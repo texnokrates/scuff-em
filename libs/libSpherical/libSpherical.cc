@@ -52,10 +52,10 @@ void CoordinateC2S(double X, double Y, double Z, double *r, double *Theta, doubl
   *Phi=atan2(Y,X);
 }
 
-void CoordinateC2S(double X[3], double *r, double *Theta, double *Phi)
+void CoordinateC2S(const double X[3], double *r, double *Theta, double *Phi)
  { CoordinateC2S(X[0], X[1], X[2], r, Theta, Phi); }
 
-void CoordinateC2S(double X[3], double R[3])
+void CoordinateC2S(const double X[3], double R[3])
  { CoordinateC2S(X[0], X[1], X[2], R+0, R+1, R+2); }
 
 void CoordinateC2S(double X[3])
@@ -82,7 +82,7 @@ void CoordinateS2C(double r, double Theta, double Phi, double *X, double *Y, dou
 void CoordinateS2C(double r, double Theta, double Phi, double X[3])
 { CoordinateS2C(r, Theta, Phi, X+0, X+1, X+2); }
 
-void CoordinateS2C(double R[3], double X[3])
+void CoordinateS2C(const double R[3], double X[3])
  { CoordinateS2C(R[0], R[1], R[2], X+0, X+1, X+2); }
 
 void CoordinateS2C(double R[3])
@@ -97,7 +97,7 @@ void CoordinateS2C(double R[3])
 /* given the cartesian components of a vector, return its      */
 /* spherical components.                                       */
 /***************************************************************/
-void VectorC2S(double Theta, double Phi, cdouble VC[3], cdouble VS[3])
+void VectorC2S(double Theta, double Phi, const cdouble VC[3], cdouble VS[3])
 { 
   double CT=cos(Theta), ST=sin(Theta);
   double CP=cos(Phi), SP=sin(Phi);
@@ -126,7 +126,7 @@ void VectorC2S(double Theta, double Phi, double V[3])
   V[0]=VS[0]; V[1]=VS[1]; V[2]=VS[2];
 }
 
-void VectorC2S(double Theta, double Phi, double VC[3], double VS[3])
+void VectorC2S(double Theta, double Phi, const double VC[3], double VS[3])
 { 
   double CT=cos(Theta), ST=sin(Theta);
   double CP=cos(Phi), SP=sin(Phi);
@@ -160,7 +160,7 @@ void VectorS2C(double Theta, double Phi, double V[3])
 /* given the spherical components of a vector, return its      */
 /* cartesian components.                                       */
 /***************************************************************/
-void VectorS2C(double Theta, double Phi, cdouble VS[3], cdouble VC[3])
+void VectorS2C(double Theta, double Phi, const cdouble VS[3], cdouble VC[3])
 { 
   double CT=cos(Theta), ST=sin(Theta);
   double CP=cos(Phi), SP=sin(Phi);
@@ -178,7 +178,7 @@ void VectorS2C(double Theta, double Phi, cdouble VS[3], cdouble VC[3])
 
 }
 
-void VectorS2C(double Theta, double Phi, double VS[3], double VC[3])
+void VectorS2C(double Theta, double Phi, const double VS[3], double VC[3])
 { 
   double CT=cos(Theta), ST=sin(Theta);
   double CP=cos(Phi), SP=sin(Phi);
