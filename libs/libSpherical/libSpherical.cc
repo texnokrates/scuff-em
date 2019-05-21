@@ -760,7 +760,7 @@ void GetMNlmArray(int lMax, cdouble k,
 {  
   int NAlpha=(lMax+1)*(lMax+1);
   int Alpha, l, m;
-  double SinTheta, dl, dm;
+  double SinTheta;
   cdouble nik, PreFac;
   cdouble ROverR;
   cdouble *R          = new cdouble[lMax+2]; 
@@ -798,13 +798,10 @@ void GetMNlmArray(int lMax, cdouble k,
   for (Alpha=l=1; l<=lMax; l++)
    for (m=-l; m<=l; m++, Alpha++)
     { 
-       dl=((double)l);
-       dm=((double)m);
-
-       PreFac=1.0/sqrt( dl*(dl+1.0) );
+       PreFac=1.0/sqrt( l*(l+1.0) );
 
        M[3*Alpha + 0]= 0.0;
-       M[3*Alpha + 1]= -dm*PreFac*R[l]*Ylm[Alpha]/SinTheta;
+       M[3*Alpha + 1]= -(double)m*PreFac*R[l]*Ylm[Alpha]/SinTheta;
        M[3*Alpha + 2]= -II*PreFac*R[l]*dYlmdTheta[Alpha];
 
 #if 0
@@ -815,9 +812,9 @@ void GetMNlmArray(int lMax, cdouble k,
         ROverR = (l==1) ? k/3.0 : 0.0;
        else
         ROverR=R[l]/r;
-       N[3*Alpha + 0]= -sqrt(dl*(dl+1.0))*ROverR*Ylm[Alpha]/k;
+       N[3*Alpha + 0]= -sqrt(l*(l+1.0))*ROverR*Ylm[Alpha]/k;
        N[3*Alpha + 1]= II*PreFac*(ROverR + dRdr[l])*dYlmdTheta[Alpha];
-       N[3*Alpha + 2]= -dm*PreFac*(ROverR + dRdr[l])*Ylm[Alpha]/SinTheta;
+       N[3*Alpha + 2]= -(double)m*PreFac*(ROverR + dRdr[l])*Ylm[Alpha]/SinTheta;
 #endif
        PreFac/=k;
 
@@ -825,14 +822,14 @@ void GetMNlmArray(int lMax, cdouble k,
         ROverR = (l==1) ? k/3.0 : 0.0;
        else
         ROverR=R[l]/r;
-       N[3*Alpha + 0]= -sqrt(dl*(dl+1.0))*ROverR*Ylm[Alpha]/k;
+       N[3*Alpha + 0]= -sqrt(l*(l+1.0))*ROverR*Ylm[Alpha]/k;
        N[3*Alpha + 1]= -PreFac*(ROverR + dRdr[l])*dYlmdTheta[Alpha];
-       N[3*Alpha + 2]= -II*dm*PreFac*(ROverR + dRdr[l])*Ylm[Alpha]/SinTheta;
+       N[3*Alpha + 2]= -II*(double)m*PreFac*(ROverR + dRdr[l])*Ylm[Alpha]/SinTheta;
 
        if (LL)
         { LL[3*Alpha + 0] = PreFac*dRdr[l] * Ylm[Alpha];
           LL[3*Alpha + 1] = PreFac*ROverR*dYlmdTheta[Alpha];
-          LL[3*Alpha + 2] = PreFac*II*dm*ROverR * Ylm[Alpha] / SinTheta;
+          LL[3*Alpha + 2] = PreFac*II*(double)m*ROverR * Ylm[Alpha] / SinTheta;
         };
 
        if (DivLL)
