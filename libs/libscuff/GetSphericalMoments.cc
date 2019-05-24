@@ -88,11 +88,15 @@ void VSWDotRWGIntegrand(double x[3], double b[3], double Divb,
   bool ConjugateRFactor=true;
   GetMWMatrix(r, Theta, Phi, k, lMax, LS_REGULAR, 
               MWMatrix, Workspace, ConjugateRFactor);
+//  fprintf(stderr, "==========================\nMWMatrix@r=%g, th=%g, f=%g, k=%g:\n", r, Theta, Phi, k);
+//  fprintf(stderr, "(weight=%g)\n", Weight);
   
   cdouble *zIntegral=(cdouble *)Integral;
   for(int nmw=0; nmw<MWMatrix->NC; nmw++)
    { cdouble *W      = (cdouble *)MWMatrix->GetColumnPointer(nmw);
-     zIntegral[nmw] += Weight*conj(W[0]*bS[0] + W[1]*bS[1] + W[2]*bS[2]);
+//	fprintf(stderr, "%d W: %g %g, %g %g, %g %g\n", nmw, real(W[0]), imag(W[0]), real(W[1]), imag(W[1]), real(W[2]), imag(W[2])); 
+//	fprintf(stderr, "%d bS: %g %g, %g %g, %g %g\n", nmw, real(bS[0]), imag(bS[0]), real(bS[1]), imag(bS[1]), real(bS[2]), imag(bS[2])); 
+     zIntegral[nmw] += Weight*conj(W[0]*bS[0] + W[1]*bS[1] + W[2]*bS[2]);// / r;
    };
 }
 
@@ -102,7 +106,8 @@ void VSWDotRWGIntegrand(double x[3], double b[3], double Divb,
 /***************************************************************/
 HVector *GetSphericalMoments(RWGGeometry *G, int ns,
                              cdouble Omega, int lMax,
-                             HVector *KN, HVector *MomentVector)
+                             HVector *KN, HVector *MomentVector,
+			     double AbsTol, double RelTol)
 { 
   /***************************************************************/
   /* (re)allocate the MomentVector as necessary ***********************/
@@ -170,13 +175,13 @@ HVector *GetSphericalMoments(RWGGeometry *G, int ns,
   /* loop to get contributions of all RWG functions              */
   /***************************************************************/
 #ifdef USE_OPENMP
-#pragma omp parallel for schedule(dynamic,1), num_threads(NT)
+//#pragma omp parallel for schedule(dynamic,1), num_threads(NT)
 #endif
   for(int ne=0; ne<S->NumEdges; ne++)
    { 
      int nt=0;
 #ifdef USE_OPENMP
-     nt = omp_get_thread_num();
+     //nt = omp_get_thread_num();
 #endif
 
      // get projections of this basis function onto M, N spherical waves
@@ -184,7 +189,8 @@ HVector *GetSphericalMoments(RWGGeometry *G, int ns,
      IntegrandData *MyData = Data + nt;
      cdouble *Integral     = IBuffer + nt*NumMoments;
      GetBFCubature2(G, ns, ne, VSWDotRWGIntegrand, (void *)MyData,
-                    2*NumMoments, Order, (double *)Integral);
+                    2*NumMoments, Order, (double *)Integral,
+		    AbsTol, RelTol);
 
      // add contributions to spherical moments
      cdouble kAlpha, nAlpha;
@@ -226,7 +232,8 @@ HVector *GetSphericalMoments(RWGGeometry *G, int ns,
 /* the moments for each individual surface                     */
 /***************************************************************/
 HVector *GetSphericalMoments(RWGGeometry *G, cdouble Omega, int lMax,
-                             HVector *KN, HVector *MomentVector)
+                             HVector *KN, HVector *MomentVector,
+			     double AbsTol, double RelTol)
 { 
   /***************************************************************/
   /* (re)allocate the MomentVector as necessary ***********************/
@@ -249,7 +256,8 @@ HVector *GetSphericalMoments(RWGGeometry *G, cdouble Omega, int lMax,
   MomentVector->Zero();
   for(int ns=0; ns<G->NumSurfaces; ns++)
    { 
-     GetSphericalMoments(G, ns, Omega, lMax, KN, PartialMoments);
+     GetSphericalMoments(G, ns, Omega, lMax, KN, PartialMoments,
+		     AbsTol, RelTol);
      for(int nm=0; nm<NumMoments; nm++)
       MomentVector->AddEntry(nm, PartialMoments->GetEntry(nm));
    }

@@ -712,7 +712,8 @@ void PPCFunction_BFBFC2(double *x, double *xp, PPCData *PPCD,
 /***************************************************************/
 void GetBFCubature2(RWGGeometry *G, int ns, int ne,
                     PCFunction2 Integrand, void *UserData, int IDim,
-                    int Order, double *Integral, int PanelOnly)
+                    int Order, double *Integral, double AbsTol,
+		    double RelTol, int PanelOnly)
 {
   /*--------------------------------------------------------------*/
   /*--------------------------------------------------------------*/
@@ -747,8 +748,8 @@ void GetBFCubature2(RWGGeometry *G, int ns, int ne,
      PCFWData.PCFunc2  = Integrand;
      PCFWData.UserData = UserData;
      PCFWData.IDim     = IDim;
-     double RelTol     = 1.0e-4;
-     double AbsTol     = 1.0e-8;
+     //double RelTol     = 1.0e-9;
+     //double AbsTol     = 1.0e-16;
      GetBFCubature(G, ns, ne, PCFunction_BFC2, (void *)&PCFWData, IDim,
                    Order, RelTol, AbsTol, 0.0, 0, Integral);
      return;                  
@@ -908,8 +909,9 @@ void GetBFBFCubature2(RWGGeometry *G,
      PCFWData.PPCFunc2 = Integrand;
      PCFWData.UserData = UserData;
      PCFWData.IDim     = IDim;
-     double RelTol     = 1.0e-4;
-     double AbsTol     = 1.0e-8;
+     // TODO variable tolerances: nontrivial AbsTol destroys scale invariance
+     double RelTol     = 1.0e-9;
+     double AbsTol     = 1.0e-16;
      GetBFBFCubature(G, ns, ne, nsP, neP, 0,
                      PPCFunction_BFBFC2, (void *)&PCFWData, IDim,
                      Order, RelTol, AbsTol, 0.0, 0, Integral);

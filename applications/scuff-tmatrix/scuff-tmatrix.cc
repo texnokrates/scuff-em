@@ -51,8 +51,10 @@ using namespace scuff;
 /***************************************************************/
 /***************************************************************/
 /***************************************************************/
+// TODO shouldn't this go to some header file instead???
 HVector *GetSphericalMoments(RWGGeometry *G, cdouble k, int LMax,
-                             HVector *KN, HVector *MomentVector);
+                             HVector *KN, HVector *MomentVector,
+			     double AbsTol=0, double RelTol=1e-4);
 
 /***************************************************************/
 /***************************************************************/
@@ -68,6 +70,8 @@ int main(int argc, char *argv[])
   char *GeoFileName=0;       // .scuffgeo file
   int LMax=3;                // maximum L-value of spherical wave computed
   cdouble Omega=0;           // angular frequency at which to run the computation
+  double SMAbsTol=0;         // absolute tolerance in final spherical moment cubature
+  double SMRelTol=1e-4;      // relative tolerance in final spherical moment cubature
   char *OmegaFile=0;         // list of angular frequencies
   char *Cache=0;             // scuff cache file 
   char *FileBase=0;          // base filename for output file
@@ -81,6 +85,8 @@ int main(int argc, char *argv[])
      {"Cache",          PA_STRING,  1, 1, (void *)&Cache,          0,  "scuff cache file"},
      {"FileBase",       PA_STRING,  1, 1, (void *)&FileBase,       0,  "base filename for output files"},
      {"WriteHDF5Files", PA_BOOL,    0, 1, (void *)&WriteHDF5Files, 0,  "write HDF5 output files"},
+     {"SphericalMomentsAbsTol", PA_DOUBLE, 1, 1, (void *)&SMAbsTol,   0,  "final spherical moment cubature abs. tolerance"},
+     {"SphericalMomentsRelTol", PA_DOUBLE, 1, 1, (void *)&SMRelTol,   0,  "final spherical moment cubature rel. tolerance"},
      {0,0,0,0,0,0,0}
    };
   ProcessOptions(argc, argv, OSArray);
@@ -170,12 +176,25 @@ int main(int argc, char *argv[])
            // solve the scattering problem for this incident spherical wave
            Log("Solving scattering problem with incident spherical wave #%i: (L,M,P)=(%i,%i,%i)",Beta,LBeta,MBeta,PBeta);
            G->AssembleRHSVector(Omega, &SW, KN);
+#ifdef FIELDDUMPS
+	   Log("===== Dump of the incident spherical wave values ====");
+	   for(int i = 0; i < KN->N; ++i)
+		   Log("(ISW) %03d:\t%g\t%g", i, real(KN->ZV[i]), imag(KN->ZV[i]));
+	   Log("=====                (End of dump)               ====");
+#endif
            M->LUSolve(KN);
 
-           // compute the full vector of spherical multipole moments induced by the
+#ifdef FIELDDUMPS
+	   Log("===== Dump of the surface current values         ====");
+	   for(int i = 0; i < KN->N; ++i)
+		   Log("(SC) %03d:\t%g\t%g", i, real(KN->ZV[i]), imag(KN->ZV[i]));
+	   Log("=====                (End of dump)               ====");
+#endif
+           
+	   // compute the full vector of spherical multipole moments induced by the
            // incident wave on the object and store it as the Betath column of the T-matrix
            HVector TColumn(NumMoments, LHM_COMPLEX, (cdouble *)TMatrix->GetColumnPointer(Beta));
-           GetSphericalMoments(G, Omega, LMax, KN, &TColumn);
+           GetSphericalMoments(G, Omega, LMax, KN, &TColumn, SMAbsTol, SMRelTol);
         }; // for (nc=l=0...)
 
      /*--------------------------------------------------------------*/
@@ -209,6 +228,5 @@ int main(int argc, char *argv[])
   /*--------------------------------------------------------------*/
   if (Cache)
    StoreCache(Cache);
-  printf("Thank you for your support.\n");
   
 }

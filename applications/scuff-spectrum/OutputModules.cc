@@ -40,7 +40,8 @@ using namespace scuff;
 // prototype for non-class method in libscuff for fetching
 // spherical moments
 HVector *GetSphericalMoments(RWGGeometry *G, cdouble Omega, int lMax,
-                             HVector *KN, HVector *MomentVector=0);
+                             HVector *KN, HVector *MomentVector=0,
+			     double AbsTol=0, double RelTol=1e-4);
 
 /***************************************************************/
 /* postprocessing of eigenvector data, part 1: write eigenmode */
