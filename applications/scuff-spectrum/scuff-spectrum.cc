@@ -159,7 +159,7 @@ int main(int argc, char *argv[])
    };
   ProcessOptions(argc, argv, OSArray);
   if (GeoFile==0)
-   OSUsage(argv[0],OSArray,"--geometry option is mandatory");
+   OSUsage(argv[0], VERSION, OSArray,"--geometry option is mandatory");
   if (FileBase==0)
    FileBase=strdup(GetFileBase(GeoFile));
 

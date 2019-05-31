@@ -236,7 +236,7 @@ int main(int argc, char *argv[])
   /*******************************************************************/
   /*******************************************************************/
   if (GeoFileName==0)
-   OSUsage(argv[0], OSArray, "--geometry option is mandatory");
+   OSUsage(argv[0], VERSION, OSArray, "--geometry option is mandatory");
   if (!FileBase)
    FileBase=vstrdup(GetFileBase(GeoFileName));
   SetLogFileName("%s.log",FileBase);
@@ -269,7 +269,7 @@ int main(int argc, char *argv[])
   /*******************************************************************/
   HVector *OmegaVector=GetOmegaList(OmegaFile, OmegaVals, nOmegaVals, LambdaFile, LambdaVals, nLambdaVals);
   if ( !OmegaVector || OmegaVector->N==0)
-   OSUsage(argv[0], OSArray, "you must specify at least one frequency");
+   OSUsage(argv[0], VERSION, OSArray, "you must specify at least one frequency");
 
   /*******************************************************************/
   /* process incident-angle-related options to construct a list of   */
@@ -282,7 +282,7 @@ int main(int argc, char *argv[])
   HVector *ThetaVector;
   if ( ThetaMax!=0.0 )
    { if ( ThetaMax<ThetaMin )
-      OSUsage(argv[0], OSArray, "--ThetaMin must not be greater than --ThetaMax");
+      OSUsage(argv[0], VERSION, OSArray, "--ThetaMin must not be greater than --ThetaMax");
      if ( ThetaMax==ThetaMin )  
       ThetaPoints=1;
      ThetaVector=LinSpace(ThetaMin*DEG2RAD, ThetaMax*DEG2RAD, ThetaPoints);
