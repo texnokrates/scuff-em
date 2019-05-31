@@ -89,7 +89,7 @@ int main(int argc, char *argv[])
    };
   ProcessOptions(argc, argv, OSArray);
   if (GeoFileName==0)
-   OSUsage(argv[0],OSArray,"--geometry option is mandatory");
+   OSUsage(argv[0],VERSION,OSArray,"--geometry option is mandatory");
 
   /*--------------------------------------------------------------*/
   /*- process frequency options ----------------------------------*/
@@ -102,7 +102,7 @@ int main(int argc, char *argv[])
      OmegaVector->SetEntry(0,Omega);
    }
   else
-   OSUsage(argv[0],OSArray,"either --omega or --omegafile must be specified");
+   OSUsage(argv[0],VERSION,OSArray,"either --omega or --omegafile must be specified");
 
   /*--------------------------------------------------------------*/
   /* create the RWGGeometry from the .scuffgeo file               */
