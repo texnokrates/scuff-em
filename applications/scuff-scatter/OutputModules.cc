@@ -27,6 +27,10 @@
 
 #include <libSGJC.h>
 
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
+
 #include "scuff-scatter.h"
 
 #define MAXSTR   1000 
@@ -84,7 +88,7 @@ void ProcessEPFile(SSData *SSD, char *EPFileName)
    { char OutFileName[MAXSTR];
      snprintf(OutFileName,MAXSTR,"%s.%s.%s",FileBase,GetFileBase(EPFileName),Ext[ST]);
      FILE *f=fopen(OutFileName,"a");
-     fprintf(f,"# scuff-scatter run on %s (%s)\n",GetHostName(),GetTimeString());
+     fprintf(f,"# scuff-scatter " VERSION " run on %s (%s)\n",GetHostName(),GetTimeString());
      fprintf(f,"# columns: \n");
      fprintf(f,"# 1,2,3   x,y,z (evaluation point coordinates)\n");
      fprintf(f,"# 4       omega (angular frequency)\n");
@@ -345,7 +349,7 @@ void GetMoments(SSData *SSD, char *MomentFile)
 /***************************************************************/
 void WritePFTFilePreamble(FILE *f, char *TransformLabel, char *IFLabel)
 {
-  fprintf(f,"# scuff-scatter run on %s (%s)\n",GetHostName(),GetTimeString());
+  fprintf(f,"# scuff-scatter " VERSION " run on %s (%s)\n",GetHostName(),GetTimeString());
   fprintf(f,"# data file columns: \n");
   fprintf(f,"# 1   omega           (rad/sec) \n");
   int nc=2;

@@ -29,6 +29,10 @@
 
 #include "scuff-ldos.h"
 
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif 
+
 /***************************************************************/
 /***************************************************************/
 /***************************************************************/
@@ -37,7 +41,7 @@ void WriteFilePreamble(char *FileName, int FileType, int LDim,
 {
   FILE *f=fopen(FileName,"a");
 
-  fprintf(f,"# scuff-ldos run on %s ",GetHostName());
+  fprintf(f,"# scuff-ldos " VERSION " run on %s ",GetHostName());
   fprintf(f,"%s\n",GetTimeString());
   fprintf(f,"# columns: \n");
   

@@ -25,6 +25,10 @@
 #include <math.h>
 #include <stdarg.h>
 
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
+
 #include <libscuff.h>
 
 #define MAXSTR   1000 
@@ -66,7 +70,7 @@ void ProcessEPFile(RWGGeometry *G, HVector *KN, cdouble Omega, double *kBloch,
   /*--------------------------------------------------------------*/
   SetDefaultCD2SFormat("%+.8e %+.8e ");
   FILE *f=vfopen("%s.%s.ModeFields","w",OutFileBase,GetFileBase(EPFileName));
-  fprintf(f,"# scuff-spectrum run on %s (%s)\n",GetHostName(),GetTimeString());
+  fprintf(f,"# scuff-spectrum " VERSION " run on %s (%s)\n",GetHostName(),GetTimeString());
   fprintf(f,"# columns: \n");
   fprintf(f,"# 1,2,3   x,y,z (evaluation point coordinates)\n");
   fprintf(f,"# 4 5     re,im omega (angular frequency)\n");
