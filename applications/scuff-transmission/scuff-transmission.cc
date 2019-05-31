@@ -26,6 +26,10 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
+
 #include <libIncField.h>
 #include "scuff-transmission.h"
 
@@ -85,7 +89,7 @@ bool GetSourceDestRegions(RWGGeometry *G, bool FromAbove,
 /***************************************************************/
 void WriteFilePreamble(FILE *f)
 {
-  fprintf(f,"# scuff-transmission run on %s (%s)\n",
+  fprintf(f,"# scuff-transmission " VERSION " run on %s (%s)\n",
              GetHostName(),GetTimeString());
   fprintf(f,"# data file columns: \n");
   fprintf(f,"# 1:      omega \n");
@@ -236,7 +240,7 @@ int main(int argc, char *argv[])
   if (!FileBase)
    FileBase=vstrdup(GetFileBase(GeoFileName));
   SetLogFileName("%s.log",FileBase);
-  Log("scuff-transmission running on %s",GetHostName());
+  Log("scuff-transmission" VERSION " running on %s",GetHostName());
   
   /*******************************************************************/
   /*- create the RWGGeometry                                        -*/

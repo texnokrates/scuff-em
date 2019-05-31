@@ -7,6 +7,10 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
+
 #include <libhrutil.h>
 #include <libscuff.h>
 #include <libSGJC.h>
@@ -188,7 +192,7 @@ int main(int argc, char *argv[])
   /* open eigenfrequency output file and write file header       */
   /***************************************************************/
   FILE *f=vfopen("%s.ModeFrequencies","a",FileBase);
-  fprintf(f,"#%s running on %s (%s)\n",argv[0], GetHostName(), GetTimeString());
+  fprintf(f,"#%s " VERSION " run on %s (%s)\n",argv[0], GetHostName(), GetTimeString());
   fclose(f);
 
   /***************************************************************/

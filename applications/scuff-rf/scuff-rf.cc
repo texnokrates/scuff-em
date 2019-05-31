@@ -30,6 +30,10 @@
 #include <math.h>
 #include <time.h>
 
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
+
 #include <libhrutil.h>
 #include <libhmat.h>
 #include <libscuff.h>
@@ -152,7 +156,7 @@ int main(int argc, char *argv[])
   /***************************************************************/
   SetLogFileName("scuff-rf.log");
   int narg;
-  Log("%s running on %s with arguments ",argv[0],getenv("HOST"));
+  Log("%s " VERSION " running on %s with arguments ",argv[0],getenv("HOST"));
   Log("%s ",argv[0]);
   for(narg=1; narg<argc; narg++) 
    LogC("%s ",argv[narg]);
