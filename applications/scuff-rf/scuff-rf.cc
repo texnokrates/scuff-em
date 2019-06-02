@@ -30,6 +30,10 @@
 #include <math.h>
 #include <time.h>
 
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
+
 #include <libhrutil.h>
 #include <libhmat.h>
 #include <libscuff.h>
@@ -141,7 +145,7 @@ int main(int argc, char *argv[])
    };
   ProcessOptions(argc, argv, OSArray);
   if (GeoFile==0)
-   OSUsage(argv[0],OSArray,"--geometry option is mandatory");
+   OSUsage(argv[0],VERSION,OSArray,"--geometry option is mandatory");
   if (!FileBase)
    FileBase=strdup(GetFileBase(GeoFile));
 
@@ -152,7 +156,7 @@ int main(int argc, char *argv[])
   /***************************************************************/
   SetLogFileName("scuff-rf.log");
   int narg;
-  Log("%s running on %s with arguments ",argv[0],getenv("HOST"));
+  Log("%s " VERSION " running on %s with arguments ",argv[0],getenv("HOST"));
   Log("%s ",argv[0]);
   for(narg=1; narg<argc; narg++) 
    LogC("%s ",argv[narg]);
@@ -170,7 +174,7 @@ int main(int argc, char *argv[])
   /* parse the port list *****************************************/ 
   /***************************************************************/ 
   if (PortFile==0)
-   OSUsage(argv[0],OSArray,"--PortFileName option is mandatory");
+   OSUsage(argv[0],VERSION,OSArray,"--PortFileName option is mandatory");
 
   int NumPorts;
   RWGPort **Ports=ParsePortFile(G, PortFile, &NumPorts);
@@ -255,11 +259,11 @@ int main(int argc, char *argv[])
   /* sanity check input arguments ********************************/
   /***************************************************************/
   if ( PCFile==0 && NumFreqs!=0 && (ZParameters==0 && SParameters==0) )
-   OSUsage(argv[0],OSArray,"--zparameters and/or --sparameters must be specified if a frequency specification is present");
+   OSUsage(argv[0],VERSION,OSArray,"--zparameters and/or --sparameters must be specified if a frequency specification is present");
   if (PCFile!=0 && (ZParameters!=0 || SParameters!=0) )
-   OSUsage(argv[0],OSArray,"--zparameters and --sparameters may not be used with --portcurrentfile");
+   OSUsage(argv[0],VERSION,OSArray,"--zparameters and --sparameters may not be used with --portcurrentfile");
   if (PCList!=0 && nEPFiles==0 && nFVMeshes==0)
-   OSUsage(argv[0],OSArray,"--EPFile or --FVMesh must be specified if --portcurrentfile is specified");
+   OSUsage(argv[0],VERSION,OSArray,"--EPFile or --FVMesh must be specified if --portcurrentfile is specified");
 
   /***************************************************************/
   /* create output files *****************************************/

@@ -38,14 +38,12 @@
  *      http://homerreid.github.io/scuff-em-documentation/applications/scuff-tmatrix/scuff-tmatrix
  */
 
-#ifdef VERSION
-#define VERSIONSTRING VERSION " "
-#else
-#define VERSIONSTRING ""
-#endif
-
 #include <stdio.h>
 #include <stdlib.h>
+
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
 
 #include "libscuff.h"
 #include "libhmat.h"
@@ -91,7 +89,7 @@ int main(int argc, char *argv[])
    };
   ProcessOptions(argc, argv, OSArray);
   if (GeoFileName==0)
-   OSUsage(argv[0],OSArray,"--geometry option is mandatory");
+   OSUsage(argv[0],VERSION,OSArray,"--geometry option is mandatory");
 
   /*--------------------------------------------------------------*/
   /*- process frequency options ----------------------------------*/
@@ -104,7 +102,7 @@ int main(int argc, char *argv[])
      OmegaVector->SetEntry(0,Omega);
    }
   else
-   OSUsage(argv[0],OSArray,"either --omega or --omegafile must be specified");
+   OSUsage(argv[0],VERSION,OSArray,"either --omega or --omegafile must be specified");
 
   /*--------------------------------------------------------------*/
   /* create the RWGGeometry from the .scuffgeo file               */
@@ -139,7 +137,7 @@ int main(int argc, char *argv[])
   if (!FileBase)
    FileBase = vstrdup(GetFileBase(GeoFileName));
   FILE *f=vfopen("%s.TMatrix","a",FileBase);
-  fprintf(f,"# scuff-tmatrix " VERSIONSTRING "run on %s (%s)\n",GetHostName(),GetTimeString());
+  fprintf(f,"# scuff-tmatrix " VERSION " run on %s (%s)\n",GetHostName(),GetTimeString());
   fprintf(f,"# columns:\n");
   fprintf(f,"# 1 omega\n");
   fprintf(f,"# 2,3,4,5 (alpha, {L,M,P}_alpha)   (T-matrix row index)\n");
