@@ -533,7 +533,7 @@ void MatProp::GetEpsMu(cdouble Omega, cdouble *pEps, cdouble *pMu)
 	  MuRV=cdouble(Data[2], Data[3]);
 	} else {
 	  EpsRV = MuRV = cdouble(NAN, NAN);
-	  Warn("Setting Eps, Mu to NaN: frequency %g outside the interpolation range in data file %s.", Omega, Name+5);
+	  Warn("Setting Eps, Mu to NaN: frequency %s outside the interpolation range in data file %s.", z2s(Omega), Name+5);
 	}
       }
      else if (real(Omega)==0.0)
@@ -545,7 +545,7 @@ void MatProp::GetEpsMu(cdouble Omega, cdouble *pEps, cdouble *pMu)
 	  MuRV=cdouble(Data[2], 0.0);
 	} else {
 	  EpsRV = MuRV = cdouble(NAN, NAN);
-	  Warn("Setting Eps, Mu to NaN: frequency %g outside the interpolation range in data file %s.", Omega, Name+5);
+	  Warn("Setting Eps, Mu to NaN: frequency %s outside the interpolation range in data file %s.", z2s(Omega), Name+5);
 	}
       }
      else
