@@ -273,6 +273,12 @@ HMatrix *GetWaveMatrix(double r, double Theta, double Phi,
         AA[1][2] = +1.0*II*AA[0][1];
         AA[2][0] = YArray[Alpha];
 
+	// This is quite obscure; it seems that it gives the right result
+	// for transversal waves only (MaxwellWaves = true), but I (MMN) 
+	// believe that it gives some nonsense otherwise. Therefore:
+	if(!MaxwellWaves) ErrExit("Before trying to compute the full set of "
+		"VSWFs, you should fix the code after line %d in file %s.",
+		__LINE__, __FILE__);
         for(int P=0; P<3; P++)
          { int Index =    MaxwellWaves
                        ?  GetMWIndex(L, M, (P==0) ? 0 : 1)
