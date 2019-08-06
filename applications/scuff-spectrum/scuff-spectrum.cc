@@ -132,8 +132,8 @@ int main(int argc, char *argv[])
      {"N",                  PA_INT,     1, 1, (void *)&N,                  0,    "number of quadrature points"},
      {"L",                  PA_INT,     1, 1, (void *)&L,                  0,    "upper bound on expected number of eigenvalues in contour "},
 //
-     {"kx",                 PA_INT,     1, 1, (void *)&kx,                 &nkx, "x component of bloch vector"},
-     {"ky",                 PA_INT,     1, 1, (void *)&ky,                 &nky, "y component of bloch vector"},
+     {"kx",                 PA_DOUBLE,     1, 1, (void *)&kx,                 &nkx, "x component of bloch vector"},
+     {"ky",                 PA_DOUBLE,     1, 1, (void *)&ky,                 &nky, "y component of bloch vector"},
 //
      {"ContourFile",        PA_STRING,  1, 1, (void *)&ContourFile,        0,   "list of contours"},
 //
@@ -204,7 +204,7 @@ int main(int argc, char *argv[])
      /***************************************************************/
      /* extract information on the contour **************************/
      /***************************************************************/
-     struct BFData MyBFData = {G, M, {0,0}, 0};
+     struct BFData MyBFData = {G, M, {kx,ky}, 0};
      double *kBloch = (G->LDim > 0) ? MyBFData.kBloch : 0;
      for(int d=0; d<G->LDim; d++) 
       MyBFData.kBloch[d] = ContourMatrix->GetEntryD(nr, d);
