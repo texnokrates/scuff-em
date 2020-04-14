@@ -152,7 +152,7 @@ void HalfSpaceDGFIntegrand(const double *q, HalfSpaceData *Data,
      if (TwoPointDGF)
       XMatrix->GetEntriesD(nx,"3:5",XSource);
 
-     if ( abs(imag(qz*(XSource[2] + XDest[2])) > 40.0 ) )
+     if ( abs(imag(qz*(XSource[2] + XDest[2]))) > 40.0  )
       continue;
 
      double R[3];
