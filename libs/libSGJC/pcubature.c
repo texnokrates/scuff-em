@@ -284,7 +284,7 @@ static int converged(unsigned fdim, const double *vals, const double *errs,
 /***************************************************************/
 /* HR 201308 status logging ************************************/
 /***************************************************************/
-void SGJCLog(char *LogFileName, int numEvals, 
+void SGJCLog(const char *LogFileName, int numEvals, 
              unsigned fdim, const double *vals, const double *errs)
 { 
   int nf;
@@ -314,7 +314,7 @@ int pcubature_v_buf(unsigned fdim, integrand_v f, void *fdata,
 		    error_norm norm,
 		    unsigned *m,
 		    double **buf, size_t *nbuf, size_t max_nbuf,
-		    double *val, double *err, char *LogFileName)
+		    double *val, double *err, const char *LogFileName)
 {
      int ret = FAILURE;
      double V = 1;

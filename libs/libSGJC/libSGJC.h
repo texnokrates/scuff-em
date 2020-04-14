@@ -106,7 +106,7 @@ int pcubature_v_buf(unsigned fdim, integrand_v f, void *fdata,
                     error_norm norm,
                     unsigned *m,
                     double **buf, size_t *nbuf, size_t max_nbuf,
-                    double *val, double *err, char *LogFileName);
+                    double *val, double *err, const char *LogFileName);
 
 int pcubature_v(unsigned fdim, integrand_v f, void *fdata,
                 unsigned dim, const double *xmin, const double *xmax, 
