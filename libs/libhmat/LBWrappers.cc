@@ -69,8 +69,9 @@ void HMatrix::Multiply(HMatrix *B, HMatrix *C, const char *Options)
   if (Options)
    { int MaxTokens=4, NumTokens;
      char *Tokens[4];
-     char Line[100];
+     char Line[101];
      strncpy(Line, Options, 100);
+     Line[100] = '\0';
      NumTokens=Tokenize(Line, Tokens, MaxTokens);
      for (int nt=0; nt<NumTokens; nt++)
       { if (!strcasecmp(Tokens[nt],"--transa"))    
@@ -165,6 +166,7 @@ int HMatrix::LUFactorize()
    zhptrf_("U", &NR, ZM, ipiv, &info);
   else if ( RealComplex==LHM_COMPLEX && StorageType==LHM_SYMMETRIC ) 
    zsptrf_("U", &NR, ZM, ipiv, &info);
+  else ErrExit("Invalid matrix properties");
 
   return info;
 }
@@ -195,6 +197,7 @@ int HMatrix::LUSolve(HVector *X)
    zhptrs_("U", &NR, &iOne, ZM, ipiv, X->ZV, &NR, &info);
   else if ( RealComplex==LHM_COMPLEX && StorageType==LHM_SYMMETRIC )
    zsptrs_("U", &NR, &iOne, ZM, ipiv, X->ZV, &NR, &info);
+  else ErrExit("Invalid matrix properties");
 
   return info;
 }
@@ -229,6 +232,7 @@ if ( RealComplex==LHM_REAL && StorageType==LHM_NORMAL )
    zhptrs_("U", &NR, &nrhs, ZM, ipiv, X->ZM, &NR, &info);
   else if ( RealComplex==LHM_COMPLEX && StorageType==LHM_SYMMETRIC )
    zsptrs_("U", &NR, &nrhs, ZM, ipiv, X->ZM, &NR, &info);
+  else ErrExit("Invalid matrix properties");
 
   return info;
 }
@@ -352,7 +356,8 @@ int HMatrix::CholFactorize()
   else if ( RealComplex==LHM_COMPLEX && StorageType==LHM_SYMMETRIC )
    { fprintf(stderr,"\n*\n* ERROR: cannot cholesky-factorize a complex symmetric matrix \n*\n");
      return -1;
-   };
+   }
+  else ErrExit("Invalid matrix properties");
 
   return info;
 }
@@ -379,7 +384,8 @@ int HMatrix::CholSolve(HVector *X)
   else if ( RealComplex==LHM_COMPLEX && StorageType==LHM_SYMMETRIC )
    { fprintf(stderr,"\n*\n* ERROR: cannot cholesky-factorize a complex symmetric matrix \n*\n");
      return -1;
-   };
+   }
+  else ErrExit("Invalid matrix properties");
 
   return info;
 }
@@ -407,7 +413,8 @@ int HMatrix::CholSolve(HMatrix *X, int nrhs)
   else if ( RealComplex==LHM_COMPLEX && StorageType==LHM_SYMMETRIC )
    { fprintf(stderr,"\n*\n* ERROR: cannot cholesky-factorize a complex symmetric matrix \n*\n");
      return -1;
-   };
+   }
+  else ErrExit("Invalid matrix properties");
 
   return info;
 }
@@ -958,7 +965,7 @@ double HMatrix::GetRCond(double ANorm, bool UseInfinityNorm)
 /***************************************************************/
 cdouble DoDot(HVector *A, HVector *B, bool Hermitian=true)
 {
-  if ( (A->N != A->N) || (A->RealComplex != B->RealComplex) )
+  if ( (A->N != B->N) || (A->RealComplex != B->RealComplex) )
    { Warn("attempt to dot-product incompatible vectors (returning 0)");
      return 0.0;
    };
