@@ -27,6 +27,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <math.h>
+#include <assert.h>
 
 #include "libscuff.h"
 
@@ -38,20 +39,24 @@ namespace scuff {
 #define TYPE_TRIANGLE 2
 #define TYPE_POINT    15
 
-#define NODE_START_KEYWORD1 "$NOD"
-#define NODE_START_KEYWORD2 "$Nodes"
+#define MESH_FORMAT_START_KEYWORD_GMSH24 "$MeshFormat"
+#define MESH_FORMAT_END_KEYWORD_GMSH24 "$EndMeshFormat"
 
-#define NODE_END_KEYWORD1   "$ENDNOD"
-#define NODE_END_KEYWORD2   "$EndNodes"
+#define NODE_START_KEYWORD_GMSH1 "$NOD"
+#define NODE_START_KEYWORD_GMSH24 "$Nodes"
 
-#define ELM_START_KEYWORD1  "$ELM"
-#define ELM_START_KEYWORD2  "$Elements"
+#define NODE_END_KEYWORD_GMSH1   "$ENDNOD"
+#define NODE_END_KEYWORD_GMSH24   "$EndNodes"
 
-#define ELM_END_KEYWORD1    "$ENDELM"
-#define ELM_END_KEYWORD2    "$EndElements"
+#define ELM_START_KEYWORD_GMSH1  "$ELM"
+#define ELM_START_KEYWORD_GMSH24  "$Elements"
 
-#define FORMAT_LEGACY 0
-#define FORMAT_NEW    1
+#define ELM_END_KEYWORD_GMSH1    "$ENDELM"
+#define ELM_END_KEYWORD_GMSH24    "$EndElements"
+
+#define FORMAT_GMSH1 1
+#define FORMAT_GMSH2 2
+#define FORMAT_GMSH4 4
 
 #define MAXREFPTS 100
 
@@ -75,16 +80,56 @@ char *ParseGMSHFile(FILE *MeshFile, char *FileName, int MeshTag,
   /*------------------------------------------------------------*/
   int LineNum=0;
   char Line[100];
-  bool KeywordFound=false;
-  int WhichMeshFormat;
-  while(!KeywordFound)
+  bool NodesKeywordFound=false;
+  int WhichMeshFormat = 0;
+
+  { // Read MSH preambule and determine version. The format checking is not bullet-proof
+    // (some malformed files can pass through), but it should parse are correct files
+    // correctly.
+    double MeshFormatVersion = 0; int file_type, data_size;// for MSH version 2 and higher
+    int VersionInfoPhase = 0;
+    while(VersionInfoPhase < 5) {
+     if (!fgets(Line,100,MeshFile))
+        return vstrdup("%s:%i: failed to find valid MSH file version specification", FileName, LineNum);
+      LineNum++;
+      if (VersionInfoPhase == 0) {
+        if( !strncmp(Line,NODE_START_KEYWORD_GMSH1,strlen(NODE_START_KEYWORD_GMSH1))) {
+  	  WhichMeshFormat=FORMAT_GMSH1; 
+          NodesKeywordFound=true;
+          VersionInfoPhase = 5; 
+          break; 
+        } else if (!strncmp(Line,MESH_FORMAT_START_KEYWORD_GMSH24,strlen(MESH_FORMAT_START_KEYWORD_GMSH24)))
+          ++VersionInfoPhase;
+	else return vstrdup("%s:%i: expected $MeshFormat or $NOD keyword", FileName, LineNum);
+      }
+      if (VersionInfoPhase == 1) {
+        if (1 == fscanf(MeshFile, "%lf", &MeshFormatVersion)) {
+          WhichMeshFormat = (int) MeshFormatVersion;
+	  if (WhichMeshFormat != FORMAT_GMSH2) 
+            return vstrdup("%s:%i: only MSH v1 and v2 formats currently supported (input file claims to be v%g)", FileName, LineNum, MeshFormatVersion);
+	  ++VersionInfoPhase;
+	}
+      }
+      if (VersionInfoPhase == 2) {
+        if (1 == fscanf(MeshFile, "%d", &file_type)) ++VersionInfoPhase;
+      }
+      if (VersionInfoPhase == 3) {
+        if (1 == fscanf(MeshFile, "%d", &data_size)) ++VersionInfoPhase;
+      }
+      if (VersionInfoPhase == 4) {
+	if (!strncmp(Line,MESH_FORMAT_END_KEYWORD_GMSH24,strlen(MESH_FORMAT_END_KEYWORD_GMSH24)))
+          ++VersionInfoPhase;
+      }
+    }
+  }
+  assert(WhichMeshFormat != 0);
+
+  while(!NodesKeywordFound)
    { if (!fgets(Line,100,MeshFile))
-      return vstrdup("%s: failed to find node start keyword");
+      return vstrdup("%s:%i: failed to find node start keyword", FileName, LineNum);
      LineNum++;
-     if( !strncmp(Line,NODE_START_KEYWORD1,strlen(NODE_START_KEYWORD1)))
-      { WhichMeshFormat=FORMAT_LEGACY; KeywordFound=true; }
-     else if( !strncmp(Line,NODE_START_KEYWORD2,strlen(NODE_START_KEYWORD2)))
-      { WhichMeshFormat=FORMAT_NEW; KeywordFound=true; }
+     if( !strncmp(Line,NODE_START_KEYWORD_GMSH24,strlen(NODE_START_KEYWORD_GMSH24)))
+       NodesKeywordFound=true; 
    }
   int NumNodes;
   if ( !fgets(Line,100,MeshFile) || !(NumNodes=atoi(Line)) )
@@ -106,7 +151,7 @@ char *ParseGMSHFile(FILE *MeshFile, char *FileName, int MeshTag,
    GMSH2HR[i]=-1;
   for (int nn=0; nn<NumNodes; nn++)
    { if (!fgets(Line,100,MeshFile))
-      return vstrdup("%s: too few nodes",FileName);
+      return vstrdup("%s:%i: too few nodes",FileName,LineNum);
      LineNum++;
      int NodeIndex;
      double V[3];
@@ -162,12 +207,12 @@ char *ParseGMSHFile(FILE *MeshFile, char *FileName, int MeshTag,
    return vstrdup("%s: bad file format (nodes section not terminated)",FileName);
   LineNum++;
 
-  if ( WhichMeshFormat==FORMAT_LEGACY ) 
-   { if ( strncmp(Line,NODE_END_KEYWORD1,strlen(NODE_END_KEYWORD1)))
+  if ( WhichMeshFormat==FORMAT_GMSH1 ) 
+   { if ( strncmp(Line,NODE_END_KEYWORD_GMSH1,strlen(NODE_END_KEYWORD_GMSH1)))
       return vstrdup("%s:%i: unexpected keyword",FileName,LineNum);
    }
   else
-   { if ( strncmp(Line,NODE_END_KEYWORD2,strlen(NODE_END_KEYWORD2)))
+   { if ( strncmp(Line,NODE_END_KEYWORD_GMSH24,strlen(NODE_END_KEYWORD_GMSH24)))
       return vstrdup("%s:%i: unexpected keyword",FileName,LineNum);
    }
 
@@ -175,12 +220,12 @@ char *ParseGMSHFile(FILE *MeshFile, char *FileName, int MeshTag,
    return vstrdup("%s: bad file format (elements section not initiated)",FileName);
   LineNum++;
 
-  if ( WhichMeshFormat==FORMAT_LEGACY ) 
-   { if ( strncmp(Line,ELM_START_KEYWORD1,strlen(ELM_START_KEYWORD1)))
+  if ( WhichMeshFormat==FORMAT_GMSH1 ) 
+   { if ( strncmp(Line,ELM_START_KEYWORD_GMSH1,strlen(ELM_START_KEYWORD_GMSH1)))
       return vstrdup("%s:%i: unexpected keyword",FileName,LineNum);
    }
   else
-   { if ( strncmp(Line,ELM_START_KEYWORD2,strlen(ELM_START_KEYWORD2)))
+   { if ( strncmp(Line,ELM_START_KEYWORD_GMSH24,strlen(ELM_START_KEYWORD_GMSH24)))
       return vstrdup("%s:%i: unexpected keyword",FileName,LineNum);
    }
 
@@ -202,7 +247,7 @@ char *ParseGMSHFile(FILE *MeshFile, char *FileName, int MeshTag,
      LineNum++;
 
      int VI[3], ElType, RegPhys;
-     if (WhichMeshFormat==FORMAT_LEGACY)
+     if (WhichMeshFormat==FORMAT_GMSH1)
       { int ElNum, RegElem, NodeCnt;
         int nConv=sscanf(Line,"%i %i %i %i %i %i %i %i", &ElNum,&ElType,&RegPhys,&RegElem,&NodeCnt,VI,VI+1,VI+2);
         if (nConv<5) return vstrdup("%s:%i: invalid element specification",FileName,LineNum);
