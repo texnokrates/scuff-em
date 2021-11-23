@@ -1,4 +1,4 @@
-AC_INIT(scuff-em, 0.95, homer@homerreid.com)
+AC_INIT(scuff-em, 0.96, homer@homerreid.com)
 AC_CONFIG_SRCDIR([README])
 
 # Shared-library version.  This has a technical
@@ -184,6 +184,14 @@ AC_CHECK_LIB([m],[cos])
 AC_CHECK_LIB([gslcblas],[cblas_dgemm])
 AC_CHECK_LIB([gsl],[gsl_sf_legendre_array_n])
 
+##############################################################################
+# check for libGDSII
+##############################################################################
+AC_CHECK_HEADER(libGDSII.h, [have_gdsii=maybe], [have_gdsii=no])
+if test $have_gdsii = maybe; then
+  AC_CHECK_LIB(GDSII, libGDSIIExists)
+fi
+
 ##################################################
 # Checks for miscellaneous math functions
 AC_CHECK_FUNCS([isnan isinf erf erfc copysign])
@@ -241,7 +249,7 @@ AM_CONDITIONAL(WITH_PYTHON, test x"$have_python" = "xyes")
 
 AC_LANG_PUSH(C++)
 AC_CHECK_HEADER(tr1/unordered_map,[AC_DEFINE([HAVE_TR1],[1],["Have tr1 headers"])],[])
-AC_CHECK_HEADER(unordered_map,[AC_DEFINE([HAVE_CXX11],[1],["Have C++11 headers"])],[])
+AX_CXX_COMPILE_STDCXX([11], [], [optional])
 AC_LANG_POP
 
 ##############################################################################
@@ -271,8 +279,8 @@ AC_CONFIG_FILES([
  libs/libhrutil/Makefile
  libs/libscuff/Makefile
  libs/libStaticSolver/Makefile
- libs/libRFSolver/Makefile
- libs/libRFSolver/tests/Makefile
+ libs/libscuffSolver/Makefile
+ libs/libscuffSolver/tests/Makefile
  libs/python/Makefile
  applications/Makefile
  applications/scuff-analyze/Makefile
@@ -282,7 +290,6 @@ AC_CONFIG_FILES([
  applications/scuff-neq/Makefile
  applications/scuff-plotEpsMu/Makefile
  applications/scuff-rf/Makefile
- applications/scuff-microstrip/Makefile
  applications/scuff-scatter/Makefile
  applications/scuff-spectrum/Makefile
  applications/scuff-static/Makefile
@@ -314,6 +321,7 @@ AC_CONFIG_FILES([
  examples/WireAntenna/Makefile
  examples/YagiUdaAntennas/Makefile
  tests/Makefile
+ tests/Mie/Makefile
  tests/Fresnel/Makefile
 ])
 AC_OUTPUT
