@@ -33,6 +33,7 @@ typedef int logical;
 typedef int ftnlen;
 
 #include <stdio.h>
+#include <stdlib.h>
 
 /* Table of constant values */
 
