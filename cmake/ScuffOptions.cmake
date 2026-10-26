@@ -25,6 +25,9 @@ set_property(CACHE SCUFF_WITH_GDSII PROPERTY STRINGS AUTO ON OFF)
 
 option(SCUFF_BUILD_DEV_PROGRAMS "Build internal developer test programs" OFF)
 
+option(SCUFF_USE_SYSTEM_CLI11
+  "Use a system CLI11 instead of the vendored single header" OFF)
+
 option(SCUFF_INSTALL_EXAMPLES "Install example files" ON)
 option(SCUFF_INSTALL_TESTS "Install test data and scripts" ON)
 

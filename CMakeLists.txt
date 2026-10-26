@@ -30,6 +30,7 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin")
 
 include(ScuffVersion)
 include(ScuffDependencies)
+include(ScuffCLI11)
 
 # All internal library directories are on the include path, mirroring the
 # historical AM_CPPFLAGS.  The generated include directory comes first so that

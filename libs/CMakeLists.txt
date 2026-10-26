@@ -10,6 +10,7 @@ scuff_add_module(scuff_hrutil
   libhrutil/ProcessOptions.cc
   libhrutil/Vector.cc
 )
+target_link_libraries(scuff_hrutil PRIVATE scuff_cli11)
 
 scuff_add_module(scuff_hmat
   libhmat/LBWrappers.cc
