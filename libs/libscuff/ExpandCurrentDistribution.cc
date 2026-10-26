@@ -99,7 +99,7 @@ void RWGGeometry::ExpandCurrentDistribution(IncField *IF,
                                             bool IsEHField)
 { 
   if (KNVector->ZV==0)
-   ErrExit("%s:%i: internal error");
+   ErrExit("%s:%i: internal error",__FILE__,__LINE__);
 
   /***************************************************************/
   /* project user's current distribution onto the RWG basis.     */

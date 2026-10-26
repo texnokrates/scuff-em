@@ -543,7 +543,7 @@ void scuffSolver::AssemblePortBFInteractionMatrix(cdouble Omega)
      int nsRight, neRight, nPortPrime=-1;
      if (nBFPE < NBF)
       { if (!G->ResolveEdge(nBFPE, &nsRight, &neRight, 0))
-         ErrExit("%s:%i: internal error(%i,%i,%i)\n",nBFPE,nsRight,neRight);
+         ErrExit("%s:%i: internal error (BF %i)",__FILE__,__LINE__,nBFPE);
       }
      else
       { RWGPortEdge *PEP  = PortList->PortEdges[nBFPE - NBF];

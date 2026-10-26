@@ -222,7 +222,7 @@ DataSet *ReadDataSet(char *FileName, Checklist *CL)
       continue;
 
      if ( NumTokens < MinTokens )
-      { Warn("%s:%i: not enough tokens on line (skipping)...");
+      { Warn("%s:%i: not enough tokens on line (skipping)...",FileName,LineNum);
         continue;
       }
 

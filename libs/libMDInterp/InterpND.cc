@@ -288,7 +288,7 @@ void InterpND::Initialize(PhiVDFunc UserFunc, void *UserData, bool Verbose)
    int ThreadTaskThreshold = 16; CheckEnv("SCUFF_INTERP_MIN_TASKS",&ThreadTaskThreshold);
    int NumThreads = ( ((int)NumPoints) <= ThreadTaskThreshold ? 1 :  GetNumThreads() );
    if (Verbose)
-    Log("Evaluating interpolation function at %i points (%i threads)",NumPoints,NumThreads);
+    Log("Evaluating interpolation function at %zu points (%i threads)",NumPoints,NumThreads);
 #ifdef USE_OPENMP
 #pragma omp parallel for num_threads(NumThreads)
 #endif
@@ -830,6 +830,6 @@ dVec GetXGrid(PhiVDFunc UserFunc, void *UserData, int NF, dVec X0Min, dVec X0Max
      if (X>X0Max[d0]) X=X0Max[d0];
      XGrid.push_back(X);
    }
-  Log(" ...%i grid points",XGrid.size()); 
+  Log(" ...%zu grid points",XGrid.size());
   return XGrid;
 }

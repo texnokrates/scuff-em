@@ -577,7 +577,7 @@ GTCList ReadTransFile(const char *FileName)
    } // while(fgets(Line, MAXSTR, f))
 
   fclose(f);
-  Log("Read %i geometrical transformations from file %s.",GTCs.size(),FileName); 
+  Log("Read %zu geometrical transformations from file %s.",GTCs.size(),FileName);
   return GTCs;
 }
 

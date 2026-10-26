@@ -217,9 +217,11 @@ HMatrix *AssembleBEMMatrix2018(RWGGeometry *G, cdouble Omega, double *kBloch, HM
   /***************************************************************/
   /***************************************************************/
   if ( G->LBasis==0 && kBloch!=0 && (kBloch[0]!=0.0 || kBloch[1]!=0.0) )
-   ErrExit("%s:%i: Bloch wavevector is undefined for compact geometries");
+   ErrExit("%s:%i: Bloch wavevector is undefined for compact geometries",
+           __FILE__,__LINE__);
   if ( G->LBasis!=0 && kBloch==0 )
-   ErrExit("%s:%i: Bloch wavevector must be specified for PBC geometries");
+   ErrExit("%s:%i: Bloch wavevector must be specified for PBC geometries",
+           __FILE__,__LINE__);
 
   /***************************************************************/
   /***************************************************************/

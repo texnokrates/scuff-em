@@ -35,6 +35,14 @@
 #include <vector>
 using namespace std;
 
+/* printf-style format checking for the varargs helpers below. */
+#if defined(__GNUC__) || defined(__clang__)
+#  define SCUFF_PRINTF_FORMAT(FormatIndex, FirstArg) \
+     __attribute__((format(printf, FormatIndex, FirstArg)))
+#else
+#  define SCUFF_PRINTF_FORMAT(FormatIndex, FirstArg)
+#endif
+
 /***************************************************************/
 /* various random constants    *********************************/
 /***************************************************************/
@@ -126,29 +134,44 @@ FILE *fopenPath(const char *Path, const char *FileName, const char *Mode, char *
 /***************************************************************/
 /* Vararg versions of common functions *************************/
 /***************************************************************/
-int vsnprintfEC(char *str, size_t size, const char *format, va_list ap);
-FILE *vfopen(const char *format, const char *mode, ...);
-int vmkdir(const char *format, ...);
-int vsystem(const char *format, ...);
-void vsetenv(const char *VariableName, const char *format, ...);
-char *vstrdup(const char *format, ...);
-char *vstrappend(char *s, const char *format, ...);
-void vstrncat(char *s, size_t n, const char *format, ...);
-void ErrExit(const char *format, ...);
-void Warn(const char *format, ...);
+int vsnprintfEC(char *str, size_t size, const char *format, va_list ap)
+  SCUFF_PRINTF_FORMAT(3,0);
+FILE *vfopen(const char *format, const char *mode, ...)
+  SCUFF_PRINTF_FORMAT(1,3);
+int vmkdir(const char *format, ...)
+  SCUFF_PRINTF_FORMAT(1,2);
+int vsystem(const char *format, ...)
+  SCUFF_PRINTF_FORMAT(1,2);
+void vsetenv(const char *VariableName, const char *format, ...)
+  SCUFF_PRINTF_FORMAT(2,3);
+char *vstrdup(const char *format, ...)
+  SCUFF_PRINTF_FORMAT(1,2);
+char *vstrappend(char *s, const char *format, ...)
+  SCUFF_PRINTF_FORMAT(2,3);
+void vstrncat(char *s, size_t n, const char *format, ...)
+  SCUFF_PRINTF_FORMAT(3,4);
+void ErrExit(const char *format, ...)
+  SCUFF_PRINTF_FORMAT(1,2);
+void Warn(const char *format, ...)
+  SCUFF_PRINTF_FORMAT(1,2);
 
 /***************************************************************/
 /* General-purpose status logging ******************************/
 /***************************************************************/
 char *GetHostName(); 
 char *GetTimeString(char *s=0);
-void SetLogFileName(const char *format, ...);
+void SetLogFileName(const char *format, ...)
+  SCUFF_PRINTF_FORMAT(1,2);
 void InitializeLog(char *argv0, const char *Path=0);
 void SetConsoleLogging();
-void Log(const char *format, ...);
-void LogC(const char *format, ...);
-void LogThread(const char *format, ...);
-void MutexLog(const char *format, ...);
+void Log(const char *format, ...)
+  SCUFF_PRINTF_FORMAT(1,2);
+void LogC(const char *format, ...)
+  SCUFF_PRINTF_FORMAT(1,2);
+void LogThread(const char *format, ...)
+  SCUFF_PRINTF_FORMAT(1,2);
+void MutexLog(const char *format, ...)
+  SCUFF_PRINTF_FORMAT(1,2);
 void LogPercent(int n, int N, int Gradations=10);
 
 /***************************************************************/
@@ -277,7 +300,8 @@ bool CheckEnv(const char *Name, double *Destination, bool LogSuccess=true);
 bool CheckEnv(const char *Name, int *Destination, bool LogSuccess=true);
 bool CheckEnv(const char *Name, char **Destination, bool LogSuccess=true);
 bool CheckEnv(const char *Name, bool LogSuccess=true);
-void AppendEnv(const char *Name, const char *Separator, const char *format, ...);
+void AppendEnv(const char *Name, const char *Separator, const char *format, ...)
+  SCUFF_PRINTF_FORMAT(3,4);
 
 FILE *CreateUniqueFile(const char *Base, int ConsoleMessage, char *FileName);
 FILE *CreateUniqueFile(const char *Base, int ConsoleMessage); 
@@ -312,7 +336,8 @@ typedef struct ArgStruct
    const char *Description;
  } ArgStruct;
 
-void ASUsage(char *ProgName, ArgStruct *ASArray, const char *format, ...);
+void ASUsage(char *ProgName, ArgStruct *ASArray, const char *format, ...)
+  SCUFF_PRINTF_FORMAT(3,4);
 void ProcessArguments(int argc, char *argv[], ArgStruct *ASArray);
 
 /***************************************************************/
@@ -339,8 +364,11 @@ typedef struct OptStruct
  } OptStruct;
 
 void AppendOSUsageMessage(const char *Message);
-void OSUsage(const char *ProgName, OptStruct *OSArray, const char *format, ...);
-void OSUsage(const char *ProgName, const char *version, OptStruct *OSArray, const char *format, ...);
+void OSUsage(const char *ProgName, OptStruct *OSArray, const char *format, ...)
+  SCUFF_PRINTF_FORMAT(3,4);
+void OSUsage(const char *ProgName, const char *version, OptStruct *OSArray,
+             const char *format, ...)
+  SCUFF_PRINTF_FORMAT(4,5);
 void ProcessOptions(int argc, char *argv[], OptStruct *OSArray,
                     bool AbortOnUnknown=true, bool ZeroArgs=false);
 void ProcessOptions(const char *ArgString, OptStruct *OSArray);

@@ -338,7 +338,7 @@ void RWGGeometry::DetectMultiMaterialJunctions()
       MultiMaterialJunctions[NumMMJs++] = Data;
 
       if (LogLevel>=SCUFF_VERBOSE2)
-       { Log(" MMJ #03i: ",NumMMJs);
+       { Log(" MMJ #%03i: ",NumMMJs);
          for(int n=0; n<NumEdges; n++)
           LogC(" {%i,%04i} ",SurfaceIndices[n],EdgeIndices[n]);
        };

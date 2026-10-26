@@ -263,7 +263,7 @@ void GetOPFT(RWGGeometry *G, int SurfaceIndex, cdouble Omega,
   
   if (SurfaceIndex<0 || SurfaceIndex>=G->NumSurfaces)
    { memset(PFT,0,NUMPFT*sizeof(double));
-     Warn("GetOPFT called for unknown surface #i",SurfaceIndex);
+     Warn("GetOPFT called for unknown surface %i",SurfaceIndex);
      return;
    };
 
@@ -473,7 +473,7 @@ void GetOPFTMatrices(RWGGeometry *G,
                      bool NeedMatrix[NUMPFT])
 {
   if (SurfaceIndex<0 || SurfaceIndex>=G->NumSurfaces)
-   { Warn("GetOPFTMatrices called for unknown surface #i",SurfaceIndex);
+   { Warn("GetOPFTMatrices called for unknown surface %i",SurfaceIndex);
      return;
    };
 

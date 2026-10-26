@@ -78,11 +78,14 @@ void GaussianBeam::SetW0(double pW0)          { W0 = pW0; }
 void GaussianBeam::GetFields(const double X[3], cdouble EH[6])
 {
   if ( imag(Eps) !=0.0 || imag(Mu) != 0.0 )
-   ErrExit("%s:%i: gaussian beams not implemented for dispersive media");
+   ErrExit("%s:%i: gaussian beams not implemented for dispersive media",
+           __FILE__,__LINE__);
   if ( imag(Omega) !=0.0 )
-   ErrExit("%s:%i: gaussian beams not implemented for imaginary frequencies");
+   ErrExit("%s:%i: gaussian beams not implemented for imaginary frequencies",
+           __FILE__,__LINE__);
   if ( LBasis )
-   ErrExit("%s:%i: gaussian beams not implemented for bloch-periodic geometries");
+   ErrExit("%s:%i: gaussian beams not implemented for bloch-periodic geometries",
+           __FILE__,__LINE__);
 
   const cdouble IU(0,1);
   double EpsR = real(Eps);

@@ -361,7 +361,7 @@ char *ParseComsolFile(FILE *MeshFile, char *FileName, int MeshTag,
      VertexCoordinates.push_back(V[2]);
    }
   if (VertexCoordinates.size() != 3*((size_t)NumVertices) )
-   return vstrdup("%s: stated number of vertices (%i) disagrees with actual (%i)",NumVertices,VertexCoordinates.size()/3);
+   return vstrdup("%s: stated number of vertices (%i) disagrees with actual (%zu)",FileName,NumVertices,VertexCoordinates.size()/3);
 
   /***************************************************************/
   /* skip down to element definition section *********************/
@@ -404,7 +404,7 @@ char *ParseComsolFile(FILE *MeshFile, char *FileName, int MeshTag,
      PanelVertexIndices.push_back(VI[2]);
    }
   if (PanelVertexIndices.size() != 3*((size_t)NumPanels) )
-   return vstrdup("%s: stated number of panels (%i) disagrees with actual (%lu)",NumPanels,PanelVertexIndices.size()/3);
+   return vstrdup("%s: stated number of panels (%i) disagrees with actual (%zu)",FileName,NumPanels,PanelVertexIndices.size()/3);
 
   /***************************************************************/
   /* ignore the rest of the file and we are done *****************/

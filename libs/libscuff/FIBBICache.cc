@@ -506,7 +506,7 @@ int FIBBICache::PreLoad(const char *FileName)
 
   Log("FC::P ...successfully preloaded %i FIBBI records.",RecordsRead);
 #define ONEMEG (1<<20)
-  Log("FC::P Cache memory use: %i MB.",(GetMemoryUsage() - M0)/(ONEMEG));
+  Log("FC::P Cache memory use: %lu MB.",(GetMemoryUsage() - M0)/(ONEMEG));
   fclose(f);
   return 0;
 

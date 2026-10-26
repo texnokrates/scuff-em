@@ -62,7 +62,7 @@ struct RowSorter
 RowSorter::RowSorter(HMatrix *_M, ivec _SortColumns, cvec _SortType): M(_M), SortColumns(_SortColumns), SortType(_SortType)
 { 
   if ( SortType.size()!=SortColumns.size() )
-   ErrExit("%s:%i: numbers of columns and flags disagree (%i,%i)",
+   ErrExit("%s:%i: numbers of columns and flags disagree (%zu,%zu)",
             __FILE__,__LINE__,SortType.size(), SortColumns.size());
 
   for(unsigned nnc=0; nnc<SortColumns.size(); nnc++)

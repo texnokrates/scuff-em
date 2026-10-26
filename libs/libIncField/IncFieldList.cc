@@ -70,7 +70,7 @@ IncField *ProcessIFTokens(char **Tokens, int NumTokens, char **pErrMsg)
 
  if ( NumTokens != NumParameters+1 )
   { *pErrMsg = vstrdup("incorrect number of parameters "
-                       "(need %i for %s)",NumTokens,NumParameters,Tokens[0]);
+                       "(need %i for %s)",NumParameters,Tokens[0]);
      return 0;
   };
 

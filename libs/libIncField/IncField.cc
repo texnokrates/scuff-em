@@ -138,7 +138,8 @@ void IncField::SetLattice(HMatrix *NewLBasis, bool Traverse)
 void IncField::SetkBloch(double *NewkBloch, bool Traverse)
 { 
   if ( LBasis==0 )
-   ErrExit("%s:%i: attempt to set kBloch in a non-periodic IncField");
+   ErrExit("%s:%i: attempt to set kBloch in a non-periodic IncField",
+           __FILE__,__LINE__);
 
   int LDim=LBasis->NC;
   if (NewkBloch)

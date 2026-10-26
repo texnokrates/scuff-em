@@ -355,7 +355,7 @@ void RWGGeometry::AssembleBEMMatrixBlock(int nsa, int nsb,
                                          double *GammaMatrix)
 {
   if (TransposeAccelerator)
-   ErrExit("%s:%i: TransposeAccelerator not implemented");
+   ErrExit("%s:%i: TransposeAccelerator not implemented",__FILE__,__LINE__);
 
   if (    nsa==nsb
        && GradM==0
@@ -690,9 +690,11 @@ HMatrix *RWGGeometry::AssembleBEMMatrix(cdouble Omega, double *kBloch, HMatrix *
   /***************************************************************/
   /***************************************************************/
   if ( LBasis==0 && kBloch!=0 && (kBloch[0]!=0.0 || kBloch[1]!=0.0) )
-   ErrExit("%s:%i: Bloch wavevector is undefined for compact geometries");
+   ErrExit("%s:%i: Bloch wavevector is undefined for compact geometries",
+           __FILE__,__LINE__);
   if ( LBasis!=0 && kBloch==0 )
-   ErrExit("%s:%i: Bloch wavevector must be specified for PBC geometries");
+   ErrExit("%s:%i: Bloch wavevector must be specified for PBC geometries",
+           __FILE__,__LINE__);
 
   /***************************************************************/
   /***************************************************************/

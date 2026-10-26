@@ -238,7 +238,7 @@ char *ParseMeshFile(char *MeshFileName, int MeshTag, char **MeshFileDir,
   char *Dir=0;
   FILE *MeshFile=fopenPath(getenv("SCUFF_MESH_PATH"),  MeshFileName, "r", &Dir);
   if (!MeshFile) return vstrdup("could not open file %s",MeshFileName);
-  Log(" Opened mesh file %s/%s",Dir ? Dir : "", Dir ? "/" : "", MeshFileName);
+  Log(" Opened mesh file %s%s%s",Dir ? Dir : "", Dir ? "/" : "", MeshFileName);
   *MeshFileDir = Dir ? strdup(Dir) : 0;
 
   /*------------------------------------------------------------*/
@@ -341,7 +341,7 @@ RWGSurface::RWGSurface(dVec VertexCoordinates, iVec PanelVertexIndices, char *pL
    ErrExit("number of panel vertex indices must be a multiple of 3");
 
   Label = strdup( pLabel ? pLabel : "ByHand");
-  MeshFileName=vstrdup("Manual_NV%i_NP%i",VertexCoordinates.size() / 3, PanelVertexIndices.size() / 3 );
+  MeshFileName=vstrdup("Manual_NV%zu_NP%zu",VertexCoordinates.size() / 3, PanelVertexIndices.size() / 3 );
   MeshFileDir=0;
   MeshTag=0;
   SurfaceZeta=0;

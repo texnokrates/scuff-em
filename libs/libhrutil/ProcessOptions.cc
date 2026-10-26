@@ -279,8 +279,9 @@ void ProcessOptions(int argc, char *argv[], OptStruct *OSArray,
          continue;
 
         if (ProcessOption(Tokens[0], Tokens+1, NumTokens-1, OSArray, ErrMsg))
-         { snprintf(Line,MAXSTR,"stdin:%i: %s",LineNum,ErrMsg);
-           OSUsage(argv[0], OSArray, Line);
+         { char Message[MAXSTR+64];
+           snprintf(Message,sizeof(Message),"stdin:%i: %s",LineNum,ErrMsg);
+           OSUsage(argv[0], OSArray, Message);
          }
       }
    }

@@ -363,7 +363,8 @@ StaticExcitation *ParseExcitationSection(StaticSolver *SSS,
         if (!S)
          ErrExit("%s:%i: unknown conductor %s",FileName,*LineNum,Tokens[0]);
         if (!(S->IsPEC))
-         ErrExit("%s:%i: attempt to assign potential to non-PEC surface %s",Tokens[0]);
+         ErrExit("%s:%i: attempt to assign potential to non-PEC surface %s",
+                 FileName,*LineNum,Tokens[0]);
 
         SE->Potentials[ns]=V;
         Log("Excitation %s: setting conductor %s to V=%e V.",Label,Tokens[0],V);
@@ -459,9 +460,10 @@ void ParsePotentialFile(RWGGeometry *G, char *PotFile, double *Potentials)
 
      int ns;
      if (G->GetSurfaceByLabel(Tokens[0],&ns)==0)
-      ErrExit("%s:%i: unknown surface",PotFile,LineNum,Tokens[0]);
+      ErrExit("%s:%i: unknown surface %s",PotFile,LineNum,Tokens[0]);
      if ( ! (G->Surfaces[ns]->IsPEC) )
-      ErrExit("%s:%i: attempt to assign potential to non-PEC surface %s",Tokens[0]);
+      ErrExit("%s:%i: attempt to assign potential to non-PEC surface %s",
+              PotFile,LineNum,Tokens[0]);
 
      double V;
      if (1!=sscanf(Tokens[1],"%le",&V))

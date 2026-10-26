@@ -158,7 +158,7 @@ void scuffSolver::InitSubstrate()
   SubstrateInitialized=true;
   OmegaSIE=OmegaPBFI=CACHE_DIRTY;
 
-  if (!G) ErrExit("%s:%i: internal error");
+  if (!G) ErrExit("%s:%i: internal error",__FILE__,__LINE__);
   if (G->Substrate) free(G->Substrate);
 
   if (SubstrateFile)
@@ -363,9 +363,12 @@ void scuffSolver::InitGeometry()
      LatticeVectors.clear();
 
      if (MeshFiles.size()==0) ErrExit("no metal traces specified");
-     if (MeshFiles.size() != Materials.size()) ErrExit("%s:%i: internal error");
-     if (MeshFiles.size() != MeshTransforms.size()) ErrExit("%s:%i: internal error");
-     if (MeshFiles.size() != MeshLabels.size()) ErrExit("%s:%i: internal error");
+     if (MeshFiles.size() != Materials.size())
+      ErrExit("%s:%i: internal error",__FILE__,__LINE__);
+     if (MeshFiles.size() != MeshTransforms.size())
+      ErrExit("%s:%i: internal error",__FILE__,__LINE__);
+     if (MeshFiles.size() != MeshLabels.size())
+      ErrExit("%s:%i: internal error",__FILE__,__LINE__);
      for(size_t n=0; n<MeshFiles.size(); n++)
       { char Buffer[100], *Label = MeshLabels[n];
         if (!Label)

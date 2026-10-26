@@ -724,10 +724,10 @@ InterpND *LayeredSubstrate::InitScalarGFInterpolator(cdouble Omega,
                                       Tolerance, Verbose);
 
   if (Dimension>1)
-   Log("Rho,Z grid: %i x %i points",ScalarGFInterpolator->XGrids[0].size(),
+   Log("Rho,Z grid: %zu x %zu points",ScalarGFInterpolator->XGrids[0].size(),
                                     ScalarGFInterpolator->XGrids[1].size());
   else 
-   Log("Rho grid: %i points",ScalarGFInterpolator->XGrids[0].size());
+   Log("Rho grid: %zu points",ScalarGFInterpolator->XGrids[0].size());
 
   /***************************************************************/
   /***************************************************************/

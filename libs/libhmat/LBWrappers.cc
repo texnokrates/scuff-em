@@ -734,7 +734,7 @@ HVector *HMatrix::NSEig(HVector *Lambda, HMatrix *U)
      zgeev_(jobvl, jobvr, &NR, ZM, &NR, Lambda->ZV, 0, &NR,
             U ? U->ZM : 0, &NR, zwork, &lworkOptimal, rwork, &info);
 
-     Log("zgeev(%i): info=%i",NR,NR,info);
+     Log("zgeev(%i): info=%i",NR,info);
      free(zwork);
      free(rwork);
    }
@@ -998,7 +998,8 @@ double HVector::DotD(HVector *B)
 void HMatrix::Apply(HVector *X, HVector *Y, char TransChar)
 {
   if ( StorageType!=LHM_NORMAL )
-   ErrExit("%s:%i: HMatrix::Apply not yet implemented for packed matrices");
+   ErrExit("%s:%i: HMatrix::Apply not yet implemented for packed matrices",
+           __FILE__,__LINE__);
   if ( X==0 || Y==0  )
    ErrExit("%s:%i: invalid operand in HMatrix::Apply",__FILE__,__LINE__);
   if ( (RealComplex!=X->RealComplex) || (RealComplex!=Y->RealComplex) )
