@@ -72,6 +72,8 @@ scuff_add_application(scuff-static
 scuff_add_application(scuff-tmatrix
   scuff-tmatrix/scuff-tmatrix.cc
 )
+# First typed CLI11 migration.
+target_link_libraries(scuff-tmatrix PRIVATE scuff_cli11)
 
 scuff_add_application(scuff-transmission
   scuff-transmission/scuff-transmission.cc

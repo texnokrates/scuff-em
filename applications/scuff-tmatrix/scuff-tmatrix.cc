@@ -41,9 +41,13 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#include <memory>
+#include <string>
+
 #include "libscuff.h"
 #include "libhmat.h"
 #include "libSpherical.h"
+#include "ScuffCLI.h"
 
 using namespace scuff;
 #define II cdouble (0.0,1.0)
@@ -65,48 +69,57 @@ int main(int argc, char *argv[])
   /*--------------------------------------------------------------*/
   /*- process command-line options -------------------------------*/
   /*--------------------------------------------------------------*/
-  char *GeoFileName=0;       // .scuffgeo file
+  std::string GeoFileName;   // .scuffgeo file
   int LMax=3;                // maximum L-value of spherical wave computed
   cdouble Omega=0;           // angular frequency at which to run the computation
-  char *OmegaFile=0;         // list of angular frequencies
-  char *Cache=0;             // scuff cache file 
-  char *FileBase=0;          // base filename for output file
+  std::string OmegaFile;     // list of angular frequencies
+  std::string Cache;         // scuff cache file
+  std::string FileBase;      // base filename for output file
   bool WriteHDF5Files=false; // write T-matrix data to HDF5 files
-  /* name        type    #args  max_instances  storage    count  description*/
-  OptStruct OSArray[]=
-   { {"geometry",       PA_STRING,  1, 1, (void *)&GeoFileName,    0,  ".scuffgeo file"},
-     {"LMax",           PA_INT,     1, 1, (void *)&LMax,           0,  "maximum l-value"},
-     {"Omega",          PA_CDOUBLE, 1, 1, (void *)&Omega,          0,  "angular frequency"},
-     {"OmegaFile",      PA_STRING,  1, 1, (void *)&OmegaFile,      0,  "list of angular frequencies"},
-     {"Cache",          PA_STRING,  1, 1, (void *)&Cache,          0,  "scuff cache file"},
-     {"FileBase",       PA_STRING,  1, 1, (void *)&FileBase,       0,  "base filename for output files"},
-     {"WriteHDF5Files", PA_BOOL,    0, 1, (void *)&WriteHDF5Files, 0,  "write HDF5 output files"},
-     {0,0,0,0,0,0,0}
-   };
-  ProcessOptions(argc, argv, OSArray);
-  if (GeoFileName==0)
-   OSUsage(argv[0],VERSIONSTRING,OSArray,"--geometry option is mandatory");
+
+  CLI::App App{"compute the T-matrix of an arbitrary scatterer"};
+  App.option_defaults()->ignore_case();
+  App.add_option("--geometry", GeoFileName, ".scuffgeo file")
+     ->required()
+     ->take_last();
+  App.add_option("--LMax", LMax, "maximum l-value")
+     ->take_last();
+  scuff::cli::AddComplexOption(App, "--Omega", Omega, "angular frequency");
+  App.add_option("--OmegaFile", OmegaFile, "list of angular frequencies")
+     ->take_last();
+  App.add_option("--Cache", Cache, "scuff cache file")
+     ->take_last();
+  App.add_option("--FileBase", FileBase, "base filename for output files")
+     ->take_last();
+  App.add_flag("--WriteHDF5Files", WriteHDF5Files, "write HDF5 output files");
+
+  if (auto Status=scuff::cli::Parse(App,argc,argv))
+   return *Status;
 
   /*--------------------------------------------------------------*/
   /*- process frequency options ----------------------------------*/
   /*--------------------------------------------------------------*/
-  HVector *OmegaVector=0;
-  if (OmegaFile)
-   OmegaVector=new HVector(OmegaFile);
+  std::unique_ptr<HVector> OmegaVector;
+  if (!OmegaFile.empty())
+   OmegaVector.reset(new HVector(OmegaFile.c_str()));
   else if ( Omega!=0.0 )
-   { OmegaVector=new HVector(1, LHM_COMPLEX);
+   { OmegaVector.reset(new HVector(1, LHM_COMPLEX));
      OmegaVector->SetEntry(0,Omega);
    }
   else
-   OSUsage(argv[0],VERSIONSTRING,OSArray,"either --omega or --omegafile must be specified");
+   { CLI::ValidationError Error("scuff-tmatrix",
+        "either --omega or --omegafile must be specified");
+     App.exit(Error);
+     return 1;
+   };
 
   /*--------------------------------------------------------------*/
   /* create the RWGGeometry from the .scuffgeo file               */
   /*--------------------------------------------------------------*/
-  RWGGeometry *G=new RWGGeometry(GeoFileName);
+  RWGGeometry *G=new RWGGeometry(GeoFileName.c_str());
   G->SetLogLevel(SCUFF_VERBOSELOGGING);
-  if (Cache)
-   PreloadCache(Cache);
+  if (!Cache.empty())
+   PreloadCache(Cache.c_str());
 
   /*--------------------------------------------------------------*/
   /* preallocate BEM matrix and RHS vector                        */
@@ -130,9 +143,9 @@ int main(int argc, char *argv[])
   /*--------------------------------------------------------------*/
   /* open output file and write preamble    ----------------------*/
   /*--------------------------------------------------------------*/
-  if (!FileBase)
-   FileBase = vstrdup(GetFileBase(GeoFileName));
-  FILE *f=vfopen("%s.TMatrix","a",FileBase);
+  if (FileBase.empty())
+   FileBase = GetFileBase(GeoFileName.c_str());
+  FILE *f=vfopen("%s.TMatrix","a",FileBase.c_str());
   fprintf(f,"# scuff-tmatrix " VERSIONSTRING " run on %s (%s)\n",GetHostName(),GetTimeString());
   fprintf(f,"# columns:\n");
   fprintf(f,"# 1 omega\n");
@@ -219,9 +232,8 @@ int main(int argc, char *argv[])
                       imag(TMatrix->GetEntry(Alpha,Beta)));
 
      if (WriteHDF5Files)
-      { char FileName[100];
-        snprintf(FileName,100,"%s_w%s.HDF5",FileBase,z2s(Omega));
-        TMatrix->ExportToHDF5(FileName,"T");
+      { std::string FileName=FileBase + "_w" + z2s(Omega) + ".HDF5";
+        TMatrix->ExportToHDF5(FileName.c_str(),"T");
       };
 
     }; // for( nOmega= ... )
@@ -231,8 +243,8 @@ int main(int argc, char *argv[])
   /*--------------------------------------------------------------*/
   /*--------------------------------------------------------------*/
   /*--------------------------------------------------------------*/
-  if (Cache)
-   StoreCache(Cache);
+  if (!Cache.empty())
+   StoreCache(Cache.c_str());
   printf("Thank you for your support.\n");
   
 }

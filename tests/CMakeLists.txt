@@ -124,6 +124,26 @@ if(BUILD_TESTING)
     WORKING_DIRECTORY "${FRESNEL_BUILD_DIR}"
     TIMEOUT 1800
   )
+
+  # Smoke test for the first typed CLI11 application migration.  It is a
+  # small LMax=1 problem, so it runs quickly compared with the Mie suite.
+  set(TMATRIX_CLI_DIR "${CMAKE_CURRENT_BINARY_DIR}/TMatrixCli")
+  file(MAKE_DIRECTORY "${TMATRIX_CLI_DIR}")
+  foreach(_file SphericalShell.scuffgeo Sphere_R1P0.msh Sphere_R0P5.msh)
+    configure_file("${PROJECT_SOURCE_DIR}/examples/SphericalShell/${_file}"
+                   "${TMATRIX_CLI_DIR}/${_file}" COPYONLY)
+  endforeach()
+  add_test(NAME TMatrixCli
+    COMMAND scuff-tmatrix
+      --geometry SphericalShell.scuffgeo
+      --LMax 1
+      --omega 0.001
+      --FileBase "${TMATRIX_CLI_DIR}/TMatrixCli"
+  )
+  set_tests_properties(TMatrixCli PROPERTIES
+    WORKING_DIRECTORY "${TMATRIX_CLI_DIR}"
+    TIMEOUT 300
+  )
 endif()
 
 add_subdirectory(unit)

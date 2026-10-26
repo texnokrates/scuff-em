@@ -70,7 +70,8 @@ jobs:
       - name: Build tests and smoke target
         run: |
           cmake --build build -j "$(nproc)" \
-            --target scuff-unit-tests scuff-cli-tests scuff-scatter
+            --target scuff-unit-tests scuff-cli-tests scuff-typed-cli-tests \
+                     scuff-scatter scuff-tmatrix
 
       - name: Unit tests
         env:
@@ -78,13 +79,14 @@ jobs:
           UBSAN_OPTIONS: halt_on_error=1:print_stacktrace=1
         run: |
           ctest --test-dir build --output-on-failure \
-            -R '^(UnitTests|CliOptions)$'
+            -R '^(UnitTests|CliOptions|TypedCli)$'
 
-      - name: Smoke test
+      - name: Smoke tests
         env:
           ASAN_OPTIONS: detect_leaks=0:halt_on_error=1
           UBSAN_OPTIONS: halt_on_error=1:print_stacktrace=1
         run: |
+          ctest --test-dir build --output-on-failure -R '^TMatrixCli$'
           cd examples/SphericalShell
           ../../build/bin/scuff-scatter \
             --geometry SphericalShell.scuffgeo \
