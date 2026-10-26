@@ -20,23 +20,36 @@
 /*
  * ProcessOptions.cc -- libhrutil facility for processing options.
  *
- * this is similar to 'ProcessArguments,' but extended in three ways:                                      
+ * This is a CLI11-backed compatibility adapter.  The public OptStruct API
+ * and the legacy command-line contract are preserved:
  *
- * (1) in addition to command-line arguments, options and their 
- *     arguments can be specified in a little text file piped into 
- *     stdin
+ *  (1) options may also be read from stdin as "Name arg..." lines;
+ *  (2) options may be repeated, subject to MaxInstances;
+ *  (3) options may take multiple arguments.
  *
- * (2) options can be specified more than once with different arguments
+ * The adapter translates the legacy stdin/argv syntax into a CLI11 token
+ * vector, lets CLI11 perform option recognition and arity validation, and
+ * then stores the parsed values into the legacy OptStruct storage.  Keeping
+ * the translation layer separate is what allows CLI11 to provide
+ * case-insensitive option matching and generated help while still honoring
+ * the old rule that a token beginning with "--" starts a new option.
  *
- * (3) options may take more than one argument.
- *
- * homer reid        -- 1/2012                       
+ * homer reid        -- 1/2012
  */
+
+#include <ctype.h>
+#include <errno.h>
+#include <limits.h>
+#include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <stdarg.h>
 #include <unistd.h>
+
+#include <string>
+#include <vector>
+
+#include <CLI11.hpp>
 
 #include "libhrutil.h"
 
@@ -57,7 +70,6 @@ void AppendOSUsageMessage(const char *Message)
 /***************************************************************/
 void printOSUsage(const char *ProgName, const char *version, OptStruct *OSArray, const char *format, va_list ap)
 {
-  //va_list ap;
   char buffer[MAXSTR];
 
   if (version)
@@ -76,9 +88,10 @@ void printOSUsage(const char *ProgName, const char *version, OptStruct *OSArray,
   OptStruct *OS;
   for(OS=OSArray; OS->Name!=0; OS++)
    { 
-     sprintf(buffer,"--%s ",OS->Name);
-     for(na=0; na<OS->NumArgs; na++)
-      strcat(buffer,"xx ");
+     snprintf(buffer,sizeof(buffer),"--%s ",OS->Name);
+     if (OS->Type!=PA_BOOL)
+      for(na=0; na<OS->NumArgs; na++)
+       strncat(buffer,"xx ",sizeof(buffer)-strlen(buffer)-1);
      fprintf(stderr,"  %-20s",buffer);
 
      if ( OS->Description )
@@ -95,7 +108,7 @@ void printOSUsage(const char *ProgName, const char *version, OptStruct *OSArray,
              break;
 
            case PA_CDOUBLE:
-             fprintf(stderr,"(%s)",z2s(*((double *)OS->Storage)));
+             fprintf(stderr,"(%s)",z2s(*((cdouble *)OS->Storage)));
              break;
 
            case PA_STRING: 
@@ -138,204 +151,533 @@ void OSUsage(const char *ProgName, OptStruct *OSArray, const char *format, ...)
 }
 
 /***************************************************************/
-/* this routine is called by ProcessOptions() to process a     */
-/* single option and its arguments.                            */
-/*                                                             */
-/* returns 0 on success, nonzero on failure. in the latter     */
-/* case, ErrMsg is filled in with an error string.             */
+/* internal adapter state                                      */
 /***************************************************************/
-int ProcessOption(char *Option, char *Args[], int NumArgs,
-                  OptStruct *OSArray, char *ErrMsg)
+namespace {
+
+struct OptionOccurrence
 {
-  int ni, na;
+  std::vector<std::string> Args;
+  std::string Source;      // "stdin:<line>" for stdin options, empty for argv
+  int ArgvStart = -1;      // index of the option token in argv
+  int ArgvEnd = -1;        // one past the last consumed argv token
+};
 
-  for(OptStruct *OS=OSArray; OS->Name!=0; OS++)
-   if ( !StrCaseCmp(Option, OS->Name) )
-    { 
-      /*--------------------------------------------------------------*/
-      /*- check how many times this option has been used so far.      */
-      /*--------------------------------------------------------------*/
-      if ( !(OS->NumInstances) )
-       { 
-         ni=0;
-       }
-      else if ( OS->MaxInstances==1 && *(OS->NumInstances)==1 )
-       { 
-         if (NumArgs==0)
-          Warn("option --%s was unnecessarily specified multiple times",Option);
-         else if (NumArgs==1)
-          Warn("new value (%s) for option --%s overrides previously specified value",Args[0],Option);
-         else if (NumArgs>1)
-          Warn("new value (%s...) for option --%s overrides previously specified value",Args[0],Option);
-         ni=0;
-       }
-      else if ( OS->MaxInstances>1 && *(OS->NumInstances)==(OS->MaxInstances) )
-       { 
-         return snprintf(ErrMsg,MAXSTR,"option --%s specified too many times",Option);
-       }
-      else 
-       { 
-         ni=(*(OS->NumInstances))++;
-       };
+struct ParseInput
+{
+  std::vector<OptionOccurrence> Occurrences;
+  std::vector<std::vector<size_t>> OccurrencesByOption;
+  std::vector<std::string> Tokens;
+};
 
-      /*--------------------------------------------------------------*/
-      /*- make sure the correct number of arguments were specified   -*/
-      /*--------------------------------------------------------------*/
-      if (NumArgs != OS->NumArgs && OS->Type!=PA_BOOL)
-       return snprintf(ErrMsg,MAXSTR,"option --%s needs %i arguments (%i provided)", Option,OS->NumArgs,NumArgs);
+size_t FindOption(OptStruct *OSArray, const std::string &Name)
+{
+  for(size_t n=0; OSArray[n].Name!=0; n++)
+   if ( StrCaseCmp(Name.c_str(), OSArray[n].Name)==0 )
+    return n;
 
-      /*--------------------------------------------------------------*/
-      /*- now switch off to process arguments according to the type   */
-      /*--------------------------------------------------------------*/
-      cdouble *cdArray = (cdouble *) OS->Storage;
-      char **cArray = (char **) OS->Storage;
-      double *dArray = (double *) OS->Storage;
-      int *iArray = (int *) OS->Storage;
-      switch(OS->Type)
-       { 
-         case PA_STRING:
-           for(na=0; na<NumArgs; na++)
-            cArray[ni*NumArgs + na] = strdupEC(Args[na]);
-           return 0;
-            
-         case PA_BOOL:
-           if (NumArgs>0)
-            return snprintf(ErrMsg,MAXSTR,"boolean option --%s takes no arguments",Option);
-           if (ni>1)
-            fprintf(stderr,"** warning: boolean option --%s specified more than once",Option);
-           *((bool *)(OS->Storage)) = true;
-           return 0;
+  return static_cast<size_t>(-1);
+}
 
-         case PA_DOUBLE:
-           for(na=0; na<NumArgs; na++)
-            if ( 1 != sscanf(Args[na],"%le",dArray+ni*NumArgs+na) )
-             return snprintf(ErrMsg,MAXSTR,"invalid argument (%s) passed to option --%s",Args[na],Option);
-           return 0;
+std::string OptionHeader(const OptStruct &OS)
+{
+  return std::string("--") + OS.Name;
+}
 
-         case PA_INT:
-           for(na=0; na<NumArgs; na++)
-            if ( 1 != sscanf(Args[na],"%i",iArray+ni*NumArgs+na) )
-             return snprintf(ErrMsg,MAXSTR,"invalid argument (%s) passed to option --%s",Args[na],Option);
-           return 0;
-            
-         case PA_CDOUBLE:
-           for(na=0; na<NumArgs; na++)
-            if ( S2CD(Args[na],cdArray+ni*NumArgs+na) )
-             return snprintf(ErrMsg,MAXSTR,"invalid argument (%s) passed to option --%s",Args[na],Option);
-           return 0;
-
-         default: 
-           // unknown value for 'Type' field in OptStruct structure
-           ErrExit("%s:%i:internal error",__FILE__,__LINE__);
-       }
-
-    } // if (!StrCaseCmp...)
-
-  /*--------------------------------------------------------------*/
-  /*--------------------------------------------------------------*/
-  /*--------------------------------------------------------------*/
-  return snprintf(ErrMsg,MAXSTR,"unknown option --%s",Option);
-
+std::string PrefixedMessage(const std::string &Source, const std::string &Message)
+{
+  if (Source.empty())
+   return Message;
+  return Source + ": " + Message;
 }
 
 /***************************************************************/
-/* if ZeroArgs==true, any arguments in Args[] that were        */
-/* successfully processed are replaced in Args by zero         */
-/* pointers.                                                   */
+/* Validate one occurrence against the declared arity.  The   */
+/* legacy parser ignores the NumArgs field for boolean flags  */
+/* and rejects any value supplied to a flag.                  */
+/***************************************************************/
+bool ValidateOccurrence(const OptStruct &OS, const std::vector<std::string> &Args,
+                        const std::string &Source, std::string &Message)
+{
+  if (OS.Type==PA_BOOL)
+   {
+     if ( !Args.empty() )
+      { Message=PrefixedMessage(Source,
+          "boolean option " + OptionHeader(OS) + " takes no arguments");
+        return false;
+      };
+     return true;
+   };
+
+  if ( static_cast<int>(Args.size()) != OS.NumArgs )
+   { Message=PrefixedMessage(Source,
+       "option " + OptionHeader(OS) + " needs "
+       + std::to_string(OS.NumArgs) + " arguments ("
+       + std::to_string(Args.size()) + " provided)");
+     return false;
+   };
+
+  return true;
+}
+
+/***************************************************************/
+/* Append an occurrence to the normalized CLI11 token vector.  */
+/* The first argument is attached with '=' so that values      */
+/* beginning with '-' are unambiguously values rather than     */
+/* new options.  An empty first value cannot use '=' (CLI11    */
+/* treats --Opt= as missing), so it is passed as a separate    */
+/* empty token instead.                                        */
+/***************************************************************/
+void AppendOccurrence(ParseInput &Input, OptStruct *OSArray,
+                      size_t OptionIndex, std::vector<std::string> Args,
+                      const std::string &Source, int ArgvStart, int ArgvEnd)
+{
+  OptStruct &OS = OSArray[OptionIndex];
+  std::string Token = OptionHeader(OS);
+
+  if ( !Args.empty() )
+   { if ( Args[0].empty() )
+      { Input.Tokens.push_back(Token);
+        Input.Tokens.push_back(std::string());
+      }
+     else
+      Input.Tokens.push_back(Token + "=" + Args[0]);
+
+     for(size_t na=1; na<Args.size(); na++)
+      Input.Tokens.push_back(Args[na]);
+   }
+  else
+   Input.Tokens.push_back(Token);
+
+  OptionOccurrence Occurrence;
+  Occurrence.Args      = std::move(Args);
+  Occurrence.Source    = Source;
+  Occurrence.ArgvStart = ArgvStart;
+  Occurrence.ArgvEnd   = ArgvEnd;
+
+  size_t OccurrenceIndex = Input.Occurrences.size();
+  Input.Occurrences.push_back(std::move(Occurrence));
+
+  if (OptionIndex>=Input.OccurrencesByOption.size())
+   Input.OccurrencesByOption.resize(OptionIndex+1);
+  Input.OccurrencesByOption[OptionIndex].push_back(OccurrenceIndex);
+}
+
+/***************************************************************/
+/* Read the legacy stdin option format.                        */
+/*                                                             */
+/* The legacy reader always aborted on malformed stdin input,  */
+/* regardless of AbortOnUnknown, and the adapter preserves     */
+/* that behavior: stdin files are explicit user data, not a    */
+/* stream that may contain options belonging to another        */
+/* parser.                                                     */
+/***************************************************************/
+void ReadStdinOptions(const char *ProgName, OptStruct *OSArray,
+                      ParseInput &Input)
+{
+  if ( isatty(fileno(stdin)) )
+   return;
+
+  int LineNum=0;
+  char Line[MAXSTR];
+  while( fgets(Line,sizeof(Line),stdin) )
+   {
+     LineNum++;
+
+     char *Tokens[MAXTOK];
+     bool Truncated=false;
+     int NumTokens=Tokenize(Line,Tokens,MAXTOK," \t\n",&Truncated);
+
+     if (Truncated)
+      { char Message[MAXSTR+64];
+        snprintf(Message,sizeof(Message),
+                 "stdin:%i: too many tokens (maximum %i)",LineNum,MAXTOK);
+        OSUsage(ProgName,OSArray,"%s",Message);
+      };
+
+     if (NumTokens==0 || Tokens[0][0]=='#')
+      continue;
+
+     std::string Name=Tokens[0];
+     if ( Name.rfind("--",0)==0 )
+      Name=Name.substr(2);
+
+     std::vector<std::string> Args;
+     for(int nt=1; nt<NumTokens; nt++)
+      Args.emplace_back(Tokens[nt]);
+
+     size_t OptionIndex=FindOption(OSArray,Name);
+     std::string Source="stdin:" + std::to_string(LineNum);
+
+     if (OptionIndex==static_cast<size_t>(-1))
+      { std::string Message=Source + ": unknown option --" + Name;
+        OSUsage(ProgName,OSArray,"%s",Message.c_str());
+      };
+
+     std::string Message;
+     if ( !ValidateOccurrence(OSArray[OptionIndex],Args,Source,Message) )
+      OSUsage(ProgName,OSArray,"%s",Message.c_str());
+
+     AppendOccurrence(Input,OSArray,OptionIndex,std::move(Args),Source,-1,-1);
+   }
+}
+
+/***************************************************************/
+/* Translate argv into occurrences.  A token beginning with    */
+/* "--" starts a new option; everything else is an argument of */
+/* the current option.  This is the legacy boundary rule.      */
+/***************************************************************/
+void ReadArgvOptions(int argc, char *argv[], const char *ProgName,
+                     OptStruct *OSArray, bool AbortOnUnknown, ParseInput &Input)
+{
+  int narg=1;
+  while( narg<argc )
+   {
+     /* allow earlier argument handlers to mark slots as consumed */
+     if ( argv[narg]==0 )
+      { narg++;
+        continue;
+      };
+
+     std::string Token=argv[narg];
+
+     /* A top-level help request is new functionality, but it must not
+        prevent the legacy options from being validated first. */
+     if ( Token=="-h" || Token=="--help"
+       || (Token.rfind("--",0)==0 && StrCaseCmp(Token.c_str()+2,"help")==0) )
+      { Input.Tokens.push_back("--help");
+        return;
+      };
+
+     if ( Token.rfind("--",0)!=0 )
+      { if (AbortOnUnknown)
+         OSUsage(ProgName,OSArray,"unknown option %s",argv[narg]);
+        narg++;
+        continue;
+      };
+
+     std::string Name=Token.substr(2);
+     if ( Name.empty() )
+      { if (AbortOnUnknown)
+         OSUsage(ProgName,OSArray,"unknown option %s",argv[narg]);
+        narg++;
+        continue;
+      };
+
+     std::vector<std::string> Args;
+     int next=narg+1;
+     while( next<argc && argv[next]!=0 && strncmp(argv[next],"--",2)!=0 )
+      { Args.emplace_back(argv[next]);
+        next++;
+      };
+
+     size_t OptionIndex=FindOption(OSArray,Name);
+     if (OptionIndex==static_cast<size_t>(-1))
+      { if (AbortOnUnknown)
+         OSUsage(ProgName,OSArray,"unknown option --%s",Name.c_str());
+        narg=next;
+        continue;
+      };
+
+     std::string Message;
+     if ( !ValidateOccurrence(OSArray[OptionIndex],Args,std::string(),Message) )
+      { if (AbortOnUnknown)
+         OSUsage(ProgName,OSArray,"%s",Message.c_str());
+        narg=next;
+        continue;
+      };
+
+     AppendOccurrence(Input,OSArray,OptionIndex,std::move(Args),
+                      std::string(),narg,next);
+     narg=next;
+   };
+}
+
+/***************************************************************/
+/* Strict numeric conversion.  Trailing garbage is rejected;   */
+/* this is the deliberate tightening described in the C++23    */
+/* migration plan.                                             */
+/***************************************************************/
+bool ParseInt(const std::string &Arg, int *Value)
+{
+  if ( Arg.empty() )
+   return false;
+
+  errno=0;
+  char *End=0;
+  long LongValue=strtol(Arg.c_str(),&End,0);
+  if (End==Arg.c_str())
+   return false;
+  while(isspace((unsigned char)*End))
+   End++;
+  if (*End!=0 || LongValue<INT_MIN || LongValue>INT_MAX)
+   return false;
+
+  *Value=static_cast<int>(LongValue);
+  return true;
+}
+
+bool ParseDouble(const std::string &Arg, double *Value)
+{
+  if ( Arg.empty() )
+   return false;
+
+  errno=0;
+  char *End=0;
+  double DoubleValue=strtod(Arg.c_str(),&End);
+  if (End==Arg.c_str())
+   return false;
+  while(isspace((unsigned char)*End))
+   End++;
+  if (*End!=0)
+   return false;
+
+  *Value=DoubleValue;
+  return true;
+}
+
+bool StoreValue(const OptStruct &OS, int Instance, int ArgNumber,
+                const std::string &Arg)
+{
+  size_t Index=static_cast<size_t>(Instance)*OS.NumArgs + ArgNumber;
+
+  switch(OS.Type)
+   {
+     case PA_STRING:
+       static_cast<char **>(OS.Storage)[Index]=strdupEC(Arg.c_str());
+       return true;
+
+     case PA_INT:
+       return ParseInt(Arg, static_cast<int *>(OS.Storage) + Index);
+
+     case PA_DOUBLE:
+       return ParseDouble(Arg, static_cast<double *>(OS.Storage) + Index);
+
+     case PA_CDOUBLE:
+       return S2CD(Arg.c_str(), static_cast<cdouble *>(OS.Storage) + Index)==0;
+
+     default:
+       ErrExit("%s:%i: internal error",__FILE__,__LINE__);
+   };
+
+  return false;
+}
+
+/***************************************************************/
+/* Apply the legacy NumInstances / MaxInstances bookkeeping.   */
+/* Returns the storage instance index for this occurrence.     */
+/***************************************************************/
+int GetInstanceIndex(OptStruct &OS, const OptionOccurrence &Occurrence,
+                     const char *ProgName, OptStruct *OSArray)
+{
+  if (OS.NumInstances==0)
+   return 0;
+
+  int &Count=*OS.NumInstances;
+
+  if ( OS.MaxInstances==1 && Count==1 )
+   {
+     if ( Occurrence.Args.empty() )
+      Warn("option --%s was unnecessarily specified multiple times",OS.Name);
+     else if ( Occurrence.Args.size()==1 )
+      Warn("new value (%s) for option --%s overrides previously specified value",
+           Occurrence.Args[0].c_str(),OS.Name);
+     else
+      Warn("new value (%s...) for option --%s overrides previously specified value",
+           Occurrence.Args[0].c_str(),OS.Name);
+     return 0;
+   };
+
+  if ( OS.MaxInstances>1 && Count==OS.MaxInstances )
+   { std::string Message="option " + OptionHeader(OS) + " specified too many times";
+     OSUsage(ProgName,OSArray,"%s",Message.c_str());
+   };
+
+  return Count++;
+}
+
+/***************************************************************/
+/***************************************************************/
+/***************************************************************/
+void StoreOptions(char *argv[], OptStruct *OSArray,
+                  ParseInput &Input, bool ZeroArgs, bool AbortOnUnknown)
+{
+  const char *ProgName=argv[0];
+  static const std::vector<size_t> NoOccurrences;
+
+  for(size_t no=0; OSArray[no].Name!=0; no++)
+   {
+     OptStruct &OS=OSArray[no];
+     const std::vector<size_t> &OccurrenceIndices =
+       (no<Input.OccurrencesByOption.size())
+        ? Input.OccurrencesByOption[no]
+        : NoOccurrences;
+
+     if (OS.Type==PA_BOOL)
+      {
+        for(size_t k=0; k<OccurrenceIndices.size(); k++)
+         { const OptionOccurrence &Occurrence=Input.Occurrences[OccurrenceIndices[k]];
+           int Instance=GetInstanceIndex(OS,Occurrence,ProgName,OSArray);
+           if (Instance>1)
+            fprintf(stderr,"** warning: boolean option --%s specified more than once",
+                    OS.Name);
+           *static_cast<bool *>(OS.Storage)=true;
+           if (ZeroArgs && Occurrence.ArgvStart>=0)
+            for(int n=Occurrence.ArgvStart; n<Occurrence.ArgvEnd; n++)
+             argv[n]=0;
+         };
+        continue;
+      };
+
+     /* The occurrence count, not the flat value count, determines how
+        many times an option was supplied. */
+     for(size_t k=0; k<OccurrenceIndices.size(); k++)
+      { const OptionOccurrence &Occurrence=Input.Occurrences[OccurrenceIndices[k]];
+        int Instance=GetInstanceIndex(OS,Occurrence,ProgName,OSArray);
+        bool Stored=true;
+
+        for(int na=0; na<OS.NumArgs; na++)
+         { const std::string &Arg=Occurrence.Args[na];
+           if ( !StoreValue(OS,Instance,na,Arg) )
+            { std::string Message=PrefixedMessage(Occurrence.Source,
+                "invalid argument (" + Arg + ") passed to option --" + OS.Name);
+              if (AbortOnUnknown)
+               OSUsage(ProgName,OSArray,"%s",Message.c_str());
+              Stored=false;
+              break;
+            };
+         };
+
+        if (Stored && ZeroArgs && Occurrence.ArgvStart>=0)
+         for(int n=Occurrence.ArgvStart; n<Occurrence.ArgvEnd; n++)
+          argv[n]=0;
+      };
+   };
+}
+
+/***************************************************************/
+/* Build the CLI11 application that recognizes the declared    */
+/* options.  Values are collected as strings; the adapter      */
+/* performs the legacy type conversions after parsing.         */
+/***************************************************************/
+bool ParseWithCLI11(const char *ProgName, OptStruct *OSArray,
+                    ParseInput &Input, bool AbortOnUnknown)
+{
+  size_t NumOptions=0;
+  while(OSArray[NumOptions].Name!=0)
+   NumOptions++;
+
+  std::vector<std::vector<std::string>> StringValues(NumOptions);
+  std::vector<std::vector<int>> FlagValues(NumOptions);
+  std::vector<CLI::Option *> Options(NumOptions,0);
+
+  CLI::App App;
+  App.name(ProgName);
+  App.option_defaults()->ignore_case();
+  App.set_help_flag("--help","print this help message and exit")->ignore_case();
+
+  /* CLI11 treats a std::vector target as unbounded by default, which both
+     suppresses arity information in --help and makes each occurrence look
+     like it accepts an arbitrary number of values.  A generous finite cap
+     keeps repeated occurrences working while letting the generated help
+     show the declared arity. */
+  constexpr int MaxOptionOccurrences=1000000;
+
+  for(size_t no=0; no<NumOptions; no++)
+   {
+     OptStruct &OS=OSArray[no];
+     std::string Name=OptionHeader(OS);
+     std::string Description=OS.Description ? OS.Description : "";
+
+     if (OS.Type==PA_BOOL)
+      Options[no]=App.add_flag(Name,FlagValues[no],Description);
+     else
+      { Options[no]=App.add_option(Name,StringValues[no],Description);
+        Options[no]->type_size(OS.NumArgs);
+        Options[no]->expected(1,MaxOptionOccurrences);
+
+        const char *TypeName;
+        switch(OS.Type)
+         { case PA_INT:     TypeName="INT";     break;
+           case PA_DOUBLE:  TypeName="FLOAT";   break;
+           case PA_CDOUBLE: TypeName="COMPLEX"; break;
+           default:         TypeName="TEXT";    break;
+         };
+
+        std::string Placeholder=TypeName;
+        if (OS.NumArgs>1)
+         Placeholder += " x " + std::to_string(OS.NumArgs);
+        Options[no]->type_name(Placeholder);
+      };
+     Options[no]->ignore_case();
+   };
+
+  try
+   {
+     /* CLI11's vector parser consumes tokens from the back, just as its
+        argc/argv parser does after reversing argv.  Reverse the normalized
+        stream so that options are seen in their original order. */
+     std::vector<std::string> ParseTokens(Input.Tokens.rbegin(),
+                                          Input.Tokens.rend());
+     App.parse(ParseTokens);
+   }
+  catch(const CLI::Success &e)
+   {
+     std::exit(App.exit(e));
+   }
+  catch(const CLI::ParseError &e)
+   {
+     if (AbortOnUnknown)
+      OSUsage(ProgName,OSArray,"%s",e.what());
+     return false;
+   };
+
+  /* StringValues is grouped in chunks of NumArgs per occurrence.  Check
+     that expectation explicitly so a future CLI11 change cannot silently
+     misalign values with occurrences. */
+  for(size_t no=0; no<NumOptions; no++)
+   {
+     OptStruct &OS=OSArray[no];
+     size_t NumOccurrences=(no<Input.OccurrencesByOption.size())
+                            ? Input.OccurrencesByOption[no].size()
+                            : 0;
+
+     if (OS.Type==PA_BOOL)
+      { if (FlagValues[no].size()!=NumOccurrences)
+         ErrExit("%s:%i: internal error (option --%s: %zu values for %zu occurrences)",
+                 __FILE__,__LINE__,OS.Name,FlagValues[no].size(),NumOccurrences);
+        continue;
+      };
+
+     if (StringValues[no].size()!=NumOccurrences*static_cast<size_t>(OS.NumArgs))
+      ErrExit("%s:%i: internal error (option --%s: %zu values for %zu occurrences of %i arguments)",
+              __FILE__,__LINE__,OS.Name,StringValues[no].size(),NumOccurrences,
+              OS.NumArgs);
+   };
+
+  return true;
+}
+
+} // namespace
+
+/***************************************************************/
+/* public entry point                                          */
 /***************************************************************/
 void ProcessOptions(int argc, char *argv[], OptStruct *OSArray,
                     bool AbortOnUnknown, bool ZeroArgs)
 {
-  /***************************************************************/
-  /***************************************************************/
-  /***************************************************************/
   for(OptStruct *OS=OSArray; OS->Name!=0; OS++)
    if (OS->NumInstances)
     *(OS->NumInstances)=0;
 
-  /***************************************************************/
-  /* first handle any arguments that might have been passed via  */
-  /* stdin                                                       */
-  /***************************************************************/
-  char ErrMsg[MAXSTR];
-  if ( !isatty(fileno(stdin)) )
-   { 
-     int LineNum=0;
-     char Line[MAXSTR];
-     while(fgets(Line,MAXSTR,stdin))
-      { 
-        LineNum++;
-        char *Tokens[MAXTOK];
-        bool Truncated=false;
-        int NumTokens=Tokenize(Line,Tokens,MAXTOK," \t\n",&Truncated);
+  ParseInput Input;
+  Input.OccurrencesByOption.resize(1);
 
-        if (Truncated)
-         { snprintf(Line,MAXSTR,"stdin:%i: too many tokens (maximum %i)",
-                    LineNum,MAXTOK);
-           OSUsage(argv[0], OSArray, Line);
-         };
+  ReadStdinOptions(argv[0],OSArray,Input);
+  ReadArgvOptions(argc,argv,argv[0],OSArray,AbortOnUnknown,Input);
 
-        if (NumTokens==0 || Tokens[0][0]=='#') 
-         continue;
-
-        if (ProcessOption(Tokens[0], Tokens+1, NumTokens-1, OSArray, ErrMsg))
-         { char Message[MAXSTR+64];
-           snprintf(Message,sizeof(Message),"stdin:%i: %s",LineNum,ErrMsg);
-           OSUsage(argv[0], OSArray, Message);
-         }
-      }
-   }
-
-  /***************************************************************/
-  /* and now handle command-line arguments ***********************/
-  /***************************************************************/
-  if (argc==1)
-   return;
-
-  for(int narg=1; narg<argc; narg++)
-   { 
-     /*--------------------------------------------------------------*/
-     /*- this line allows ProcessOptions() to be preceded by other   */
-     /*- command-line argument handlers, which indicate that they    */
-     /*- have already processed an argument by setting the           */
-     /*- corresponding slot(s) in the argv[] vector to NULL          */
-     /*--------------------------------------------------------------*/
-     if (argv[narg]==0) continue;
-
-     /*--------------------------------------------------------------*/
-     /*--------------------------------------------------------------*/
-     /*--------------------------------------------------------------*/
-     if (strncmp(argv[narg],"--",2))
-      { if (AbortOnUnknown) 
-         OSUsage(argv[0], OSArray,"unknown option %s",argv[narg]);
-        continue;
-      }
-
-     /*--------------------------------------------------------------*/
-     /*- collect all successive arguments that do not begin with     */
-     /*- '--' as parameters for the current option                   */
-     /*--------------------------------------------------------------*/
-     char *Tokens[MAXTOK];
-     int NumTokens=0;
-     for(int nt=0; nt<MAXTOK && (narg+nt+1)<argc && argv[narg+nt+1]; nt++)
-      { if ( !strncmp(argv[narg+nt+1],"--",2) )
-         break;
-        Tokens[NumTokens]=argv[narg+nt+1];
-        NumTokens++;
-      }
-     int Status=ProcessOption(argv[narg]+2, Tokens, NumTokens, OSArray, ErrMsg);
-
-     if (Status!=0 && AbortOnUnknown==true)
-      OSUsage(argv[0], OSArray, ErrMsg);
-
-     if (Status==0 && ZeroArgs==true)
-      for(int nt=0; nt<=NumTokens; nt++)
-       argv[narg+nt]=0;
-
-     narg+=NumTokens;
-
-   }
-
+  if ( ParseWithCLI11(argv[0],OSArray,Input,AbortOnUnknown) )
+   StoreOptions(argv,OSArray,Input,ZeroArgs,AbortOnUnknown);
 }
 
 /***************************************************************/

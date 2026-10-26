@@ -8,7 +8,13 @@
 add_executable(scuff-unit-tests TestMain.cc)
 target_link_libraries(scuff-unit-tests PRIVATE scuff scuff_common)
 
+add_executable(scuff-cli-tests CliOptionsTest.cc)
+target_link_libraries(scuff-cli-tests PRIVATE scuff scuff_common)
+
 if(BUILD_TESTING)
   add_test(NAME UnitTests COMMAND scuff-unit-tests)
   set_tests_properties(UnitTests PROPERTIES TIMEOUT 300)
+
+  add_test(NAME CliOptions COMMAND scuff-cli-tests)
+  set_tests_properties(CliOptions PROPERTIES TIMEOUT 120)
 endif()
