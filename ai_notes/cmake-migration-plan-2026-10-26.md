@@ -1,7 +1,7 @@
 # CMake migration plan — phase 1 of the build/C++ modernization
 
 Date: 2026-10-26
-Status: **planning only — no CMake files added yet**
+Status: **implemented — see `ai_notes/cmake-implementation-2026-10-26.md`**
 
 ## Decisions from the user
 

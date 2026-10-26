@@ -1,0 +1,12 @@
+prefix=${pcfiledir}/@SCUFF_PC_PREFIX_REL@
+exec_prefix=${prefix}
+libdir=${pcfiledir}/@SCUFF_PC_LIBDIR_REL@
+includedir=${pcfiledir}/@SCUFF_PC_INCLUDEDIR_REL@
+datadir=${pcfiledir}/@SCUFF_PC_DATADIR_REL@
+
+Name: SCUFF-EM
+Description: Surface-integral-equation modeling of classical and quantum-statistical phenomena
+Version: @SCUFF_VERSION_STRING@
+Libs: -L${libdir} -lscuff
+Libs.private: @SCUFF_PC_PRIVATE_LIBS@
+Cflags: -I${includedir}/scuff-em

@@ -1,0 +1,24 @@
+@PACKAGE_INIT@
+
+include(CMakeFindDependencyMacro)
+
+find_dependency(Threads)
+
+if(@SCUFF_WITH_HDF5@)
+  find_dependency(HDF5 COMPONENTS C HL)
+endif()
+
+find_dependency(BLAS)
+find_dependency(LAPACK)
+
+if(@HAVE_LIBGSL@)
+  find_dependency(GSL)
+endif()
+
+if(@USE_OPENMP@)
+  find_dependency(OpenMP COMPONENTS CXX)
+endif()
+
+include("${CMAKE_CURRENT_LIST_DIR}/scuff-emTargets.cmake")
+
+check_required_components(scuff-em)
