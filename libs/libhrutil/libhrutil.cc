@@ -48,6 +48,7 @@
 #endif 
 
 #include <math.h>
+#include <string>
 
 #include "libhrutil.h"
 
@@ -87,46 +88,67 @@ double Toc(unsigned long *BytesAllocated)
  }
 
 /***************************************************************/
-/* String functions (not thread-safe) **************************/
+/* String functions *********************************************/
+/*                                                              */
+/* These helpers retain the historical C-style interface, but   */
+/* copy into thread-local buffers with explicit bounds and NUL  */
+/* termination.  New code should prefer std::string /            */
+/* std::filesystem rather than relying on the static lifetime.  */
 /***************************************************************/
 /* given "/home/homer/work/MyFile.dat", return "MyFile.dat" */
-char *RemoveDirectories(char *s)
-{ static char buffer[MAXSTR];
-  char *p;
+char *RemoveDirectories(const char *s)
+{ static thread_local char buffer[MAXSTR];
+  const char *p;
+
+  if (!s)
+   { buffer[0]=0;
+     return buffer;
+   };
 
   p=strrchr(s,'/');
-
-  if (!p)
-   strncpy(buffer,s,MAXSTR); 
-  else
-   strncpy(buffer,p+1,MAXSTR);
+  snprintf(buffer,sizeof(buffer),"%s", p ? p+1 : s);
 
   return buffer;
 }
 
 /* given "/home/homer/work/MyFile.dat", return "/home/homer/work/MyFile" */
-char *RemoveExtension(char *s)
-{ static char buffer[MAXSTR];
-  char *p;
+char *RemoveExtension(const char *s)
+{ static thread_local char buffer[MAXSTR];
+  char *p, *dot;
 
-  strncpy(buffer,s,MAXSTR);
-  if ( (p=strrchr(buffer,'.')) )
-   *p=0;
+  if (!s)
+   { buffer[0]=0;
+     return buffer;
+   };
+
+  snprintf(buffer,sizeof(buffer),"%s",s);
+
+  /* only consider dots in the final path component */
+  p=strrchr(buffer,'/');
+  dot=strrchr(p ? p+1 : buffer,'.');
+  if (dot)
+   *dot=0;
 
   return buffer;
 
 }
 
 /* given "/home/homer/work/MyFile.dat", return "dat" */
-char *GetFileExtension(char *s)
+char *GetFileExtension(const char *s)
 {
-  static char buffer[MAXSTR];
-  char *p;
+  static thread_local char buffer[MAXSTR];
+  const char *base, *dot;
 
-  if ( (p=strrchr(s,'.')) )
-   strncpy(buffer,p+1,999);
-  else
-   buffer[0]=0;
+  if (!s)
+   { buffer[0]=0;
+     return buffer;
+   };
+
+  base=strrchr(s,'/');
+  base=base ? base+1 : s;
+  dot=strrchr(base,'.');
+
+  snprintf(buffer,sizeof(buffer),"%s", dot ? dot+1 : "");
 
   return buffer;
 }
@@ -135,11 +157,11 @@ char *GetFileExtension(char *s)
 char *GetFileBase(const char *s)
 {  
 #define NUMBUFS 4
-  static int bufhead=0;
-  static char buffers[NUMBUFS][MAXSTR];
+  static thread_local int bufhead=0;
+  static thread_local char buffers[NUMBUFS][MAXSTR];
   bufhead = (bufhead+1)%NUMBUFS;
   char *buffer = buffers[bufhead];
-  strncpy(buffer, s, MAXSTR);
+  snprintf(buffer,MAXSTR,"%s", s ? s : "");
   char *p = strrchr(buffer,'/');
   char *ret = p ? p+1 : buffer;
   if ( (p=strrchr(ret,'.')) ) *p=0;         // remove file extension
@@ -225,13 +247,27 @@ sVec Tokenize(char *s, const char *Separators)
 }
 
 // old calling convention retained for backward compatibility
-int Tokenize(char *s, char **Tokens, int MaxTokens, const char *Separators)
-{ sVec TokenVec=Tokenize(s,Separators);
-  for(int nt=0; nt<((int)(TokenVec.size())); nt++)
-   { Tokens[nt]=TokenVec[nt];
-     if (nt==MaxTokens-1) break;
-   }
-  return TokenVec.size();
+int Tokenize(char *s, char **Tokens, int MaxTokens, const char *Separators,
+             bool *Truncated)
+{ 
+  if (Truncated) *Truncated=false;
+
+  if (MaxTokens<=0 || Tokens==0)
+   { if (Truncated && s && *s) *Truncated=true;
+     return 0;
+   };
+
+  sVec TokenVec=Tokenize(s,Separators);
+  int NumStored=static_cast<int>(TokenVec.size());
+  if (NumStored>MaxTokens)
+   { NumStored=MaxTokens;
+     if (Truncated) *Truncated=true;
+   };
+
+  for(int nt=0; nt<NumStored; nt++)
+   Tokens[nt]=TokenVec[nt];
+
+  return NumStored;
 }
 
 /***************************************************************/
@@ -257,34 +293,37 @@ int vsnprintfEC(char *str, size_t size, const char *format, va_list ap)
 FILE *fopenPath(const char *Path, const char *FileName,
                 const char *Mode, char **WhichDir)
 { 
-  static char DirFound[MAXSTR];
+  static thread_local char DirFound[MAXSTR];
   if (WhichDir) *WhichDir=DirFound;
+  DirFound[0]=0;
 
   if ( FILE *f=fopen(FileName,Mode) )
    { if (strchr(FileName,'/'))
-      { snprintf(DirFound,MAXSTR,FileName);
-        *strrchr(DirFound,'/') = 0;
+      { snprintf(DirFound,sizeof(DirFound),"%s",FileName);
+        char *Slash=strrchr(DirFound,'/');
+        if (Slash) *Slash=0;
       }
      else 
-      sprintf(DirFound,".");
+      snprintf(DirFound,sizeof(DirFound),"%s",".");
      return f;
    }
 
-  const char *p=Path;
-  if (!p) return 0;
-  while(*p)
+  if (!Path || !*Path) return 0;
+
+  std::string SearchPath(Path);
+  size_t Start=0;
+  while( Start <= SearchPath.size() )
    {
-     int n=0;
-     char FullFileName[MAXSTR];
-     while( *p && *p!=':' && n<MAXSTR )
-      FullFileName[n++] = *p++;
-     strncpy(DirFound,FullFileName,n);
-     DirFound[n]=0;
-     FullFileName[n++]='/';
-     strncpy(FullFileName+n,FileName,MAXSTR-n);
-     if ( FILE *f=fopen(FullFileName,Mode) )
-      return f;
-     if (*p==':') p++;
+     size_t Colon=SearchPath.find(':',Start);
+     std::string Dir=SearchPath.substr(Start,
+         Colon==std::string::npos ? std::string::npos : Colon-Start);
+     std::string FullFileName=Dir + "/" + FileName;
+     if ( FILE *f=fopen(FullFileName.c_str(),Mode) )
+      { snprintf(DirFound,sizeof(DirFound),"%s",Dir.c_str());
+        return f;
+      }
+     if (Colon==std::string::npos) break;
+     Start=Colon+1;
    }
   return 0;
 }
@@ -705,22 +744,46 @@ cdouble csqrt2(cdouble z)
 /***************************************************************/
 int S2CD(const char *str, cdouble *pZ)
 { 
-  double X, Y;
-  char c1, c2;
+  if (!str || !pZ) return 1;
 
-  int nConv=sscanf(str,"%le%c%le%c",&X,&c1,&Y,&c2);
+  const char *p=str;
+  char *End=0;
+  double X=strtod(p,&End);
+  if (End==p) return 1;
+  p=End;
+  while (isspace((unsigned char)*p)) p++;
 
-  if (nConv==1)
+  /* pure real value */
+  if (*p==0)
    { *pZ=cdouble(X,0.0); return 0; };
-  if ( (nConv==2) && (tolower(c1)=='i' || tolower(c1)=='j') )
-   { *pZ=cdouble(0.0,X); return 0; };
-  if (nConv==2) 
-   { *pZ=cdouble(X,0.0); return 0; };
-  if (nConv==4 && c1=='+' && (tolower(c2)=='i' || tolower(c1)=='j') )
-   { *pZ=cdouble(X,Y); return 0; };
-  if (nConv==4 && c1=='-' && (tolower(c2)=='i' || tolower(c1)=='j') )
-   { *pZ=cdouble(X,-Y); return 0; };
-  return 1;
+
+  /* pure imaginary value: 3i, 3j, 3I, 3J */
+  if (*p=='i' || *p=='I' || *p=='j' || *p=='J')
+   { p++;
+     while (isspace((unsigned char)*p)) p++;
+     if (*p!=0) return 1;
+     *pZ=cdouble(0.0,X); return 0;
+   };
+
+  /* complex value: X+Yi, X-Yi, ... */
+  if (*p!='+' && *p!='-') return 1;
+  int Sign = (*p=='+') ? 1 : -1;
+  p++;
+  while (isspace((unsigned char)*p)) p++;
+
+  char *EndY=0;
+  double Y=strtod(p,&EndY);
+  if (EndY==p) return 1;
+  p=EndY;
+  while (isspace((unsigned char)*p)) p++;
+
+  if (*p!='i' && *p!='I' && *p!='j' && *p!='J') return 1;
+  p++;
+  while (isspace((unsigned char)*p)) p++;
+  if (*p!=0) return 1;
+
+  *pZ=cdouble(X, Sign*Y);
+  return 0;
 
 } 
 
@@ -734,19 +797,19 @@ char *CD2S(cdouble z, const char *format)
 { 
   #define NUMSTRINGS 100
   #define STRLEN 50
-  static char Strings[NUMSTRINGS][50];
-  static int BufPtr=0;
+  static thread_local char Strings[NUMSTRINGS][STRLEN];
+  static thread_local int BufPtr=0;
 
   BufPtr = (BufPtr+1) % NUMSTRINGS;
   char *zStr=Strings[BufPtr];
 
   if (!format)
    { if ( imag(z)==0.0 )
-      snprintf(zStr,MAXSTR,"%g",real(z));
+      snprintf(zStr,STRLEN,"%g",real(z));
      else if ( real(z)==0.0 )
-      snprintf(zStr,MAXSTR,"%gi",imag(z));
+      snprintf(zStr,STRLEN,"%gi",imag(z));
      else 
-      snprintf(zStr,MAXSTR,"%g+%gi",real(z),imag(z));
+      snprintf(zStr,STRLEN,"%g+%gi",real(z),imag(z));
      return zStr; 
    };
 
@@ -759,7 +822,7 @@ char *CD2S(cdouble z, const char *format)
   else if (nConv==1)
    snprintf(zStr,STRLEN,format,real(z));
   else 
-   strncpy(zStr,format,STRLEN);
+   snprintf(zStr,STRLEN,"%s",format);
 
   return zStr;
 }
@@ -767,7 +830,8 @@ char *CD2S(cdouble z, const char *format)
 char *CD2S(cdouble z)
 { 
   if (DefaultCD2SFormatInitialized==0)
-   { strcpy(DefaultCD2SFormat,"(%+9.5e,%+9.5e)");
+   { snprintf(DefaultCD2SFormat,sizeof(DefaultCD2SFormat),
+              "%s","(%+9.5e,%+9.5e)");
      DefaultCD2SFormatInitialized=1;
    };
   return CD2S(z,DefaultCD2SFormat);
@@ -775,7 +839,8 @@ char *CD2S(cdouble z)
 
 void SetDefaultCD2SFormat(const char *format)
 { 
-  strncpy(DefaultCD2SFormat,format,99);
+  snprintf(DefaultCD2SFormat,sizeof(DefaultCD2SFormat),"%s",
+           format ? format : "");
   DefaultCD2SFormatInitialized=1;
 }
 
@@ -784,8 +849,11 @@ char *z2s(cdouble z)
   return CD2S(z,0);
 }
 
+void z2s(cdouble z, char *zStr, size_t Size)
+{ snprintf(zStr, Size, "%s", z2s(z)); }
+
 void z2s(cdouble z, char *zStr)
- { strcpy(zStr, z2s(z)); }
+{ z2s(z, zStr, STRLEN); }
 
 /***************************************************************/
 /* given a string like 'MyFile.dat', try to create a new file  */
@@ -813,9 +881,9 @@ FILE *CreateUniqueFile(const char *Base, int ConsoleMessage, char *FileName)
    for(N=0; N<MAXSTR; N++)
     { 
       if (N==0)
-       snprintf(NewFileName,MAXSTR-10,"%s",Base);
+       snprintf(NewFileName,sizeof(NewFileName)-10,"%s",Base);
       else
-       snprintf(NewFileName,MAXSTR-10,"%s.%i",Base,N);
+       snprintf(NewFileName,sizeof(NewFileName)-10,"%s.%i",Base,N);
 
       f=fopen(NewFileName,"r");
       if (f==0) break;
@@ -832,32 +900,41 @@ FILE *CreateUniqueFile(const char *Base, int ConsoleMessage, char *FileName)
             Base,NewFileName);
                   
    if (FileName)
-    strncpy(FileName,NewFileName,MAXSTR-1);
+    snprintf(FileName,MAXSTR,"%s",NewFileName);
 
    return f;
 
  } 
 
 // return a string form of the current time. If no buffer is supplied,
-// the return value is a pointer to a static buffer, so not thread-safe.
+// the return value points to a thread-local buffer.
 char *GetTimeString(char *s)
 {
-  static char TimeStr[30];
+  static thread_local char TimeStr[30];
   if (s==0) s=TimeStr;
+  s[0]=0;
   time_t MyTime=time(0);
-  strftime(s,30,"%D::%T",localtime(&MyTime));
+  struct tm TimeStruct;
+#if defined(_WIN32)
+  localtime_s(&TimeStruct,&MyTime);
+#else
+  localtime_r(&MyTime,&TimeStruct);
+#endif
+  strftime(s,30,"%D::%T",&TimeStruct);
+  s[29]=0;
   return s;
 }
 
 char *GetHostName()
 { 
-  static char HostName[MAXSTR];
+  static thread_local char HostName[MAXSTR];
 #if defined(_WIN32)
   // gethostname exists on Win32 but causes link failure with MinGW
   // ... punt, since scuff doesn't actually use this function.
-  strcpy(HostName, "Windows");
+  snprintf(HostName,sizeof(HostName),"%s","Windows");
 #else
-  gethostname(HostName,MAXSTR);
+  gethostname(HostName,sizeof(HostName)-1);
+  HostName[sizeof(HostName)-1]=0;
 #endif
   return HostName;
 }
@@ -876,7 +953,7 @@ FILE *CreateUniqueFile(const char *Base)
 #if !defined(_WIN32)
 static char CodeMarker[MAXSTR];
 void SetCodeMarker(const char *Marker)
-{ strncpy(CodeMarker, Marker, MAXSTR); }
+{ snprintf(CodeMarker,sizeof(CodeMarker),"%s", Marker ? Marker : ""); }
 
 static void SignalHandler(int WhichSignal)
 {

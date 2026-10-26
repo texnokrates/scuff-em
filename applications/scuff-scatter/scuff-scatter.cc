@@ -382,7 +382,7 @@ int main(int argc, char *argv[])
      SSD->Omega    = Omega;
 
      char OmegaStr[MAXSTR];
-     z2s(Omega, OmegaStr);
+     z2s(Omega, OmegaStr, sizeof(OmegaStr));
      Log("Working at frequency %s...",OmegaStr);
 
      /*******************************************************************/

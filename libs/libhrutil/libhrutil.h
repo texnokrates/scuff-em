@@ -112,11 +112,12 @@ double Toc(unsigned long *BytesAllocated=0);
 /***************************************************************/
 /* string functions  *******************************************/
 /***************************************************************/
-char *RemoveDirectories(char *s);
-char *RemoveExtension(char *s);
-char *GetFileExtension(char *s);
+char *RemoveDirectories(const char *s);
+char *RemoveExtension(const char *s);
+char *GetFileExtension(const char *s);
 char *GetFileBase(const char *s);
-int Tokenize(char *s, char **Tokens, int MaxTokens, const char *Separators=" \t\n");
+int Tokenize(char *s, char **Tokens, int MaxTokens,
+             const char *Separators=" \t\n", bool *Truncated=0);
 sVec Tokenize(char *s, const char *Separators=" \t\n");
 int StrCaseCmp(const char *s1, const char *s2);
 
@@ -170,6 +171,7 @@ char *CD2S(cdouble z, const char *format);
 char *CD2S(cdouble z);
 void SetDefaultCD2SFormat(const char *format);
 void z2s(cdouble z, char *zStr);
+void z2s(cdouble z, char *zStr, size_t Size);
 char *z2s(cdouble z);
 
 /***************************************************************/

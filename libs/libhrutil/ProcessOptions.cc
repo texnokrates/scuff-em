@@ -266,7 +266,14 @@ void ProcessOptions(int argc, char *argv[], OptStruct *OSArray,
       { 
         LineNum++;
         char *Tokens[MAXTOK];
-        int NumTokens=Tokenize(Line,Tokens,MAXTOK);
+        bool Truncated=false;
+        int NumTokens=Tokenize(Line,Tokens,MAXTOK," \t\n",&Truncated);
+
+        if (Truncated)
+         { snprintf(Line,MAXSTR,"stdin:%i: too many tokens (maximum %i)",
+                    LineNum,MAXTOK);
+           OSUsage(argv[0], OSArray, Line);
+         };
 
         if (NumTokens==0 || Tokens[0][0]=='#') 
          continue;
@@ -309,7 +316,7 @@ void ProcessOptions(int argc, char *argv[], OptStruct *OSArray,
      /*--------------------------------------------------------------*/
      char *Tokens[MAXTOK];
      int NumTokens=0;
-     for(int nt=0; nt<MAXTOK && argv[narg+nt+1] && (narg+nt+1)<argc; nt++)
+     for(int nt=0; nt<MAXTOK && (narg+nt+1)<argc && argv[narg+nt+1]; nt++)
       { if ( !strncmp(argv[narg+nt+1],"--",2) )
          break;
         Tokens[NumTokens]=argv[narg+nt+1];
@@ -335,10 +342,23 @@ void ProcessOptions(int argc, char *argv[], OptStruct *OSArray,
 /***************************************************************/
 void ProcessOptions(const char *ArgString, OptStruct *OSArray)
 {
-  char *ArgStringCopy=strdup(ArgString);
+  char *ArgStringCopy=strdup(ArgString ? ArgString : "");
   char *Tokens[100];
-  int NumTokens=Tokenize(ArgStringCopy,Tokens,100);
-  ProcessOptions(NumTokens,Tokens,OSArray);
+  bool Truncated=false;
+  int NumTokens=Tokenize(ArgStringCopy,Tokens,99," \t\n",&Truncated);
+  if (Truncated)
+   ErrExit("too many options in option string");
+
+  /* The argc/argv overload expects a program name in argv[0]; synthesize
+     one so that the first option in the string is not skipped. */
+  char *Argv[101];
+  Argv[0]=const_cast<char *>("ProcessOptions");
+  for(int n=0; n<NumTokens; n++)
+   Argv[n+1]=Tokens[n];
+  Argv[NumTokens+1]=0;
+
+  ProcessOptions(NumTokens+1,Argv,OSArray);
+
   free(ArgStringCopy);
 
 }
