@@ -8,6 +8,7 @@ scuff_add_module(scuff_hrutil
   libhrutil/libhrutil.cc
   libhrutil/ProcessArguments.cc
   libhrutil/ProcessOptions.cc
+  libhrutil/ScuffCLI.cc
   libhrutil/Vector.cc
 )
 target_link_libraries(scuff_hrutil PRIVATE scuff_cli11)
