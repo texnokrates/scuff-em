@@ -43,3 +43,55 @@ jobs:
 
       - name: Install
         run: cmake --install build --prefix "$RUNNER_TEMP/scuff-em"
+
+  sanitizers:
+    name: ASan + UBSan
+    runs-on: ubuntu-24.04
+
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            cmake ninja-build g++ gfortran \
+            libopenblas-dev liblapack-dev libhdf5-dev \
+            libgsl-dev libreadline-dev
+
+      - name: Configure
+        run: |
+          cmake -S . -B build -G Ninja \
+            -DCMAKE_BUILD_TYPE=RelWithDebInfo \
+            -DSCUFF_ENABLE_SANITIZERS=ON \
+            -DSCUFF_BUILD_DEV_PROGRAMS=OFF
+
+      - name: Build tests and smoke target
+        run: |
+          cmake --build build -j "$(nproc)" \
+            --target scuff-unit-tests scuff-cli-tests scuff-scatter
+
+      - name: Unit tests
+        env:
+          ASAN_OPTIONS: detect_leaks=1:halt_on_error=1
+          UBSAN_OPTIONS: halt_on_error=1:print_stacktrace=1
+        run: |
+          ctest --test-dir build --output-on-failure \
+            -R '^(UnitTests|CliOptions)$'
+
+      - name: Smoke test
+        env:
+          ASAN_OPTIONS: detect_leaks=0:halt_on_error=1
+          UBSAN_OPTIONS: halt_on_error=1:print_stacktrace=1
+        run: |
+          cd examples/SphericalShell
+          ../../build/bin/scuff-scatter \
+            --geometry SphericalShell.scuffgeo \
+            --omega 0.001 \
+            --pslocation -0.3 -0.2 0.1 \
+            --psstrength 1.0 0.0 0.0 \
+            --EPFile LineOfPoints \
+            --FileBase "$RUNNER_TEMP/asan-smoke" \
+            --Cache "$RUNNER_TEMP/asan-smoke.cache" \
+            --LogLevel terse
