@@ -840,6 +840,32 @@ behavior.  The recommendations above are the default plan.
 7. **Public C-style string API:** keep deprecated wrappers (recommended) or
    remove them in the same release as the C++ replacements?
 
+### Resolution status
+
+The decisions that affect the current implementation are now settled:
+
+1. **CLI11 acquisition — vendored.**  CLI11 2.7.2 is vendored under
+   `third_party/CLI11/` with an optional `SCUFF_USE_SYSTEM_CLI11=ON`
+   (`74d4f304`).  Builds remain offline and reproducible.
+2. **Adapter first — yes.**  The CLI11-backed `OptStruct` adapter landed in
+   `efafc09c`; typed application migration follows incrementally.
+3. **Strict numeric parsing — yes.**  Trailing garbage is rejected by the
+   adapter; the compatibility tests codify this tightening.
+4. **Bare `--` — legacy unknown-option behavior retained.**  No script that
+   relied on the old error changes meaning.
+5. **Compiler floor — GCC 13+ / Clang 17+ for C++23 builds.**  CMake keeps
+   the 17/20/23 choices for now, but the project does not promise that older
+   compilers can build every C++23 facility used by future changes.  A hard
+   CMake version check is deferred until a C++23-only library feature is
+   actually adopted.
+6. **Dormant applications — keep unbuilt.**  `scuff-cas2D` and
+   `scuff-microstrip` remain in the tree but outside the maintained build.
+   They are not part of the modernization or warning budget unless revived.
+7. **Public C-style string API — keep until Stage C.**  The deprecated
+   wrappers stay for downstream compatibility while call sites migrate.
+   Removal is a separate, documented release decision after all maintained
+   applications use the C++ replacements.
+
 ---
 
 ## 11. Appendix: CLI call-site inventory
