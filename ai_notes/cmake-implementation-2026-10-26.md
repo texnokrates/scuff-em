@@ -1,7 +1,7 @@
 # CMake build implementation — 2026-10-26
 
-Status: **implemented and validated** (Autotools still present; removal is the
-next, separate commit).
+Status: **implemented and validated; the Autotools build has since been
+removed** (see `ai_notes/autotools-removal-2026-10-26.md`).
 
 This note records what was built, how it maps to the old Autotools build, and
 what was verified.  The design rationale is in
@@ -184,8 +184,8 @@ workstream, as planned.
 
 ## Follow-up / not done here
 
-- Remove Autotools in the next commit and update `README` / installation docs
-  / CI to CMake.
+- The Autotools build has been removed and the README / installation docs /
+  CI updated to CMake; see `ai_notes/autotools-removal-2026-10-26.md`.
 - Unit tests (`unitTests/`) and interactive tests (`interactiveTests/`) are
   not part of the old default build and were not ported.
 - Dormant `scuff-cas2D` / `scuff-microstrip` sources remain in the tree but

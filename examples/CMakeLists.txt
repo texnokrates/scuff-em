@@ -1,5 +1,5 @@
-# Install example data.  The list mirrors examples/Makefile.am.  Build-system
-# files and accidental build artifacts are excluded.
+# Install example data.  The list mirrors the historical examples/Makefile.am.
+# Build-system files and accidental build artifacts are excluded.
 
 set(SCUFF_EXAMPLE_DIRECTORIES
   DiffractionPatterns

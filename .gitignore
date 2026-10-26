@@ -1,33 +1,32 @@
 # Compiled SCUFF programs #
-###################
+###########################
 scuff-analyze
 scuff-caspol
-scuff-heat
-scuff-scatter
-scuff-static
 scuff-cas3D
-scuff-cas2D
+scuff-integrate
+scuff-ldos
 scuff-neq
 scuff-plotEpsMu
 scuff-rf
-scuff-transmission
+scuff-scatter
+scuff-spectrum
+scuff-static
 scuff-tmatrix
+scuff-transmission
 # don't ignore directories, though:
 !scuff-analyze/
 !scuff-caspol/
-!scuff-heat/
-!scuff-scatter/
-!scuff-static/
 !scuff-cas3D/
-!scuff-cas2D/
+!scuff-integrate/
+!scuff-ldos/
 !scuff-neq/
 !scuff-plotEpsMu/
 !scuff-rf/
-!scuff-transmission/
+!scuff-scatter/
+!scuff-spectrum/
+!scuff-static/
 !scuff-tmatrix/
-
-# ChangeLog should be generated from 'git log' at 'make dist' time #
-ChangeLog
+!scuff-transmission/
 
 # Compiled source #
 ###################
@@ -40,38 +39,6 @@ ChangeLog
 *.so
 *.a
 *.la
-
-# Autostuff #
-############
-stamp-h1
-Makefile
-Makefile.in
-config.h.in*
-config.h
-autom4te.cache
-aclocal.m4
-missing
-depcomp
-configure
-install-sh
-ltmain.sh
-libtool.m4
-lt*.m4
-.libs
-.deps
-config.guess
-config.sub
-config.status
-config.log
-compile
-libtool
-INSTALL
-ylwrap
-py-compile
-test-driver
-
-# Keep the CMake config.h template tracked #
-!cmake/config.h.in
 
 # CMake build directories #
 ###########################
@@ -114,17 +81,3 @@ ehthumbs.db
 Icon?
 Thumbs.db
 *~
-
-# SWIG-generated files #
-########################
-scuff-python.cpp
-scuff.py
-scuff.pyc
-
-# Compiled programs #
-#####################
-interactiveTests/scuff-test-overlap
-interactiveTests/scuff-test-Ewald
-unitTests/unit-test-BEMMatrix
-unitTests/unit-test-PPIs
-unitTests/unit-test-PFT

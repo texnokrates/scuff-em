@@ -1,117 +1,171 @@
-# Installing [[scuff-em]]
+# Installing SCUFF-EM
 
-## External packages
+## Build requirements
 
-[[scuff-em]] relies on a small number of well-established free 
-software packages to implement certain non-essential functionality. 
-[[scuff-em]] can be compiled and installed without any of these packages, 
-but in this case the code will be somewhat crippled.
+SCUFF-EM is built with [CMake](https://cmake.org) 3.20 or newer.
+The required toolchain and numerical libraries are:
 
-+ If you actually want to solve scattering problems (instead of 
-  just setting them up), you will need
-  [LAPACK/BLAS](http://www.netlib.org/lapack).
++ A C++23-capable compiler (GCC 13 or newer, Clang 17 or newer).
++ A Fortran compiler (needed for the Fortran name-mangling header and
+  the LAPACK/BLAS interface).
++ [LAPACK and BLAS](http://www.netlib.org/lapack). An optimized
+  implementation such as OpenBLAS is recommended.
 
-+ If you want the capacity to write output files in the 
-  standard HDF5 binary format, you will need
-  [HDF5](http://www.hdfgroup.org/HDF5).
+The following external packages are optional. CMake detects them
+automatically and reports the resulting configuration at the end of
+the configure step.
 
-+ If you want to compile the [[python]] interface, you will need the
-  [[python]] development files.
++ [HDF5](http://www.hdfgroup.org/HDF5) — enabled by default. It is used
+  for binary output files. Configure with `-DSCUFF_WITH_HDF5=OFF` to
+  disable it.
++ [GSL](https://www.gnu.org/software/gsl/) — used by some spherical-wave
+  routines. Detected automatically when present.
++ `readline` — used by a few developer test programs.
++ `DCUTRI` — optional adaptive cubature backend.
++ [libGDSII](http://github.com/HomerReid/libGDSII) — optional GDSII input
+  support.
 
-+ Although not required to install, compile, or use
-  [[scuff-em]],
-  [<span class="SC">gmsh</span>](http://geuz.org/gmsh)
-  is an extremely valuable open-source meshing and visualization
-  tool that is used throughout the
-  [[scuff-em]] documentation.
+[Gmsh](http://geuz.org/gmsh) is not required to build or run SCUFF-EM,
+but it is the meshing tool used throughout the documentation.
 
-On Debian/Ubuntu Linux systems, you can fetch all of these packages by doing a 
+On Debian/Ubuntu Linux systems, a complete build environment can be
+installed with:
 
-````bash
-% sudo apt-get install liblapack-dev libblas-dev libhdf5-serial-dev python-dev gmsh
-````
+```bash
+sudo apt-get install cmake ninja-build g++ gfortran \
+  libopenblas-dev liblapack-dev libhdf5-dev \
+  libgsl-dev libreadline-dev gmsh
+```
 
-> Note: In some cases it seems the ``gmsh`` package conflicts with 
-> the ``libhdf5-serial-dev`` package. In this case, just 
-> remove ``gmsh`` from the above ``apt-get`` statement; you can 
-> install it by hand following the instructions
-> on the [GMSH website](http://geuz.org/gmsh).
-> (Note that [[gmsh]], though very useful, 
-> is not necessary to compile or run [[scuff-em]].)
+## Clone and build
 
-## Cloning the GitHub repository and building the code
+```bash
+git clone https://github.com/HomerReid/scuff-em.git
+cd scuff-em
+cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
+cmake --build build -j
+ctest --test-dir build --output-on-failure
+cmake --install build --prefix /path/to/scuff-em-installation
+```
 
-[[scuff-em]] is hosted on [GitHub][GitHub].
-To fetch and install the latest version of the 
-code, execute the following steps. (Replace the string
-``/path/to/scuff-em-installation-directory``
-with your desired installation directory.)
+The applications (`scuff-scatter`, `scuff-rf`, etc.) are installed in
+`PREFIX/bin`, the library in `PREFIX/lib`, headers in
+`PREFIX/include/scuff-em`, and the examples in
+`PREFIX/share/scuff-em/examples`. Tests and test data are installed
+under `PREFIX/share/scuff-em/tests`.
 
-````bash
-% git clone https://homerreid@github.com/HomerReid/scuff-em.git
-% cd scuff-em
-% sh autogen.sh --prefix=/path/to/scuff-em-installation-directory
-% make install
-````
+## Configuration options
 
-If this succeeds, the executable versions of the application
-programs (such as ``scuff-scatter``, ``scuff-rf``, etc.) will be 
-installed in the directory ``PREFIX/bin/`` 
-and the demonstration examples for the various application programs 
-will be in ``PREFIX/share/scuff-em/examples``
-(where ``PREFIX`` is the directory you specified using the 
-``--prefix`` option above).
+Pass options to CMake with `-DOPTION=VALUE`. The most useful options are:
 
-If you have trouble installing [[scuff-em]],
-please file an issue on the 
-[<span class="SC">scuff-em</span> GitHub page](GitHub).
+| Option | Default | Description |
+|---|---|---|
+| `CMAKE_BUILD_TYPE` | `RelWithDebInfo` | `Release`, `Debug`, `RelWithDebInfo`, or `MinSizeRel` |
+| `CMAKE_INSTALL_PREFIX` | `/usr/local` | Installation prefix |
+| `BUILD_SHARED_LIBS` | `ON` | Build `libscuff` as a shared library; set `OFF` for a static library |
+| `SCUFF_CXX_STANDARD` | `23` | C++ standard (`17`, `20`, or `23`) |
+| `SCUFF_THREAD_BACKEND` | `OpenMP` | `OpenMP`, `Pthreads`, or `None` |
+| `SCUFF_WITH_HDF5` | `ON` | Enable HDF5 output |
+| `SCUFF_WITH_GSL` | `AUTO` | GSL support: `AUTO`, `ON`, or `OFF` |
+| `SCUFF_WITH_READLINE` | `AUTO` | readline support: `AUTO`, `ON`, or `OFF` |
+| `SCUFF_WITH_DCUTRI` | `AUTO` | DCUTRI support: `AUTO`, `ON`, or `OFF` |
+| `SCUFF_WITH_GDSII` | `AUTO` | libGDSII support: `AUTO`, `ON`, or `OFF` |
+| `SCUFF_INSTALL_EXAMPLES` | `ON` | Install example input files |
+| `SCUFF_INSTALL_TESTS` | `ON` | Install test data and scripts |
+| `SCUFF_BUILD_DEV_PROGRAMS` | `OFF` | Build internal developer test programs |
+| `SCUFF_WARNINGS` | `ON` | Enable the project warning set |
+| `SCUFF_WARNINGS_AS_ERRORS` | `OFF` | Treat warnings as errors |
+| `SCUFF_ENABLE_SANITIZERS` | `OFF` | Enable AddressSanitizer and UndefinedBehaviorSanitizer |
 
-### Build options
+If an optional package is installed in a nonstandard location, point
+CMake at it with `CMAKE_PREFIX_PATH`, or its package-specific hint:
 
-You may specify options to the ``autogen.sh``
-(or ``configure``) command to guide the compilation process. 
-For a full list of available options,
-type ``configure --help.`` Here we summarize some of the
-more salient possibilities.
+```bash
+cmake -S . -B build \
+  -DCMAKE_PREFIX_PATH=/opt/my-libs \
+  -DHDF5_ROOT=/opt/hdf5 \
+  -DGSL_ROOT=/opt/gsl
+```
 
 <a name="Threading"></a>
-#### Multithreading: [[openmp]] vs. [[pthreads]] 
+## Multithreading: OpenMP vs. pthreads
 
-The [[scuff-em]] core library 
-uses multithreading for all steps in the
-<a href="scuff-em/libscuff/MainFlow.shtml">main flow</a> of
-the BEM scattering procedure. You can use ``configure``
-options to select whether this multithreading is implemented
-using [[openmp]] or [[pthreads]]. The former is the default,
-while the latter may be enabled like this:
+The SCUFF-EM core library uses multithreading for the main stages of the
+boundary-element method. OpenMP is the default backend. To use the
+legacy pthreads backend instead:
 
-````bash
-% ./configure --without-openmp --with-pthreads
-````
+```bash
+cmake -S . -B build -DSCUFF_THREAD_BACKEND=Pthreads
+```
 
-The default [[openmp]]
-multithreading tends to play better with other multithreaded 
-software packages and is definitely the right choice if you 
-will be operating on a shared machine with some CPU cores 
-occupied by other users. 
-(You can monitor performance by inspecting
-<a href="scuff-em/reference/scuffEMMisc.shtml#LogFiles"``.log`` files.</a>)
+To build without multithreading (useful for debugging or constrained
+environments):
 
-Support for [[pthreads]]
-is a legacy feature that will be discontinued in future versions of 
-[[scuff-em]].
+```bash
+cmake -S . -B build -DSCUFF_THREAD_BACKEND=None
+```
 
-Note: in some cases you may need to tweak certain environment 
-variables to achieve maximal 
-[[openmp]] performance.
-For example, on my workstation (which has 8 CPU cores),
-in order to get [[openmp]] codes
-to use all 8 cores I need to set the following environment
-variable:
+With OpenMP, setting `OMP_NUM_THREADS` controls the number of threads:
 
-````bash
-% export GOMP_CPU_AFFINITY=0-7
-````
+```bash
+OMP_NUM_THREADS=8 scuff-scatter < scuff-scatter.args
+```
 
-[GMSH]: http://www.geuz.org/gmsh
-[GitHub]: https://github.com/HomerReid/scuff-em/
+On some Linux systems, setting `GOMP_CPU_AFFINITY` may improve
+performance. For an 8-core machine:
+
+```bash
+export GOMP_CPU_AFFINITY="0-7"
+```
+
+## Tests
+
+The Mie and Fresnel regression tests are registered with CTest:
+
+```bash
+ctest --test-dir build --output-on-failure
+```
+
+Tests run with `OMP_NUM_THREADS=2` by default. To run one test:
+
+```bash
+ctest --test-dir build -R Mie --output-on-failure
+```
+
+## Static builds
+
+```bash
+cmake -S . -B build-static -DBUILD_SHARED_LIBS=OFF
+cmake --build build-static -j
+cmake --install build-static --prefix /path/to/installation
+```
+
+Both shared and static builds export a CMake package and a `pkg-config`
+file for downstream C++ projects.
+
+## Using SCUFF-EM from another project
+
+With `pkg-config`:
+
+```bash
+c++ -std=c++23 mycode.cc -o mycode $(pkg-config --cflags --libs scuff-em)
+```
+
+With CMake:
+
+```cmake
+find_package(scuff-em CONFIG REQUIRED)
+target_link_libraries(mycode PRIVATE scuff-em::scuff)
+```
+
+## Troubleshooting
+
++ If CMake cannot find HDF5, install the development package (`libhdf5-dev`
+  on Debian/Ubuntu) or set `HDF5_ROOT`.
++ If OpenMP is unavailable, configure with
+  `-DSCUFF_THREAD_BACKEND=Pthreads`.
++ If you change compiler or dependency locations, remove the build
+  directory and configure again to avoid stale cache entries.
+
+If you have trouble installing SCUFF-EM, please file an issue on the
+[SCUFF-EM GitHub page](https://github.com/HomerReid/scuff-em/issues).
