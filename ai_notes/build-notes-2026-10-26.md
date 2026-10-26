@@ -1,5 +1,11 @@
 # SCUFF-EM build notes — 2026-10-26
 
+> **Follow-up (2026-10-26):** `libhdf5-dev` is now installed system-wide
+> (`pkg-config hdf5` reports 1.14.5). The missing-include fix was committed.
+> SWIG/Python bindings are considered obsolete and will not be part of the
+> CMake build. See `ai_notes/cmake-migration-plan-2026-10-26.md` for the
+> build-system migration plan.
+
 ## Environment
 
 - Debian GNU/Linux 13.7 (trixie), x86_64, 6 cores
