@@ -251,7 +251,7 @@ item gets an explicit test.
 | Boolean flags | `--Flag` only; extra value is an error | `add_flag`; an extra value is an unexpected argument |
 | Negative numbers | accepted because only `--` starts a new option | CLI11 recognizes `-1`, `-.5`, etc. as values; add a test for `-inf`/`-nan` |
 | Single-dash values | accepted as option arguments | test; if CLI11 rejects a needed value form, pre-normalize known options to `--opt=value` |
-| `--` terminator | treated as an unknown option | decide explicitly; likely reject for compatibility or document the change |
+| `--` terminator | treated as an unknown option | Stage A rejects it; typed applications accept CLI11's end-of-options marker with no positionals |
 | Unknown option | print usage and exit 1 | catch `CLI::ParseError`, call `OSUsage` (exit 1) during adapter phase |
 | Missing/extra args | usage error | CLI11 error, mapped to the same exit status |
 | Stdin ordering | stdin options first, then argv | build token vector in that order; last-wins behavior is preserved |
@@ -279,8 +279,12 @@ Important compatibility details:
   `1foo` is accepted as `1`.  The modernized parser should reject trailing
   garbage.  This is a deliberate tightening; add a release note and tests.
 - **Complex syntax:** `S2CD` accepts `3+4i`, `3+4j`, `3-4I`, `3i`, and
-  two-argument forms via repeated options.  CLI11's complex converter is
-  close but must be tested for uppercase `I`/`J` and the two-token form.
+  two-argument forms via repeated options.  CLI11's complex converter
+  rejects uppercase `I`/`J`, and its one-token parser splits at the last
+  `+`/`-`, so it also rejects scientific notation such as `1e-3-4e-2i`.
+  Typed applications therefore use `scuff::cli::AddComplexOption`, which
+  converts through `S2CD`; see
+  `ai_notes/c++23-typed-cli-2026-10-26.md`.
 
 ### 4.5 Architecture
 
