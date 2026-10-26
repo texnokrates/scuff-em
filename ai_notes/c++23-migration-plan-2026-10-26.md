@@ -1,13 +1,15 @@
 # C++23 modernization and CLI11 migration — 2026-10-26
 
-Status: **planning only**.  This is a new workstream, separate from the
-completed CMake/Autotools build-system migration.  No source code is changed
-by this note.  Phase 1 implementation results are recorded in
+Status: **planning note; implementation is recorded in the linked notes**.
+This is a new workstream, separate from the completed CMake/Autotools
+build-system migration.  Phase 1 implementation results are recorded in
 `ai_notes/c++23-phase1-2026-10-26.md`; Stage A (the CLI11-backed
 `ProcessOptions` adapter) is recorded in
 `ai_notes/c++23-cli11-adapter-2026-10-26.md`; the ASan/UBSan pass and
 warning cleanup are recorded in
-`ai_notes/c++23-sanitizers-2026-10-26.md`.
+`ai_notes/c++23-sanitizers-2026-10-26.md`; Stage B (typed CLI11 helpers and
+the `scuff-tmatrix` migration) is recorded in
+`ai_notes/c++23-typed-cli-2026-10-26.md`.
 
 Baseline: commit `26e6ea22` (`[build] Remove Autotools in favor of CMake`).
 The default CMake build is C++23 (`SCUFF_CXX_STANDARD=23`), builds cleanly,
@@ -328,23 +330,26 @@ reference for the old implementation.
 For each application, replace the `OptStruct` array with typed declarations:
 
 ```cpp
-CLI::App app{"..."};
-app.option_defaults()->ignore_case();
+CLI::App App{"..."};
+App.option_defaults()->ignore_case();
 
 std::string GeoFile;
-app.add_option("--geometry", GeoFile, "geometry file");
+App.add_option("--geometry", GeoFile, "geometry file")
+   ->required()
+   ->take_last();
 std::vector<std::complex<double>> OmegaVals;
-app.add_option("--Omega", OmegaVals, "angular frequency")
+App.add_option("--Omega", OmegaVals, "angular frequency")
    ->expected(1)
    ->take_all();
 std::vector<double> pwDir;
-app.add_option("--pwDirection", pwDir, "plane wave direction")
+App.add_option("--pwDirection", pwDir, "plane wave direction")
    ->expected(3)
    ->take_all();
 bool DSIFarField = false;
-app.add_flag("--DSIFarField", DSIFarField, "retain only far-field contributions");
+App.add_flag("--DSIFarField", DSIFarField, "retain only far-field contributions");
 
-CLI11_PARSE(app, argc, argv);
+if (auto Status=scuff::cli::Parse(App,argc,argv))
+ return *Status;
 ```
 
 Use `std::optional` for values that must distinguish "not supplied" from a
@@ -354,10 +359,14 @@ Keep the old option spellings and aliases (`mesh`/`meshfile`, `omega`/
 only when the surrounding code can use the vectors; do not change numerical
 interfaces unnecessarily.
 
-Migrate `scuff-scatter` first: it has the largest option array (40 entries),
-the most complex repeated/multi-value options, and is exercised by the
-SphericalShell/SolidSphere examples.  That migration will stress every part
-of the compatibility contract.
+`scuff-tmatrix` is the first migration: its small option set validated the
+shared helper, the stdin/argv ordering, and the `S2CD`-based complex option
+support.  `scuff-scatter` follows: it has the largest option array (40
+entries), the most complex repeated/multi-value options, and is exercised by
+the SphericalShell/SolidSphere examples.  That migration will stress every
+part of the compatibility contract and must add a multi-value complex helper
+before the `pwPolarization`, `gbPolarization`, and `psStrength` options can
+move.
 
 #### Stage C — remove legacy APIs
 
