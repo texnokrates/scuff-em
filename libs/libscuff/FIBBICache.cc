@@ -69,17 +69,19 @@ void ComputeFIBBIData(RWGSurface *Sa, int nea,
 /*--------------------------------------------------------------*/
 long JenkinsHash(const char *key, size_t len)
 {
-    long hash = 0;
+    /* Use unsigned arithmetic: the Jenkins mixing steps intentionally
+       overflow the machine word, and signed overflow is undefined. */
+    unsigned long hash = 0;
     for(size_t i = 0; i < len; ++i)
     {
-        hash += key[i];
+        hash += static_cast<unsigned char>(key[i]);
         hash += (hash << 10);
         hash ^= (hash >> 6);
     }
     hash += (hash << 3);
     hash ^= (hash >> 11);
     hash += (hash << 15);
-    return hash;
+    return static_cast<long>(hash);
 }
 
 static long HashFunction(const float *Key)
@@ -344,7 +346,7 @@ void FIBBICache::Store(const char *MeshFileName)
   if (!MeshFileName)
    return;
   char MFNCopy[MAXSTR];
-  strncpy(MFNCopy,MeshFileName,MAXSTR);
+  snprintf(MFNCopy,sizeof(MFNCopy),"%s",MeshFileName);
 
   char FileName[MAXSTR];
   

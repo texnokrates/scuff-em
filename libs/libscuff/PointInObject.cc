@@ -66,6 +66,7 @@
 */
 
 #include <stdlib.h>
+#include <stdint.h>
 #include <string.h>
 
 #include "libscuff.h"
@@ -125,25 +126,27 @@ static void swap(void *a_, void *b_, size_t size)
 {
      if (a_ == b_) return;
      {
-          size_t i, nlong = size / sizeof(long);
-          long *a = (long *) a_, *b = (long *) b_;
-          for (i = 0; i < nlong; ++i) {
-               long c = a[i];
-               a[i] = b[i];
-               b[i] = c;
-          }
-	  a_ = (void*) (a + nlong);
-	  b_ = (void*) (b + nlong);
-     }
-     {
-          size_t i;
-          char *a = (char *) a_, *b = (char *) b_;
-          size = size % sizeof(long);
-          for (i = 0; i < size; ++i) {
-               char c = a[i];
-               a[i] = b[i];
-               b[i] = c;
-          }
+          /* Elements of an arbitrary byte array need not be aligned for
+             long or uint64_t access: boxtri, for example, is 52 bytes,
+             so successive elements alternate between 4- and 8-byte
+             alignment.  Copy through local values so the loads and
+             stores are alignment-safe. */
+          unsigned char *a = (unsigned char *) a_, *b = (unsigned char *) b_;
+          while (size >= sizeof(uint64_t)) {
+               uint64_t ca, cb;
+               memcpy(&ca, a, sizeof(ca));
+               memcpy(&cb, b, sizeof(cb));
+               memcpy(a, &cb, sizeof(cb));
+               memcpy(b, &ca, sizeof(ca));
+               a += sizeof(uint64_t);
+               b += sizeof(uint64_t);
+               size -= sizeof(uint64_t);
+          };
+          while (size-- > 0) {
+               unsigned char c = *a;
+               *a++ = *b;
+               *b++ = c;
+          };
      }
 }
 

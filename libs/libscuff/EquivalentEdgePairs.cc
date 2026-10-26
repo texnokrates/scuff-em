@@ -246,7 +246,6 @@ long GetEdgePairHash(RWGSurface *Sa, int nea, RWGSurface *Sb, int neb)
   EdgePairData[2*EDGESIGLEN + 0] 
    = Quantize(VecDistance(Sa->Edges[nea]->Centroid, Sb->Edges[neb]->Centroid), 1.0e-6);
   long HashVal=scuff::JenkinsHash( (const char *)EdgePairData, sizeof(EdgePairData) ); return HashVal<0 ? -HashVal : HashVal;
-  return HashVal<0 ? -HashVal : HashVal;
 }
 
 /*****************************************************************/
