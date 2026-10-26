@@ -159,6 +159,9 @@ node_copy(Node * node)
 				   node_copy(node->data.bin_op.left),
 				   node_copy(node->data.bin_op.right));
 	}
+
+	/* Unreachable for valid node types; keep a defined return value. */
+	return NULL;
 }
 
 Node           *
@@ -321,6 +324,9 @@ node_simplify(Node * node, int sc /* simplify constants? */)
 		else
 			return node;
 	}
+
+	/* Unreachable for valid node types; keep a defined return value. */
+	return node;
 }
 
 cmplx
@@ -355,6 +361,7 @@ node_evaluate(Node * node, const cmplx *Vals)
 		case '-':
 		     return -node_evaluate(node->data.un_op.child, Vals);
 		}
+		break;
 
 	case 'b':
 		/* Binary operation node is evaluated according to
@@ -1204,6 +1211,7 @@ node_derivative(Node * node, char *name, SymbolTable * symbol_table)
 							   name,
 							   symbol_table));
 		}
+		break;
 
 	case 'b':
 		switch (node->data.bin_op.operation) {
@@ -1349,6 +1357,9 @@ node_derivative(Node * node, char *name, SymbolTable * symbol_table)
 			}
 		}
 	}
+
+	/* Unreachable for valid node types; keep a defined return value. */
+	return NULL;
 }
 
 void

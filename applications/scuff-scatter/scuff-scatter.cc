@@ -225,7 +225,7 @@ int main(int argc, char *argv[])
    };
 
   IncFieldList *IFList=0;
-  if (IFList!=0 && IF!=0)
+  if (IFFile!=0 && IF!=0)
    ErrExit("--IFFile is incompatible with other incident-field specifications");
   else if (IFFile!=0 && IF==0)
    IFList = ReadIncFieldList(IFFile);

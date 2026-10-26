@@ -60,7 +60,8 @@ int main(int argc, char *argv[])
   /***************************************************************/
   char *GeoFile;
 /**/
-  cdouble OmegaVals[MAXFREQ];	int nOmegaVals;   int nLambdaVals;
+  cdouble OmegaVals[MAXFREQ];	int nOmegaVals;
+  cdouble LambdaVals[MAXFREQ];	int nLambdaVals;
   char *OmegaFile=0;
   char *LambdaFile=0;
   char *OkBFile=0;
@@ -94,7 +95,7 @@ int main(int argc, char *argv[])
      {"TransFile",   PA_STRING,  1, 1, (void *)&TransFile,    0,  "list of geometrical transformations"},
 //
      {"Omega",       PA_CDOUBLE, 1, MAXFREQ, (void *)OmegaVals,  &nOmegaVals,  "angular frequency"},
-     {"Lambda",      PA_CDOUBLE, 1, MAXFREQ, (void *)OmegaVals,  &nLambdaVals, "(free-space) wavelength"},
+     {"Lambda",      PA_CDOUBLE, 1, MAXFREQ, (void *)LambdaVals, &nLambdaVals, "(free-space) wavelength"},
      {"OmegaFile",   PA_STRING,  1, 1, (void *)&OmegaFile,    0,  "list of omega points "},
      {"LambdaFile",  PA_STRING,  1, 1,       (void *)&LambdaFile,   0,       "list of (free-space) wavelengths"},
      {"OmegakBlochFile",   PA_STRING,  1, 1, (void *)&OkBFile,    0,  "list of (omega,kBloch) points "},
@@ -135,7 +136,7 @@ int main(int argc, char *argv[])
       ErrExit(OkBPoints->ErrMsg);
    }
   else
-   { OmegaPoints=GetOmegaList(OmegaFile, OmegaVals, nOmegaVals, LambdaFile, OmegaVals, nLambdaVals);
+   { OmegaPoints=GetOmegaList(OmegaFile, OmegaVals, nOmegaVals, LambdaFile, LambdaVals, nLambdaVals);
      if (!OmegaPoints)
       ErrExit("you must specify at least one frequency");
    };

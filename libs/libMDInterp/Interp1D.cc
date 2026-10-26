@@ -527,7 +527,7 @@ Interp1D::Interp1D(const char *FileName)
 
   FILE *f=fopen(FileName,"r");
   if (!f)
-   ErrExit("could not open file %s");
+   ErrExit("could not open file %s",FileName);
 
   freadEC(&Type, sizeof(int), 1, f, FileName);
   freadEC(&N   , sizeof(int), 1, f, FileName);
@@ -568,6 +568,7 @@ Interp1D::Interp1D(Interp1D *Original)
   N    = Original->N;
   nFun = Original->nFun;
   Type = Original->Type;
+  LogLevel = Original->LogLevel;
 
   if (Original->XPoints)
    { XPoints=(double *)mallocEC(N*sizeof(double));
@@ -593,7 +594,7 @@ void Interp1D::WriteToFile(const char *FileName)
 
   FILE *f=fopen(FileName,"w");
   if (!f)
-   ErrExit("could not open file %s");
+   ErrExit("could not open file %s",FileName);
 
   fwrite(&Type, sizeof(int), 1, f); 
   fwrite(&N   , sizeof(int), 1, f); 

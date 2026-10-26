@@ -245,7 +245,7 @@ class Interp1D
     double XMin, DX;    // these are only used if XPoints==0
 
     int N, nFun;
-    int LogLevel;
+    int LogLevel = LMDI_LOGLEVEL_TERSE;
     int Type;
 
     double *CTable;
@@ -325,7 +325,7 @@ class Interp2D
     double DX1, DX2;
 
     int nFun; 
-    int LogLevel;
+    int LogLevel = LMDI_LOGLEVEL_TERSE;
 
     double *CTable;
     
@@ -436,7 +436,7 @@ class Interp3D
     double X1Min, X2Min, X3Min;
     double DX1, DX2, DX3;
     int nFun; 
-    int LogLevel;
+    int LogLevel = LMDI_LOGLEVEL_TERSE;
 
     double *CTable;
     

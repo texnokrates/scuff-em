@@ -324,7 +324,7 @@ int main(int argc, char *argv[])
   if (!FileBase)
    FileBase=GetFileBase(GeoFileName);
   f=vfopen("%s.transmission","a",FileBase);
-  if (!f) ErrExit("could not open file %s",f);
+  if (!f) ErrExit("could not open file %s.transmission",FileBase);
   WriteFilePreamble(f);
 
   /*******************************************************************/

@@ -282,17 +282,22 @@ void StaticSolver::PlotChargeDensity(HVector *Sigma, char *BaseFileName)
   /*--------------------------------------------------------------*/
   /*--------------------------------------------------------------*/
   char FileName[MAXSTR];
-  strncpy(FileName, BaseFileName, MAXSTR-1);
+  snprintf(FileName,sizeof(FileName),"%s",BaseFileName ? BaseFileName : "");
   if (SeparateOutputFiles && (TransformLabel || ExcitationLabel) )
    { char Extension[MAXSTR];
-     strncpy(Extension, GetFileExtension(FileName), MAXSTR-1);
+     snprintf(Extension,sizeof(Extension),"%s",GetFileExtension(FileName));
      RemoveExtension(FileName);
+     char NewFileName[MAXSTR];
      if (TransformLabel && ExcitationLabel)
-      snprintf(FileName,MAXSTR,"%s.%s.%s.%s",FileName,TransformLabel,ExcitationLabel,Extension);
+      snprintf(NewFileName,sizeof(NewFileName),"%s.%s.%s.%s",
+               FileName,TransformLabel,ExcitationLabel,Extension);
      else if (TransformLabel)
-      snprintf(FileName,MAXSTR,"%s.%s.%s",FileName,TransformLabel,Extension);
-     else if (ExcitationLabel)
-      snprintf(FileName,MAXSTR,"%s.%s.%s",FileName,ExcitationLabel,Extension);
+      snprintf(NewFileName,sizeof(NewFileName),"%s.%s.%s",
+               FileName,TransformLabel,Extension);
+     else
+      snprintf(NewFileName,sizeof(NewFileName),"%s.%s.%s",
+               FileName,ExcitationLabel,Extension);
+     snprintf(FileName,sizeof(FileName),"%s",NewFileName);
    };
 
   FILE *f=fopen(FileName,"a");

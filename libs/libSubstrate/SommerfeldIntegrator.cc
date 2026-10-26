@@ -252,10 +252,10 @@ void SommerfeldIntegrate(integrand f, void *fdata, unsigned zfdim,
      if (SIData.LogFile) fprintf(SIData.LogFile,"\n\n");
      VecPlusEquals(Integral, 1.0, Integral2, zfdim);
      VecPlusEquals(Error,    1.0, Error2,    zfdim);
-     delete[] Integral2;
-     delete[] Error2;
      if (Verbose)
       Log(" q Integral: %i calls (%s)",SIData.NumPoints,CD2S(Integral2[0]));
+     delete[] Integral2;
+     delete[] Error2;
      if (SIData.LogFile) fclose(SIData.LogFile);
      return; 
    };

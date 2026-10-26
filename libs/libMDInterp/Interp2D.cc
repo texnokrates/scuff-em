@@ -485,7 +485,7 @@ Interp2D::Interp2D(const char *FileName)
 
    FILE *f=fopen(FileName,"r");
    if (!f)
-    ErrExit("could not open file %s");
+    ErrExit("could not open file %s",FileName);
    
    freadEC(&N1  , sizeof(int), 1, f, FileName);
    freadEC(&N2  , sizeof(int), 1, f, FileName);
@@ -535,7 +535,7 @@ void Interp2D::WriteToFile(const char *FileName)
 
    FILE *f=fopen(FileName,"w");
    if (!f)
-    ErrExit("could not open file %s");
+    ErrExit("could not open file %s",FileName);
 
    fwrite(&N1  , sizeof(int), 1, f);
    fwrite(&N2  , sizeof(int), 1, f);

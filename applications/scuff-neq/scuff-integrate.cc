@@ -394,13 +394,14 @@ int main(int argc, char *argv[])
   /* values start on row # RowStarts[2]                          */
   /*      and end on row # RowStarts[3] - 1                      */
   /***************************************************************/
-  int NumParmValues=1;
-  ivec RowStarts(1,0);
+  ivec RowStarts;
+  RowStarts.push_back(0);
   if (NumParms)
    for(int nr=1; nr<DataMatrix->NR; nr++)
     if ( !ParmsMatch(DataMatrix,nr,nr-1,ParmColumns,NumParms) )
-     RowStarts[NumParmValues++]=nr;
+     RowStarts.push_back(nr);
   RowStarts.push_back(DataMatrix->NR);
+  int NumParmValues=static_cast<int>(RowStarts.size()) - 1;
   
   int MaxNumFreqs = RowStarts[1] - RowStarts[0];
   for(int npv=2; npv<NumParmValues; npv++)
