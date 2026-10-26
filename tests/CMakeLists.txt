@@ -125,3 +125,5 @@ if(BUILD_TESTING)
     TIMEOUT 1800
   )
 endif()
+
+add_subdirectory(unit)
