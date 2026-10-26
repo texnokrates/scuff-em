@@ -5,7 +5,9 @@ completed CMake/Autotools build-system migration.  No source code is changed
 by this note.  Phase 1 implementation results are recorded in
 `ai_notes/c++23-phase1-2026-10-26.md`; Stage A (the CLI11-backed
 `ProcessOptions` adapter) is recorded in
-`ai_notes/c++23-cli11-adapter-2026-10-26.md`.
+`ai_notes/c++23-cli11-adapter-2026-10-26.md`; the ASan/UBSan pass and
+warning cleanup are recorded in
+`ai_notes/c++23-sanitizers-2026-10-26.md`.
 
 Baseline: commit `26e6ea22` (`[build] Remove Autotools in favor of CMake`).
 The default CMake build is C++23 (`SCUFF_CXX_STANDARD=23`), builds cleanly,
