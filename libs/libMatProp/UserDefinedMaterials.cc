@@ -29,6 +29,8 @@
 #include <string.h>
 #include <ctype.h>
 
+#include <string>
+
 #include <libhrutil.h>
 #include "libMatProp.h"
 
@@ -69,11 +71,10 @@ void MatProp::CreateUserDefinedMaterial(const char *MatPropFileName,
   if (status==0)
    { char *s=getenv("SCUFF_MATPROP_PATH");
      if (s)
-      { char FullFileName[MAXSTR];
-        snprintf(FullFileName,MAXSTR,"%s/%s",s,FileName);
-        status=ReadMaterialFromFile(FullFileName, MaterialName);
+      { std::string FullFileName = std::string(s) + "/" + FileName;
+        status=ReadMaterialFromFile(FullFileName.c_str(), MaterialName);
         if (status==1)
-         Log("Found material %s in file %s.",MaterialName,FullFileName);
+         Log("Found material %s in file %s.",MaterialName,FullFileName.c_str());
         return;
       };
    };

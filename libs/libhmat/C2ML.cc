@@ -109,11 +109,12 @@ void *HMatrix::OpenMATLABContext(const char *format, ... )
   va_end(ap);
   KillDP(Name);
 
-  char buffer[1000];
-  snprintf(buffer,1000,"%s.m",Name);
+  /* Name may use all of its 1000 bytes; leave room for the suffixes. */
+  char buffer[1100];
+  snprintf(buffer,sizeof(buffer),"%s.m",Name);
   FILE *MFile=fopen(buffer,"w");
 
-  snprintf(buffer,1000,"%s.hdf5",Name);
+  snprintf(buffer,sizeof(buffer),"%s.hdf5",Name);
   void *pHC=HMatrix::OpenHDF5Context(buffer);
 
   if ( pHC!=0 && MFile!=0 )
@@ -158,7 +159,8 @@ void HMatrix::ExportToMATLAB(void *pCC, const char *format, ...)
   MATLABContext *CC=(MATLABContext *)pCC;
   HMatrix *MCopy;
   int nr, nc;
-  char buffer[1000];
+  /* MName may use all of its 1000 bytes; "real_"/"imag_" add five. */
+  char buffer[1100];
 
   if (RealComplex==LHM_REAL && StorageType==LHM_NORMAL)
    { 
@@ -184,7 +186,7 @@ void HMatrix::ExportToMATLAB(void *pCC, const char *format, ...)
        for(nc=0; nc<NC; nc++)
         MCopy->SetEntry(nr, nc, real(this->GetEntry(nr,nc)));
 
-      snprintf(buffer,1000,"real_%s",MName);
+      snprintf(buffer,sizeof(buffer),"real_%s",MName);
       MCopy->ExportToHDF5(CC->pHC, buffer);
       fprintf(CC->MFile,"%s=hdf5read('%s','%s');\n",
                           buffer,CC->HDF5FileName,buffer);
@@ -192,7 +194,7 @@ void HMatrix::ExportToMATLAB(void *pCC, const char *format, ...)
       for(nr=0; nr<NR; nr++)
        for(nc=0; nc<NC; nc++)
         MCopy->SetEntry(nr, nc, imag(this->GetEntry(nr,nc)));
-      snprintf(buffer,1000,"imag_%s",MName);
+      snprintf(buffer,sizeof(buffer),"imag_%s",MName);
       MCopy->ExportToHDF5(CC->pHC, buffer);
       fprintf(CC->MFile,"%s=hdf5read('%s','%s');\n",
                           buffer,CC->HDF5FileName,buffer);

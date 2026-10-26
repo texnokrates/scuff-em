@@ -32,6 +32,8 @@
 #include <math.h>
 #include <ctype.h>
 
+#include <string>
+
 #include <libhrutil.h>
 #include <libTriInt.h>
 
@@ -156,34 +158,37 @@ void StaticSolver::VisualizeFields(HVector *Sigma,
   if (!OutFileBase)
    OutFileBase=strdup(GetFileBase(G->GeoFileName));
 
-  char PPFileBase[MAXSTR];
+  std::string PPFileBase;
   char *FVMFileBase=GetFileBase(FVMeshFile);
   if (SeparateOutputFiles && (TransformLabel && ExcitationLabel) )
-   snprintf(PPFileBase,MAXSTR,"%s.%s.%s.%s",OutFileBase,TransformLabel,ExcitationLabel,FVMFileBase);
+   PPFileBase = std::string(OutFileBase) + "." + TransformLabel + "."
+              + ExcitationLabel + "." + FVMFileBase;
   else if (SeparateOutputFiles && TransformLabel)
-   snprintf(PPFileBase,MAXSTR,"%s.%s.%s",OutFileBase,TransformLabel,FVMFileBase);
+   PPFileBase = std::string(OutFileBase) + "." + TransformLabel + "."
+              + FVMFileBase;
   else if (SeparateOutputFiles && ExcitationLabel)
-   snprintf(PPFileBase,MAXSTR,"%s.%s.%s",OutFileBase,ExcitationLabel,FVMFileBase);
+   PPFileBase = std::string(OutFileBase) + "." + ExcitationLabel + "."
+              + FVMFileBase;
   else
-   snprintf(PPFileBase,MAXSTR,"%s.%s",OutFileBase,FVMFileBase);
+   PPFileBase = std::string(OutFileBase) + "." + FVMFileBase;
   for(int nt=0; nt<NT; nt++)
    {
      GTComplex *GTC=GTCs[nt];
      GTransformation *GT=GTC->GTs.size() > 0 ? GTC->GTs[0] : 0;
      char *Tag = GTC->Tag;
-     char PPFileName[MAXSTR];
+     std::string PPFileName;
      if (NT>1)
-      { 
-        snprintf(PPFileName,MAXSTR,"%s.%s.pp",PPFileBase,Tag);
+      {
+        PPFileName = PPFileBase + "." + (Tag ? Tag : "") + ".pp";
         Log("Creating flux plot for surface %s, transform %s...",FVMeshFile,Tag);
       }
      else
-      {  snprintf(PPFileName,100,"%s.pp",PPFileBase);
+      {  PPFileName = PPFileBase + ".pp";
          Log("Creating flux plot for surface %s...",FVMeshFile);
       };
-     FILE *f=fopen(PPFileName,"a");
-     if (!f) 
-      { Warn("could not open field visualization file %s",PPFileName);
+     FILE *f=fopen(PPFileName.c_str(),"a");
+     if (!f)
+      { Warn("could not open field visualization file %s",PPFileName.c_str());
        continue;
       };
 
@@ -281,26 +286,20 @@ void StaticSolver::PlotChargeDensity(HVector *Sigma, char *BaseFileName)
   /*--------------------------------------------------------------*/
   /*--------------------------------------------------------------*/
   /*--------------------------------------------------------------*/
-  char FileName[MAXSTR];
-  snprintf(FileName,sizeof(FileName),"%s",BaseFileName ? BaseFileName : "");
+  std::string FileName = BaseFileName ? BaseFileName : "";
   if (SeparateOutputFiles && (TransformLabel || ExcitationLabel) )
-   { char Extension[MAXSTR];
-     snprintf(Extension,sizeof(Extension),"%s",GetFileExtension(FileName));
-     RemoveExtension(FileName);
-     char NewFileName[MAXSTR];
+   { std::string Extension = GetFileExtension(FileName.c_str());
+     std::string Stem = RemoveExtension(FileName.c_str());
      if (TransformLabel && ExcitationLabel)
-      snprintf(NewFileName,sizeof(NewFileName),"%s.%s.%s.%s",
-               FileName,TransformLabel,ExcitationLabel,Extension);
+      FileName = Stem + "." + TransformLabel + "." + ExcitationLabel
+               + "." + Extension;
      else if (TransformLabel)
-      snprintf(NewFileName,sizeof(NewFileName),"%s.%s.%s",
-               FileName,TransformLabel,Extension);
+      FileName = Stem + "." + TransformLabel + "." + Extension;
      else
-      snprintf(NewFileName,sizeof(NewFileName),"%s.%s.%s",
-               FileName,ExcitationLabel,Extension);
-     snprintf(FileName,sizeof(FileName),"%s",NewFileName);
+      FileName = Stem + "." + ExcitationLabel + "." + Extension;
    };
 
-  FILE *f=fopen(FileName,"a");
+  FILE *f=fopen(FileName.c_str(),"a");
   if (!f) return;
 
   /*--------------------------------------------------------------*/

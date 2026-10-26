@@ -267,7 +267,7 @@ void WriteGeometryPPFiles(RWGGeometry *G, int Neighbors)
 
   if (Neighbors)
    { double DL[3];
-     char Tag[20];
+     char Tag[64];
      for(int n1=-Neighbors; n1<=Neighbors; n1++)
       for(int n2=-Neighbors*n2Mult; n2<=Neighbors*n2Mult; n2++)
        { 
@@ -285,9 +285,9 @@ void WriteGeometryPPFiles(RWGGeometry *G, int Neighbors)
           };
 
          if (LDim==1)
-          snprintf(Tag,20,"(%i)",n1);
+          snprintf(Tag,sizeof(Tag),"(%i)",n1);
          else if (LDim==2)
-          snprintf(Tag,20,"(%i,%i)",n1,n2);
+          snprintf(Tag,sizeof(Tag),"(%i,%i)",n1,n2);
 
          for(int ns=0; ns<G->NumSurfaces; ns++)
           G->Surfaces[ns]->Transform("DISPLACED %e %e %e \n",DL[0],DL[1],DL[2]);

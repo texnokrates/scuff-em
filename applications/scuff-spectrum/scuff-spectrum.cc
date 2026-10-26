@@ -215,13 +215,14 @@ int main(int argc, char *argv[])
      L                   = (int)(ContourMatrix->GetEntryD(nr, G->LDim+4));
 
      // create a string identifier for this contour
-     char kbStr[20]="";
+     char kbStr[64]="";
      if (G->LDim==1)
-      snprintf(kbStr,20,"kx%g_",kBloch[0]);
+      snprintf(kbStr,sizeof(kbStr),"kx%g_",kBloch[0]);
      if (G->LDim==2)
-      snprintf(kbStr,20,"kx%g_ky%g_",kBloch[0],kBloch[1]);
-     char ContourLabel[100];
-     snprintf(ContourLabel, 100, "C%i_w%s_%sRX%g_RY%g_N%i",nr,z2s(Omega0),kbStr,Rx,Ry,N);
+      snprintf(kbStr,sizeof(kbStr),"kx%g_ky%g_",kBloch[0],kBloch[1]);
+     char ContourLabel[256];
+     snprintf(ContourLabel, sizeof(ContourLabel),
+              "C%i_w%s_%sRX%g_RY%g_N%i",nr,z2s(Omega0),kbStr,Rx,Ry,N);
      Log("Looking for eigenvalues in contour %s",ContourLabel);
 
      // initialize visualization files showing the contour if that was requested
@@ -268,8 +269,9 @@ int main(int argc, char *argv[])
      /***************************************************************/
      for(int nm=0; nm<NumModes; nm++)
       { 
-        char OutFileBase[100];
-        snprintf(OutFileBase,100,"%s_%s_Mode%i",FileBase,ContourLabel,nm);
+        char OutFileBase[512];
+        snprintf(OutFileBase,sizeof(OutFileBase),"%s_%s_Mode%i",
+                 FileBase,ContourLabel,nm);
 
         cdouble Omega = Eigenvalues->GetEntry(nm);
         HVector KN(D, LHM_COMPLEX, (cdouble *)Eigenvectors->GetColumnPointer(nm));
@@ -297,8 +299,9 @@ int main(int argc, char *argv[])
         for(int nfm=0; nfm<nFVMeshes; nfm++)
          VisualizeFields(G, &KN, Omega, kBloch, OutFileBase, FVMeshes[nfm], FVMeshTransFiles[nfm]);
         for(int ns=0; ns<nFVScreens; ns++)
-         { char VFFileBase[100];
-           snprintf(VFFileBase,100,"%s.Screen%i",OutFileBase,ns);
+         { char VFFileBase[1024];
+           snprintf(VFFileBase,sizeof(VFFileBase),"%s.Screen%i",
+                    OutFileBase,ns);
            VisualizeFields(G, &KN, Omega, kBloch, VFFileBase, FVScreens + 11*ns);
          }
       }
