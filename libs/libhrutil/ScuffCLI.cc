@@ -121,6 +121,38 @@ CLI::Option *AddComplexOption(CLI::App &App, const std::string &Name,
 /***************************************************************/
 /***************************************************************/
 /***************************************************************/
+CLI::Option *AddComplexVectorOption(CLI::App &App, const std::string &Name,
+                                    std::vector<std::complex<double>> &Values,
+                                    const std::string &Description,
+                                    int MaxOccurrences)
+{
+  /* The values arrive in one callback call, in order of appearance.
+     A vector-valued callback is required here: a scalar-valued
+     callback option runs only once per parse regardless of the
+     multi-occurrence policy.  expected() bounds are in units of
+     type_size, which is 1 for this option, so MaxOccurrences caps the
+     number of occurrences exactly like the legacy MaxInstances. */
+  return App.add_option_function<std::vector<std::string>>(
+    Name,
+    [&Values, Name](const std::vector<std::string> &Texts)
+    {
+      for(const std::string &Text : Texts)
+       { cdouble Parsed;
+         if ( S2CD(Text.c_str(), &Parsed)!=0 )
+          throw CLI::ValidationError(Name,
+                                     "invalid complex value \"" + Text + "\"");
+         Values.push_back(Parsed);
+       };
+    },
+    Description)
+    ->type_name("COMPLEX")
+    ->expected(1, MaxOccurrences)
+    ->take_all();
+}
+
+/***************************************************************/
+/***************************************************************/
+/***************************************************************/
 std::optional<int> Parse(CLI::App &App, int argc, char *argv[])
 {
   if ( argc>0 && App.get_name().empty() )

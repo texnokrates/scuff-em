@@ -346,6 +346,109 @@ void TestUnknownStdinOption()
   CHECK(*Result == 1);
 }
 
+/***************************************************************/
+/* Repeatable complex options accumulate their values in order */
+/* of appearance (scuff-scatter's --Omega/--Lambda pattern).   */
+/***************************************************************/
+struct VectorOptions
+{
+  std::string Geometry;
+  std::vector<std::complex<double>> Omegas;
+  std::vector<double> Directions;
+};
+
+void TestComplexVectorOption()
+{
+  {
+    VectorOptions Options;
+    CLI::App App{"probe"};
+    App.option_defaults()->ignore_case();
+    App.add_option("--geometry", Options.Geometry, "geometry")
+       ->required()
+       ->take_last();
+    scuff::cli::AddComplexVectorOption(App, "--Omega", Options.Omegas,
+                                       "angular frequency");
+    App.add_option("--pwDirection", Options.Directions, "direction")
+       ->type_size(3)
+       ->expected(1, 3);
+
+    char Arg0[] = "probe";
+    char Arg1[] = "--geometry";
+    char Arg2[] = "sphere.scuffgeo";
+    char Arg3[] = "--OMEGA";
+    char Arg4[] = "1e-3-4e-2I";
+    char Arg5[] = "--Omega";
+    char Arg6[] = "2.5";
+    char Arg7[] = "--pwDirection";
+    char Arg8[] = "-1.0";
+    char Arg9[] = "0.0";
+    char Arg10[] = "0.5";
+    char Arg11[] = "--pwDirection";
+    char Arg12[] = "0.0";
+    char Arg13[] = "1.0";
+    char Arg14[] = "0.0";
+    char *Argv[] = {Arg0, Arg1, Arg2, Arg3, Arg4, Arg5, Arg6,
+                    Arg7, Arg8, Arg9, Arg10, Arg11, Arg12, Arg13, Arg14,
+                    nullptr};
+
+    std::optional<int> Result = scuff::cli::Parse(App, 15, Argv);
+    CHECK(!Result.has_value());
+    CHECK(Options.Omegas.size() == 2);
+    CHECK(Options.Omegas[0] == std::complex<double>(1.0e-3, -4.0e-2));
+    CHECK(Options.Omegas[1] == std::complex<double>(2.5, 0.0));
+    CHECK(Options.Directions.size() == 6);
+    CHECK(Options.Directions[0] == -1.0);
+    CHECK(Options.Directions[5] == 0.0);
+  }
+
+  {
+    /* an invalid complex value aborts the parse */
+    VectorOptions Options;
+    CLI::App App{"probe"};
+    App.option_defaults()->ignore_case();
+    App.add_option("--geometry", Options.Geometry, "geometry")
+       ->required()
+       ->take_last();
+    scuff::cli::AddComplexVectorOption(App, "--Omega", Options.Omegas,
+                                       "angular frequency");
+
+    char Arg0[] = "probe";
+    char Arg1[] = "--geometry";
+    char Arg2[] = "sphere.scuffgeo";
+    char Arg3[] = "--omega";
+    char Arg4[] = "1+2x";
+    char *Argv[] = {Arg0, Arg1, Arg2, Arg3, Arg4, nullptr};
+
+    std::optional<int> Result = scuff::cli::Parse(App, 5, Argv);
+    CHECK(Result.has_value());
+    CHECK(*Result == 1);
+  }
+}
+
+void TestComplexVectorOptionStdin()
+{
+  VectorOptions Options;
+  CLI::App App{"probe"};
+  App.option_defaults()->ignore_case();
+  App.add_option("--geometry", Options.Geometry, "geometry")
+     ->required()
+     ->take_last();
+  scuff::cli::AddComplexVectorOption(App, "--Omega", Options.Omegas,
+                                     "angular frequency");
+
+  char Arg0[] = "probe";
+  char Arg1[] = "--Omega";
+  char Arg2[] = "3.0";
+  char *Argv[] = {Arg0, Arg1, Arg2, nullptr};
+
+  std::optional<int> Result = scuff::cli::Parse(App, 3, Argv);
+  CHECK(!Result.has_value());
+  CHECK(Options.Omegas.size() == 3);
+  CHECK(Options.Omegas[0] == std::complex<double>(1.0, 2.0));
+  CHECK(Options.Omegas[1] == std::complex<double>(2.0, 0.0));
+  CHECK(Options.Omegas[2] == std::complex<double>(3.0, 0.0));
+}
+
 } // namespace
 
 int main()
@@ -382,6 +485,16 @@ int main()
 
   const int StdinUnknown = RunChild("bogus 1\n", TestUnknownStdinOption);
   CHECK(StdinUnknown == 0);
+
+  const int StdinVector = RunChild(nullptr, TestComplexVectorOption);
+  CHECK(StdinVector == 0);
+
+  const int StdinVectorStdin = RunChild(
+    "geometry from-stdin.scuffgeo\n"
+    "omega 1+2i\n"
+    "omega 2.0\n",
+    TestComplexVectorOptionStdin);
+  CHECK(StdinVectorStdin == 0);
 
   std::printf("%i checks, %i failures\n", NumChecks, NumFailures);
   return NumFailures == 0 ? 0 : 1;
