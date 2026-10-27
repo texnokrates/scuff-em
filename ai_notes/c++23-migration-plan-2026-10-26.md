@@ -9,7 +9,9 @@ build-system migration.  Phase 1 implementation results are recorded in
 warning cleanup are recorded in
 `ai_notes/c++23-sanitizers-2026-10-26.md`; Stage B (typed CLI11 helpers and
 the `scuff-tmatrix` migration) is recorded in
-`ai_notes/c++23-typed-cli-2026-10-26.md`.
+`ai_notes/c++23-typed-cli-2026-10-26.md`.  The current workstream status,
+verification state, and next steps are summarized in
+`ai_notes/c++23-status-2026-10-27.md`.
 
 Baseline: commit `26e6ea22` (`[build] Remove Autotools in favor of CMake`).
 The default CMake build is C++23 (`SCUFF_CXX_STANDARD=23`), builds cleanly,
@@ -885,7 +887,8 @@ The decisions that affect the current implementation are now settled:
 
 ## 11. Appendix: CLI call-site inventory
 
-`ProcessOptions` external call sites (33):
+`ProcessOptions` external call sites (corrected against the tree on
+2026-10-27; 32 remaining call sites after the `scuff-tmatrix` migration):
 
 ```text
 applications/scuff-analyze/scuff-analyze.cc
@@ -895,35 +898,34 @@ applications/scuff-caspol/tPolModel.cc
 applications/scuff-ldos/scuff-ldos.cc
 applications/scuff-neq/scuff-integrate.cc
 applications/scuff-neq/scuff-neq.cc
-applications/scuff-plotEpsMu/scuff-plotEpsMu.cc
 applications/scuff-rf/scuff-rf.cc
 applications/scuff-scatter/scuff-scatter.cc
 applications/scuff-spectrum/scuff-spectrum.cc
+applications/scuff-spectrum/tBeyn411.cc
 applications/scuff-static/scuff-static.cc
-applications/scuff-tmatrix/scuff-tmatrix.cc
 applications/scuff-transmission/scuff-transmission.cc
+examples/GetTMatrix/GetTMatrix.cc
+examples/GetTMatrix/tSphericalMoments.cc
+libs/libhmat/tEig.cc
+libs/libhmat/tLUSolve.cc
+libs/libhmat/tQR.cc
+libs/libhmat/tSMatrix.cc
 libs/libIncField/tPointSource.cc
 libs/libMDInterp/tInterpND.cc
+libs/libhrutil/tProcessOptions.cc
+libs/libscuffSolver/tests/t1BFMOIFields.cc
+libs/libscuffSolver/tests/tEquivalentPairs.cc
 libs/libSubstrate/tSommerfeldIntegrand.cc
 libs/libSubstrate/tests/tFullWaveSubstrate.cc
 libs/libSubstrate/tests/tGTwiddle.cc
 libs/libSubstrate/tests/tInterpolation.cc
 libs/libSubstrate/tests/tInterpolationError.cc
 libs/libSubstrate/tests/tMOISGFs.cc
-libs/libhmat/tInvert.cc
-libs/libhmat/tQR.cc
-libs/libhmat/tlibhmat2.cc
-libs/libscuffSolver/tests/t1BFMOIFields.cc
-libs/libscuffSolver/tests/tEquivalentPairs.cc
-libs/libTriInt/BZIntegration.cc
-libs/libTriInt/tlibTriInt2.cc
 tests/CheckSCUFFData.cc
 tests/RunSCUFFTests.cc
-examples/GetTMatrix/GetTMatrix.cc
-examples/GetTMatrix/tSphericalMoments.cc
 ```
 
-`ProcessArguments` external call sites (13):
+`ProcessArguments` external call sites (13; re-verified 2026-10-27):
 
 ```text
 applications/scuff-plotEpsMu/scuff-plotEpsMu.cc
@@ -941,10 +943,20 @@ libs/libMDInterp/WriteMatrixLP.cc
 libs/libTriInt/tlibTriInt2.cc
 ```
 
-Notes:
+Notes (updated 2026-10-27):
 
+- `scuff-tmatrix`, formerly listed here, was migrated to typed CLI11
+  options in `ca6ec28e`; it no longer calls `ProcessOptions`.
+- The original inventory listed four files that do not (or no longer) call
+  `ProcessOptions`: `libs/libTriInt/BZIntegration.cc` (calls neither
+  parser), `libs/libTriInt/tlibTriInt2.cc`, `libs/libhmat/tInvert.cc`,
+  and `libs/libhmat/tlibhmat2.cc` (those three use `ProcessArguments`).
+  It omitted five real call sites, now included:
+  `libs/libhmat/tEig.cc`, `libs/libhmat/tLUSolve.cc`,
+  `libs/libhmat/tSMatrix.cc`, `applications/scuff-spectrum/tBeyn411.cc`,
+  and `libs/libhrutil/tProcessOptions.cc`.
 - `scuff-microstrip` also contains `ProcessOptions` calls, but it is not
-  built; it is excluded from the 33 maintained call sites.
+  built; it is excluded from the counts above.
 - `ProcessArguments` is used mostly by developer/test programs and by the
   installed `scuff-plotEpsMu` application.  Migrate `scuff-plotEpsMu` with the
   applications, then convert or delete the developer programs.
