@@ -206,7 +206,7 @@ double LargeXiCoefficient_DPB_Francium =  8.04767e-5;
 /***************************************************************/
 /* PolModel class constructor entry point                      */
 /***************************************************************/
-PolModel::PolModel(char *String, int Which)
+PolModel::PolModel(const char *String, int Which)
 {
   if (Which==PM_BUILTIN)
    InitPolModel_BI(String);
@@ -218,7 +218,7 @@ PolModel::PolModel(char *String, int Which)
 /***************************************************************/
 /* PolModel class constructor for built-in polarizabilities.   */
 /***************************************************************/
-void PolModel::InitPolModel_BI(char *Atom)
+void PolModel::InitPolModel_BI(const char *Atom)
 {
   ErrMsg=0;
 
@@ -276,7 +276,7 @@ void PolModel::InitPolModel_BI(char *Atom)
 /***************************************************************/
 /* PolModel class constructor for user-defined polarizabilities*/
 /***************************************************************/
-void PolModel::InitPolModel_UD(char *FileName)
+void PolModel::InitPolModel_UD(const char *FileName)
 {
   ErrMsg=0;
   LargeXiCoefficient = 0.0;

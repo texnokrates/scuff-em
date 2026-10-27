@@ -30,10 +30,10 @@
 /***************************************************************/
 /***************************************************************/
 /***************************************************************/
-SCPData *CreateSCPData(char *GeoFile,
-                       char **Atoms, int NumBIAtoms,
-                       char **Particles, int NumParticles,
-                       char *EPFile, char *FileBase)
+SCPData *CreateSCPData(const char *GeoFileIn,
+                       const char **Atoms, int NumBIAtoms,
+                       const char **Particles, int NumParticles,
+                       const char *EPFile, const char *FileBase)
 {
   SCPData *SCPD=(SCPData *)mallocEC(sizeof(SCPData));
 
@@ -41,7 +41,8 @@ SCPData *CreateSCPData(char *GeoFile,
   /* create the RWGGeometry, allocate BEM matrix and RHS vector, and */
   /* set up the data structure passed to the computational routines  */
   /***************************************************************/
-  if (GeoFile)
+  const char *GeoFile = GeoFileIn ? GeoFileIn : "PECPlate";
+  if (GeoFileIn)
    { SCPD->G  = new RWGGeometry(GeoFile, SCUFF_TERSELOGGING);
      SCPD->M  = SCPD->G->AllocateBEMMatrix(SCUFF_PUREIMAGFREQ);
      SCPD->KN = SCPD->G->AllocateRHSVector(SCUFF_PUREIMAGFREQ);
@@ -50,7 +51,6 @@ SCPData *CreateSCPData(char *GeoFile,
    { SCPD->G  = 0; // in this case we take the
      SCPD->M  = 0; // geometry to be a PEC plate in the xy plane
      SCPD->KN = 0;
-     GeoFile = strdup("PECPlate");
    };
 
   /*******************************************************************/
@@ -64,14 +64,14 @@ SCPData *CreateSCPData(char *GeoFile,
   for(int nbi=0; nbi<NumBIAtoms; nbi++)
    { SCPD->PolModels[na] = new PolModel(Atoms[nbi], PM_BUILTIN);
      if (SCPD->PolModels[na]->ErrMsg)
-      ErrExit(SCPD->PolModels[na]->ErrMsg);
+      ErrExit("%s",SCPD->PolModels[na]->ErrMsg);
      SCPD->Alphas[na] = new HMatrix(3,3);
      na++;
    };
   for(int np=0; np<NumParticles; np++)
    { SCPD->PolModels[na] = new PolModel(Particles[np], PM_FILE);
      if (SCPD->PolModels[na]->ErrMsg)
-      ErrExit(SCPD->PolModels[na]->ErrMsg);
+      ErrExit("%s",SCPD->PolModels[na]->ErrMsg);
      SCPD->Alphas[na] = new HMatrix(3,3);
      na++;
    };
@@ -85,7 +85,7 @@ SCPData *CreateSCPData(char *GeoFile,
   /*******************************************************************/
   /*******************************************************************/
   if (FileBase==0)
-   FileBase=strdup(GetFileBase(GeoFile));
+   FileBase=vstrdup("%s",GetFileBase(GeoFile));
   SCPD->ByXiFileName=vstrdup("%s.byXi",FileBase);
 
   /***************************************************************/

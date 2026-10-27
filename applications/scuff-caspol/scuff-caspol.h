@@ -69,11 +69,11 @@ class PolModel
 public:
 
    // constructor entry point
-   PolModel(char *Name, int Which=PM_FILE);
+   PolModel(const char *Name, int Which=PM_FILE);
 
    // constructors for built-in and user-defined models
-   void InitPolModel_BI(char *Atom);
-   void InitPolModel_UD(char *FileName);
+   void InitPolModel_BI(const char *Atom);
+   void InitPolModel_UD(const char *FileName);
 
    // routine to compute the polarizability tensor
    void GetPolarizability(double Xi, HMatrix *Alpha);
@@ -128,10 +128,10 @@ typedef struct SCPData
 /***************************************************************/
 /***************************************************************/
 /***************************************************************/
-SCPData *CreateSCPData(char *GeoFile,
-                       char **Atoms, int NumBIAtoms,
-                       char **Particles, int NumParticles,
-                       char *EPFile, char *FileBase);
+SCPData *CreateSCPData(const char *GeoFile,
+                       const char **Atoms, int NumBIAtoms,
+                       const char **Particles, int NumParticles,
+                       const char *EPFile, const char *FileBase);
 
 /***************************************************************/
 /***************************************************************/

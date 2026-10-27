@@ -29,9 +29,14 @@
  * homer reid        -- 10/2006 -- 8/2013
  *
  */
-#include "scuff-caspol.h"
-
 #include <time.h>
+
+#include <memory>
+#include <string>
+#include <vector>
+
+#include <ScuffCLI.h>
+#include "scuff-caspol.h"
 
 /***************************************************************/
 /***************************************************************/
@@ -112,46 +117,6 @@ void WriteFilePreamble(SCPData *SCPD, const char *FileName,
 /***************************************************************/
 /***************************************************************/
 /***************************************************************/
-void Usage(const char *ProgramName, OptStruct *OSArray, const char *ErrMsg)
-{
-  (void) OSArray; // unused
-
-  fprintf(stderr, "error: %s (aborting)\n",ErrMsg);
-  fprintf(stderr, "\n");
-  fprintf(stderr, "usage: %s [options] \n",ProgramName);
-  fprintf(stderr, "\n");
-  fprintf(stderr, "options: \n");
-  fprintf(stderr, "\n");
-  fprintf(stderr, " --geoFile     MyFile.scuffgeo   specify geometry file\n");
-  fprintf(stderr, " --PECPlate                      use PEC plate\n");
-  fprintf(stderr, "\n");
-  fprintf(stderr, " --EPFile      MyEvalPointFile   file specifying evaluation points\n");
-  fprintf(stderr, "\n");
-  fprintf(stderr, " --Xi          2.17              imaginary angular frequency\n");
-  fprintf(stderr, " --XiFile      MyXiFile          list of imaginary angular frequencies\n");
-  fprintf(stderr, " --XikBlochFile MyXikBlochFile   list of (Xi, k) points\n");
-  fprintf(stderr, "\n");
-  fprintf(stderr, " --atom        Rubidium          atomic species (for built-in polarizability models)\n");
-  fprintf(stderr, " --particle    MyParticle.pol    particle species (for a user-defined polarizability model)\n");
-  fprintf(stderr, "\n");
-  fprintf(stderr, " --temperature xx                compute at T=xx kelvin\n");
-  fprintf(stderr, "\n");
-  fprintf(stderr, " --reltol      xx                relative error tolerance for frequency sums/integrals\n");
-  fprintf(stderr, "\n");
-  fprintf(stderr, "\n");
-  fprintf(stderr, "built-in polarizability models: \n");
-  fprintf(stderr, "\n");
-  fprintf(stderr, " --atom Hydrogen   [--atom H ] \n");
-  fprintf(stderr, " --atom Lithium    [--atom Li] \n");
-  fprintf(stderr, " --atom Sodium     [--atom Na] \n");
-  fprintf(stderr, " --atom Potassium  [--atom K ] \n");
-  fprintf(stderr, " --atom Rubidium   [--atom Rb] \n");
-  fprintf(stderr, " --atom Cesium     [--atom Cs] \n");
-  fprintf(stderr, " --atom Francium   [--atom Fr] \n");
-  fprintf(stderr, "\n");
-  exit(1);
-}
-
 /***************************************************************/
 /***************************************************************/
 /***************************************************************/
@@ -162,80 +127,95 @@ int main(int argc, char *argv[])
 
   /***************************************************************/
   /* pre-process command-line arguments to extract arguments     */
-  /* any relevant for Brillouin-zone integration                 */
+  /* any relevant for Brillouin-zone integration.  InitBZIArgs   */
+  /* consumes its --BZI* options by nulling their argv slots,    */
+  /* which the typed option reader below then skips.             */
   /***************************************************************/
   GetBZIArgStruct *BZIArgs=InitBZIArgs(argc, argv);
 
   /***************************************************************/
   /* process options *********************************************/
   /***************************************************************/
-  char *GeoFile=0;
+  std::string GeoFile;
   bool PECPlate=false;
-//
-  char *Atoms[MAXATOM];                     int NumBIAtoms;
-  char *Particles[MAXATOM];                 int NumParticles;
-//
-  char *EPFile=0;
-//
-  double Temperature = 0.0;                 int nTemperature;
-  double XiVals[MAXFREQ];	            int nXiVals;
-  char *XiFile=0;
-  char *XikBlochFile=0;
-//
-  char *FileBase=0;
-//
+  std::vector<std::string> Atoms;
+  std::vector<std::string> Particles;
+  std::string EPFile;
+  double Temperature = 0.0;
+  std::vector<double> XiVals;
+  std::string XiFile;
+  std::string XikBlochFile;
+  std::string FileBase;
   double RelTol    = 1.0e-2;
   double AbsTol    = 1.0e-10;
-  /* name           type  #args  max_instances  storage    count  description*/
-  OptStruct OSArray[]=
-   { 
-     {"geometry",    PA_STRING,  1, 1,       (void *)&GeoFile,     0,             ".scuffgeo file"},
-     {"PECPlate",    PA_BOOL,    0, 1,       (void *)&PECPlate,    0,             "use PEC plate"},
-//
-     {"Atom",        PA_STRING,  1, MAXATOM, (void *)Atoms,        &NumBIAtoms,   "atomic species (built-in polarizability models)"},
-     {"Particle",    PA_STRING,  1, MAXATOM, (void *)Particles,    &NumParticles, "particle species (user-defined polarizability models)"},
-//
-     {"EPFile",      PA_STRING,  1, 1,       (void *)&EPFile,      0,             "list of evaluation points"},
-//
-     {"Temperature", PA_DOUBLE,  1, 1,       (void *)&Temperature, &nTemperature, "temperature in Kelvin"},
-     {"Xi",          PA_DOUBLE,  1, MAXFREQ, (void *)XiVals,       &nXiVals,      "imaginary frequency"},
-     {"XiFile",      PA_STRING,  1, 1,       (void *)&XiFile,      0,             "file containing Xi values"},
-     {"XikBlochFile", PA_STRING,  1, 1,      (void *)&XikBlochFile, 0,            "file containing (Xi,kBloch) values"},
-//
-     {"FileBase",    PA_STRING,  1, 1,       (void *)&FileBase,    0,             "base name for output files"},
-//
-     {"RelTol",      PA_DOUBLE,  1, 1,       (void *)&RelTol,      0,             "relative error tolerance"},
-     {"AbsTol",      PA_DOUBLE,  1, 1,       (void *)&AbsTol,      0,             "absolute error tolerance"},
-     {0,0,0,0,0,0,0}
-   };
-  ProcessOptions(argc, argv, OSArray);
+
+  CLI::App App{"compute Casimir-Polder potentials and polarizabilities"};
+  App.option_defaults()->ignore_case();
+
+  App.add_option("--geometry", GeoFile, ".scuffgeo file")->take_last();
+  App.add_flag("--PECPlate", PECPlate, "use PEC plate");
+  App.add_option("--atom", Atoms,
+                 "atomic species (built-in polarizability models)")
+     ->expected(1, MAXATOM);
+  App.add_option("--particle", Particles,
+                 "particle species (user-defined polarizability models)")
+     ->expected(1, MAXATOM);
+  App.add_option("--EPFile", EPFile, "list of evaluation points")->take_last();
+  App.add_option("--temperature", Temperature, "temperature in Kelvin")->take_last();
+  App.add_option("--xi", XiVals, "imaginary frequency")->expected(1, MAXFREQ);
+  App.add_option("--xifile", XiFile, "file containing Xi values")->take_last();
+  App.add_option("--xikblochfile", XikBlochFile,
+                 "file containing (Xi,kBloch) values")->take_last();
+  App.add_option("--filebase", FileBase, "base name for output files")->take_last();
+  App.add_option("--reltol", RelTol, "relative error tolerance")->take_last();
+  App.add_option("--abstol", AbsTol, "absolute error tolerance")->take_last();
+
+  if (auto Status=scuff::cli::Parse(App,argc,argv))
+   return *Status;
 
   /***************************************************************/
   /* some sanity checks on input arguments ***********************/
   /***************************************************************/
-  if (GeoFile==0 && PECPlate==0)
-   Usage(argv[0], OSArray,"either --geometry or --PECPlate must be specified");
-  if (GeoFile!=0 && PECPlate!=0)
+  if (GeoFile.empty() && !PECPlate)
+   { CLI::ValidationError Error("scuff-caspol",
+        "either --geometry or --PECPlate must be specified");
+     App.exit(Error);
+     return 1;
+   };
+  if (!GeoFile.empty() && PECPlate)
    ErrExit("geometry and --PECPlate are mutually exclusive");
-  if (EPFile==0)
-   Usage(argv[0], OSArray,"--EPFile option is mandatory");
-  if ( XiFile && nXiVals )
+  if (EPFile.empty())
+   { CLI::ValidationError Error("scuff-caspol","--EPFile option is mandatory");
+     App.exit(Error);
+     return 1;
+   };
+  if ( !XiFile.empty() && XiVals.size()>0 )
    ErrExit("--XiFile and --Xi are mutually exclusive");
-  if (nTemperature!=0 && (XiFile!=0 || nXiVals!=0) )
+  bool TemperatureSpecified = App.get_option("--temperature")->count() > 0;
+  if ( TemperatureSpecified && (!XiFile.empty() || XiVals.size()>0) )
    ErrExit("--Xi and --XiFile options are incompatible with --Temperature");
   if (Temperature<0.0)
    ErrExit("--temperature may not be negative");
-  int NumAtoms = NumBIAtoms + NumParticles;
-  if ( NumBIAtoms==0 && NumParticles==0)
-   Usage(argv[0], OSArray,"you must specify at least one --atom or --particle");
+  int NumAtoms = (int)(Atoms.size() + Particles.size());
+  if ( Atoms.empty() && Particles.empty() )
+   { CLI::ValidationError Error("scuff-caspol",
+        "you must specify at least one --atom or --particle");
+     App.exit(Error);
+     return 1;
+   };
+
+  std::vector<const char *> AtomPtrs, ParticlePtrs;
+  for(const std::string &A : Atoms)     AtomPtrs.push_back(A.c_str());
+  for(const std::string &P : Particles) ParticlePtrs.push_back(P.c_str());
 
   /*******************************************************************/
   /*******************************************************************/
   /*******************************************************************/
-  SCPData *SCPD=CreateSCPData(GeoFile,
-                              Atoms, NumBIAtoms,
-                              Particles, NumParticles,
-                              EPFile, FileBase);
+  SCPData *SCPD=CreateSCPData(GeoFile.empty() ? 0 : GeoFile.c_str(),
+                              AtomPtrs.data(), (int)Atoms.size(),
+                              ParticlePtrs.data(), (int)Particles.size(),
+                              EPFile.c_str(),
+                              FileBase.empty() ? 0 : FileBase.c_str());
 
   /*******************************************************************/
   /* fill in a few simple fields in the SCPData structure ************/
@@ -251,7 +231,7 @@ int main(int argc, char *argv[])
      SCPD->BZIArgs=BZIArgs;
    };
 
-  WriteFilePreamble(SCPD, SCPD->ByXiFileName, argc, argv, 
+  WriteFilePreamble(SCPD, SCPD->ByXiFileName, argc, argv,
                     FILETYPE_BYXI);
 
   if (SCPD->ByXikFileName)
@@ -261,31 +241,31 @@ int main(int argc, char *argv[])
   /*******************************************************************/
   /* process frequency-related options */
   /*******************************************************************/
-  HVector *XiList=0;
-  HMatrix *XikList=0;
+  std::unique_ptr<HVector> XiList;
+  std::unique_ptr<HMatrix> XikList;
   int LDim = (SCPD->G) ? SCPD->G->LDim : 0;
-  if ( XikBlochFile )
-   { if (LDim==0) 
+  if ( !XikBlochFile.empty() )
+   { if (LDim==0)
       ErrExit("--XikBloch file cannot be used with non-periodic geometries");
-     XikList = new HMatrix(XikBlochFile);
-     Log("Read %i (Xi,kBloch) points from file %s.",XikList->NR, XikBlochFile);
+     XikList.reset(new HMatrix(XikBlochFile.c_str()));
+     Log("Read %i (Xi,kBloch) points from file %s.",XikList->NR, XikBlochFile.c_str());
    }
-  else if (XiFile)
-   { XiList = new HVector(XiFile);
-     Log("Read %i Xi points from file %s.",XiList->N, XiFile);
+  else if (!XiFile.empty())
+   { XiList.reset(new HVector(XiFile.c_str()));
+     Log("Read %i Xi points from file %s.",XiList->N, XiFile.c_str());
    }
-  else if ( nXiVals>0 )
-   { XiList = new HVector(nXiVals);
-     for(int n=0; n<nXiVals; n++)
-      XiList->SetEntry(n,XiVals[n]);
+  else if ( XiVals.size()>0 )
+   { XiList.reset(new HVector((int)XiVals.size()));
+     for(size_t n=0; n<XiVals.size(); n++)
+      XiList->SetEntry((int)n,XiVals[n]);
    };
 
   /*******************************************************************/
   /*******************************************************************/
   /*******************************************************************/
-  if ( XikList )
+  if ( XikList.get()!=0 )
    Log("Computing CP integrand at %i (Xi,k) points",XikList->NR);
-  else if ( XiList )
+  else if ( XiList.get()!=0 )
    Log("Computing Casimir-Polder quantities at %i user-specified frequency points.",XiList->N);
   else if ( Temperature!=0.0 )
    Log("Computing full Matsubara-summed Casimir-Polder potentials at T=%e Kelvin.",Temperature);
@@ -310,46 +290,45 @@ int main(int argc, char *argv[])
   /*******************************************************************/
   int NumEvalPoints=SCPD->EPMatrix->NR;
   int NumDataValues = NumEvalPoints*NumAtoms;
-  double *U=(double *)mallocEC(NumDataValues * sizeof(double));
-  if (XikList)
+  std::vector<double> U(NumDataValues, 0.0);
+  if (XikList.get()!=0)
    {
      for(int n=0; n<XikList->NR; n++)
-      { 
+      {
         double Xi, kBloch[2]={0.0, 0.0};
         Xi = XikList->GetEntryD(n,0);
         kBloch[0] = XikList->GetEntryD(n,1);
         if (LDim>1)
          kBloch[1] = XikList->GetEntryD(n,2);
 
-        GetCPIntegrand((void *)SCPD, cdouble(0.0,Xi), kBloch, U);
+        GetCPIntegrand((void *)SCPD, cdouble(0.0,Xi), kBloch, U.data());
       }
    }
-  if (XiList)
+  if (XiList.get()!=0)
    {
      for(int nXi=0; nXi<XiList->N; nXi++)
-      GetXiIntegrand(SCPD, XiList->GetEntryD(nXi), U);
+      GetXiIntegrand(SCPD, XiList->GetEntryD(nXi), U.data());
    }
   else if ( Temperature != 0.0 )
-   { 
-     EvaluateMatsubaraSum(SCPD, Temperature, U);
+   {
+     EvaluateMatsubaraSum(SCPD, Temperature, U.data());
    }
   else
-   { 
-     EvaluateFrequencyIntegral(SCPD, U);
+   {
+     EvaluateFrequencyIntegral(SCPD, U.data());
    };
 
   /***************************************************************/
   /* write frequency-integrated or Matsubara-summed results to   */
   /* output file                                                 */
   /***************************************************************/
-  if (XiList==0)
-   { 
-     char OutFileName[MAXSTR];
-     snprintf(OutFileName, MAXSTR, "%s.out",GeoFile ? GetFileBase(GeoFile)
-                                                    : "PECPlate");
-     WriteFilePreamble(SCPD, OutFileName, argc, argv, FILETYPE_OUT);
+  if (XiList.get()==0)
+   {
+     std::string OutFileName=std::string(GetFileBase(GeoFile.empty()
+                                ? "PECPlate" : GeoFile.c_str())) + ".out";
+     WriteFilePreamble(SCPD, OutFileName.c_str(), argc, argv, FILETYPE_OUT);
 
-     FILE *f=fopen(OutFileName,"a");
+     FILE *f=fopen(OutFileName.c_str(),"a");
      HMatrix *EPMatrix=SCPD->EPMatrix;
      for(int nep=0; nep<EPMatrix->NR; nep++)
       { fprintf(f,"%e %e %e ", EPMatrix->GetEntryD(nep,0),
@@ -363,9 +342,9 @@ int main(int argc, char *argv[])
      fclose(f);
 
      if (Temperature>0.0)
-      printf("Matsubara-summed data written to file %s.\n",OutFileName);
+      printf("Matsubara-summed data written to file %s.\n",OutFileName.c_str());
      else
-      printf("Frequency-integrated data written to file %s.\n",OutFileName);
+      printf("Frequency-integrated data written to file %s.\n",OutFileName.c_str());
    };
 
   /***************************************************************/

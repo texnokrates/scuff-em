@@ -24,6 +24,8 @@ scuff_add_application(scuff-caspol
   scuff-caspol/GetCPIntegrand.cc
   scuff-caspol/PolModel.cc
 )
+# Eighth typed CLI11 migration.
+target_link_libraries(scuff-caspol PRIVATE scuff_cli11)
 
 scuff_add_application(scuff-ldos
   scuff-ldos/scuff-ldos.cc
