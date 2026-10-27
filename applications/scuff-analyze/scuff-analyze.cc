@@ -37,6 +37,11 @@
 #include <config.h>
 #endif
 
+#include <memory>
+#include <string>
+#include <vector>
+
+#include <ScuffCLI.h>
 #include "libscuff.h"
 #include "EquivalentEdgePairs.h"
 
@@ -404,18 +409,22 @@ int main(int argc, char *argv[])
   /*  % scuff-analyze File.msh                                   */
   /* or                                                          */
   /*  % scuff-analyze File.scuffgeo                              */
+  /* a leading bare filename argument is mapped to the           */
+  /* corresponding option and removed from the argument vector   */
   /***************************************************************/
-  char *GeoFile=0;
-  char *MeshFile=0;
-  if (argc>=2)
-   { char *Ext = GetFileExtension(argv[1]);
+  std::string GeoFile;
+  std::string MeshFile;
+  if (argc>=2 && argv[1][0]!='-')
+   { const char *Ext=GetFileExtension(argv[1]);
      if (Ext && !strcasecmp(Ext,"scuffgeo"))
-      { GeoFile=strdup(argv[1]); 
-        argv[1]=0; 
+      { GeoFile=argv[1];
+        argc-=1;
+        memmove(&argv[1],&argv[2],(argc)*sizeof(char *));
       }
      else if (Ext && !strcasecmp(Ext,"msh"))
-      { MeshFile=strdup(argv[1]); 
-        argv[1]=0; 
+      { MeshFile=argv[1];
+        argc-=1;
+        memmove(&argv[1],&argv[2],(argc)*sizeof(char *));
       }
    }
 
@@ -423,75 +432,94 @@ int main(int argc, char *argv[])
   /* process options *********************************************/
   /***************************************************************/
   int PhysicalRegion=-1;
-  char *TransFile=0;
-  bool WriteGPFiles=0;
-  bool WritePPFiles=0;
-  bool WriteLabels=0;
+  std::string TransFile;
+  bool WriteGPFiles=false;
+  bool WritePPFiles=false;
+  bool WriteLabels=false;
   int Neighbors=0;
-  int EEPs[2]={-1,-1};
+  std::vector<int> EEPs;
   bool RegionVolumes=false;
-  double WhichRegion[3]={HUGE_VAL, HUGE_VAL, HUGE_VAL};
-  char *EPFile=0;
-  /* name, type, # args, max # instances, storage, count, description*/
-  OptStruct OSArray[]=
-   { {"geometry",           PA_STRING, 1, 1, (void *)&GeoFile,        0, "geometry file"},
-     {"mesh",               PA_STRING, 1, 1, (void *)&MeshFile,       0, "mesh file"},
-     {"meshfile",           PA_STRING, 1, 1, (void *)&MeshFile,       0, "mesh file"},
-     {"PhysicalRegion",     PA_INT,    1, 1, (void *)&PhysicalRegion, 0, "index of surface within mesh file"},
-     {"TransFile",          PA_STRING, 1, 1, (void *)&TransFile,      0, "list of transformations"},
-     {"EPFile",             PA_STRING, 1, 1, (void *)&EPFile,         0, "list of points"},
-     {"WriteGnuplotFiles",  PA_BOOL,   0, 1, (void *)&WriteGPFiles,   0, "write gnuplot visualization files"},
-     {"WriteGMSHFiles",     PA_BOOL,   0, 1, (void *)&WritePPFiles,   0, "write GMSH visualization files "},
-     {"WriteGMSHLabels",    PA_BOOL,   0, 1, (void *)&WriteLabels,    0, "write GMSH labels"},
-     {"Neighbors",          PA_INT,    1, 1, (void *)&Neighbors,      0, "number of neighboring cells to plot"},
-     {"EEPs",               PA_INT,    2, 1, (void *)EEPs,            0, "analyze equivalent edge pairs for surfaces xx, xx"},
-     {"RegionVolumes",      PA_BOOL,   0, 1, (void *)&RegionVolumes,  0, "compute volumes of closed regions"},
-     {"WhichRegion",        PA_DOUBLE, 3, 1, (void *)&WhichRegion,    0, "identify region in which the given point lives"},
-     {0,0,0,0,0,0,0}
-   };
-  ProcessOptions(argc, argv, OSArray);
+  std::vector<double> WhichRegion;
+  std::string EPFile;
+
+  CLI::App App{"print statistics on a SCUFF geometry or mesh"};
+  App.option_defaults()->ignore_case();
+
+  App.add_option("--geometry", GeoFile, "geometry file")->take_last();
+  App.add_option("--mesh", MeshFile, "mesh file")->take_last();
+  App.add_option("--meshfile", MeshFile, "mesh file")->take_last();
+  App.add_option("--PhysicalRegion", PhysicalRegion,
+                 "index of surface within mesh file")->take_last();
+  App.add_option("--TransFile", TransFile, "list of transformations")->take_last();
+  App.add_option("--EPFile", EPFile, "list of points")->take_last();
+  App.add_flag("--WriteGnuplotFiles", WriteGPFiles,
+               "write gnuplot visualization files");
+  App.add_flag("--WriteGMSHFiles", WritePPFiles,
+               "write GMSH visualization files ");
+  App.add_flag("--WriteGMSHLabels", WriteLabels, "write GMSH labels");
+  App.add_option("--Neighbors", Neighbors,
+                 "number of neighboring cells to plot")->take_last();
+  App.add_option("--EEPs", EEPs,
+                 "analyze equivalent edge pairs for surfaces xx, xx")
+     ->type_size(2)
+     ->expected(2)
+     ->take_last();
+  App.add_flag("--RegionVolumes", RegionVolumes,
+               "compute volumes of closed regions");
+  App.add_option("--WhichRegion", WhichRegion,
+                 "identify region in which the given point lives")
+     ->type_size(3)
+     ->expected(3)
+     ->take_last();
+
+  if (auto Status=scuff::cli::Parse(App,argc,argv))
+   return *Status;
 
   /***************************************************************/
   /***************************************************************/
   /***************************************************************/
-  if (GeoFile==0 && MeshFile==0)
-   OSUsage(argv[0], VERSION, OSArray,"either --geometry or --meshfile option must be specified");
-  if (GeoFile!=0 && MeshFile!=0)
+  if (GeoFile.empty() && MeshFile.empty())
+   { CLI::ValidationError Error("scuff-analyze",
+        "either --geometry or --meshfile option must be specified");
+     App.exit(Error);
+     return 1;
+   };
+  if (!GeoFile.empty() && !MeshFile.empty())
    ErrExit("--geometry and --meshfile options are mutually exclusive");
-  if (PhysicalRegion!=-1 && MeshFile==0)
+  if (PhysicalRegion!=-1 && MeshFile.empty())
    ErrExit("--PhysicalRegion option may only be used with --meshfile");
-  if (TransFile && GeoFile==0)
+  if (!TransFile.empty() && GeoFile.empty())
    ErrExit("--transfile option may only be used with --geometry");
-  if (EPFile)
+  if (!EPFile.empty())
    WritePPFiles=true;
   if (WriteLabels)
    WritePPFiles=true;
-   
+
   /***************************************************************/
-  /**************************************************************/
   /***************************************************************/
-  RWGSurface *S=0;
-  RWGGeometry *G=0;
+  /***************************************************************/
+  std::unique_ptr<RWGSurface> S;
+  std::unique_ptr<RWGGeometry> G;
   SetLogFileName("scuff-analyze.log");
-  if (MeshFile)
+  if (!MeshFile.empty())
    {
      RWGGeometry::UseHRWGFunctions=false;
-     S=new RWGSurface(MeshFile, PhysicalRegion);
+     S.reset(new RWGSurface(MeshFile.c_str(), PhysicalRegion));
      if (S->ErrMsg)
-      ErrExit(S->ErrMsg);
-     AnalyzeSurface(S);
+      ErrExit("%s",S->ErrMsg);
+     AnalyzeSurface(S.get());
 
      if (WriteGPFiles)
-      WriteMeshGPFiles(S);
+      WriteMeshGPFiles(S.get());
 
      if (WritePPFiles)
-      WriteMeshPPFiles(S);
+      WriteMeshPPFiles(S.get());
 
    }
   else
-   { G=new RWGGeometry(GeoFile);
+   { G.reset(new RWGGeometry(GeoFile.c_str()));
 
-     AnalyzeGeometry(G);
+     AnalyzeGeometry(G.get());
 
      if (Neighbors!=0 && G->LBasis==0)
       { Warn("--Neighbors option only makes sense for periodic geometries");
@@ -499,34 +527,34 @@ int main(int argc, char *argv[])
       }
 
      if (WriteGPFiles)
-      WriteGeometryGPFiles(G);
+      WriteGeometryGPFiles(G.get());
 
      if (WritePPFiles)
-      WriteGeometryPPFiles(G, Neighbors);
+      WriteGeometryPPFiles(G.get(), Neighbors);
 
      if (WriteLabels)
-      WriteGeometryLabels(G);
+      WriteGeometryLabels(G.get());
    }
 
   /***************************************************************/
   /***************************************************************/
   /***************************************************************/
-  if (TransFile)
-   { 
-     if (!G) 
+  if (!TransFile.empty())
+   {
+     if (!G)
       ErrExit("--transfile option may only be used with --geometry");
 
-     GTCList GTCs=ReadTransFile(TransFile);
+     GTCList GTCs=ReadTransFile(TransFile.c_str());
      int NGTC=GTCs.size();
      char *ErrMsg=G->CheckGTCList(GTCs);
      if (ErrMsg)
-      ErrExit("file %s: %s",TransFile,ErrMsg);
+      ErrExit("file %s: %s",TransFile.c_str(),ErrMsg);
 
      char PPFileName[MAXSTR];
      snprintf(PPFileName,MAXSTR,"%s.transformed.pp",GetFileBase(G->GeoFileName));
      unlink(PPFileName);
 
-     for(int ngtc=0; ngtc<NGTC; ngtc++) 
+     for(int ngtc=0; ngtc<NGTC; ngtc++)
       {
         G->Transform(GTCs[ngtc]);
         G->WritePPMesh(PPFileName, GTCs[ngtc]->Tag);
@@ -539,16 +567,16 @@ int main(int argc, char *argv[])
   /***************************************************************/
   /***************************************************************/
   /***************************************************************/
-  if (EPFile)
-   { HMatrix *XMatrix=new HMatrix(EPFile);
+  if (!EPFile.empty())
+   { std::unique_ptr<HMatrix> XMatrix(new HMatrix(EPFile.c_str()));
      char PPFileName[MAXSTR];
-     if (MeshFile)
+     if (!MeshFile.empty())
       snprintf(PPFileName,MAXSTR,"%s.pp",GetFileBase(S->MeshFileName));
      else
       snprintf(PPFileName,MAXSTR,"%s.pp",GetFileBase(G->GeoFileName));
 
      FILE *f=fopen(PPFileName,"a");
-     fprintf(f,"View \"%s\" {\n",EPFile);
+     fprintf(f,"View \"%s\" {\n",EPFile.c_str());
      for(int n=0; n<XMatrix->NR; n++)
       fprintf(f,"SP(%e,%e,%e) {0.0};\n",
                  XMatrix->GetEntryD(n,0),
@@ -564,9 +592,9 @@ int main(int argc, char *argv[])
   if (RegionVolumes)
    { printf("Region volumes: \n");
      for(int nr=1; nr<G->NumRegions; nr++)
-      { 
+      {
         printf("%i (%-20s) ",nr,G->RegionLabels[nr]);
-        double RV=GetRegionVolume(G,nr);
+        double RV=GetRegionVolume(G.get(),nr);
         if (RV==0.0)
          printf("unbounded\n");
         else
@@ -577,8 +605,9 @@ int main(int argc, char *argv[])
   /***************************************************************/
   /***************************************************************/
   /***************************************************************/
-  if (WhichRegion[0]!=HUGE_VAL)
-   { int nr=G->GetRegionIndex(WhichRegion);
+  if (WhichRegion.size()==3)
+   { double X[3]={WhichRegion[0],WhichRegion[1],WhichRegion[2]};
+     int nr=G->GetRegionIndex(X);
      printf("Point {%g,%g,%g} lives in region %s.\n",
              WhichRegion[0],WhichRegion[1],WhichRegion[2],G->RegionLabels[nr]);
    }
@@ -586,23 +615,22 @@ int main(int argc, char *argv[])
   /***************************************************************/
   /***************************************************************/
   /***************************************************************/
-  if (EEPs[0]!=-1 && EEPs[1]!=-1)
+  if (EEPs.size()==2)
    { char EEPFileName[100];
-     if (MeshFile)
+     if (!MeshFile.empty())
       { char GeoFileName[100];
-        snprintf(GeoFileName,100,"MESH__%s",GetFileBase(MeshFile));
-        delete G;
-        G=new RWGGeometry(GeoFileName);
+        snprintf(GeoFileName,100,"MESH__%s",GetFileBase(MeshFile.c_str()));
+        G.reset(new RWGGeometry(GeoFileName));
         if (!G) ErrExit("Could not open %s",GeoFileName);
-        snprintf(EEPFileName,100,"%s.%i.%i.EEPs",GetFileBase(MeshFile),EEPs[0],EEPs[1]);
+        snprintf(EEPFileName,100,"%s.%i.%i.EEPs",GetFileBase(MeshFile.c_str()),EEPs[0],EEPs[1]);
       }
      else
-      snprintf(EEPFileName,100,"%s.%i.%i.EEPs",GetFileBase(GeoFile),EEPs[0],EEPs[1]);
+      snprintf(EEPFileName,100,"%s.%i.%i.EEPs",GetFileBase(GeoFile.c_str()),EEPs[0],EEPs[1]);
 
-     RWGSurface *Sa = G->Surfaces[EEPs[0]], *Sb = G->Surfaces[EEPs[1]]; 
+     RWGSurface *Sa = G->Surfaces[EEPs[0]], *Sb = G->Surfaces[EEPs[1]];
      printf("Analyzing equivalent edge pairs between surfaces %i (%s) and %i (%s)...\n",
              EEPs[0],Sa->Label,EEPs[1],Sb->Label);
-     EquivalentEdgePairTable EEPTable(G,EEPs[0],EEPs[1]);
+     EquivalentEdgePairTable EEPTable(G.get(),EEPs[0],EEPs[1]);
      int NEA = Sa->NumEdges, NEB=Sb->NumEdges;
      int NEPairs = NEA * (Sa==Sb ? (NEA+1)/2 : NEB);
      int NumChildPairs  = EEPTable.NumChildren();

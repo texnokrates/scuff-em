@@ -4,6 +4,8 @@
 scuff_add_application(scuff-analyze
   scuff-analyze/scuff-analyze.cc
 )
+# Third typed CLI11 migration.
+target_link_libraries(scuff-analyze PRIVATE scuff_cli11)
 
 scuff_add_application(scuff-cas3D
   scuff-cas3D/CasimirIntegrand.cc
