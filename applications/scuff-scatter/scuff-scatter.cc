@@ -377,6 +377,8 @@ int main(int argc, char *argv[])
   SSD->IF             = 0;
   SSD->TransformLabel = 0;
   SSD->IFLabel        = 0;
+  if ( FileBase.empty() )
+   FileBase=GetFileBase(GeoFile.c_str());
   SSD->FileBase       = FileBase.c_str();
 
   if ( !LogLevel.empty() )
