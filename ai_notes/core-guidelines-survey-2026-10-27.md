@@ -428,6 +428,23 @@ verified first):
 | `55214b40` | **scuff-transmission**: typed options, unique_ptr geometry/matrix/vectors and PlaneWave arrays (GetFlux/UpdateStandardPWs now take arrays of unique_ptr).  Output agrees with the reference binary within its own nondeterminism (old-vs-old verified). |
 | `4190f6d7` | **scuff-static**: typed options (4-/6-value --monopole/--dipole, PA_BOOL quirks as flags, lMax via option count), unique_ptr solver/RHS, per-iteration TransformLabel leak fixed.  Const-corrected: ReadExcitationFile, CreateSimpleSEList, ParsePotentialFile/ParseExcitationSection, StaticSolver::PlotChargeDensity/VisualizeFields, and the scuff-static output modules.  Capacitance data identical. |
 
-Remaining applications: scuff-cas3D, scuff-rf, scuff-neq (+scuff-integrate),
-scuff-spectrum (+tBeyn411), scuff-plotEpsMu, scuff-caspol.  Then the
-leaf-first library sweeps; then G4 (clang-tidy ratchet).
+G3 continued (all verified against pre-migration reference binaries;
+comparison methodology: old-vs-old first to establish the OpenMP
+run-to-run noise band, then old-vs-new within it):
+
+| Commit | Scope |
+| --- | --- |
+| `e68f59d6` | **scuff-cas3D**: typed options incl. 3-per-occurrence --torque; Xi/XikBloch matrices and EFT/error buffers RAII'd; SC3Data::FileBase/WriteCache const (the empty-string WriteCache had masqueraded as an unset option, producing a spurious cache-dump warning on every cacheless run).  Matsubara output identical. |
+| `944d974e` | **scuff-caspol**: typed options; Xi/XikBloch lists and potential buffer RAII'd; CreateSCPData/PolModel const-corrected (PEC-plate fallback no longer strdups a literal).  --xi path byte-identical. |
+| `041a9579` | **scuff-neq + scuff-integrate**: typed options; frequency lists RAII'd; PFTOptions::DSIMesh and the DSIPFT entry points const-corrected.  scuff-integrate's fixed MAXDATA/MAXPARMS arrays became vectors, with autodetect clearing/refilling exactly where legacy overwrote -- a first version captured the column counts before autodetect and crashed; caught by the old-vs-new comparison and fixed.  Outputs identical on EMTPFT and integration paths. |
+| `911ac335` | **scuff-spectrum**: typed options (--FVScreen 11-per-occurrence); geometry/matrix/contour/Beyn-solver RAII'd; --kx/--ky were PA_INT written through a cast into doubles (upper bytes uninitialized) and are now plain doubles.  Same physical resonances found, within reference noise. |
+| `915b311d` | **scuff-plotEpsMu**: the last ProcessArguments user among installed applications moved to typed CLI11; geometry/MatProp RAII'd.  (The bare-material usage in the old header comment never worked; nothing preserved.) |
+| `64a8ce63` | **scuff-rf**: typed options; geometry/matrix/vector/list/ZS/moment objects RAII'd; --PlotPorts success path exit 1 → 0; dead ContribOnly removed.  Z/S parameters identical on the WireAntenna coil. |
+
+**Stage B/G3 application migration is complete: all twelve built
+applications now use the typed CLI11 layer.**  Remaining
+`ProcessOptions` callers are developer/test programs only (libhmat,
+libSubstrate, libMDInterp, libTriInt, libIncField, libscuffSolver,
+tests/, examples/GetTMatrix); Stage C can retire the legacy parsers
+once those migrate or are deleted.  Then the leaf-first library
+ownership sweeps; then G4 (clang-tidy ratchet).
