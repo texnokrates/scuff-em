@@ -33,6 +33,9 @@
 using namespace scuff;
 
 // incident-field polarizations 
+#include <array>
+#include <memory>
+
 #define POL_TE  0
 #define POL_TM  1
 #define NUMPOLS 2
@@ -46,7 +49,8 @@ using namespace scuff;
 void GetFlux(RWGGeometry *G, IncField *IF, HVector *KN,
              cdouble Omega, double *kBloch, int NQPoints,
              double ZAbove, double ZBelow, bool FromAbove,
-             PlaneWave *ReflectedPW[2], PlaneWave *TransmittedPW[2],
+             std::array<std::unique_ptr<PlaneWave>, 2> &ReflectedPW,
+             std::array<std::unique_ptr<PlaneWave>, 2> &TransmittedPW,
              double *Flux, cdouble tIntegral[2], cdouble rIntegral[2],
              double *nHatAbove=0, double *nHatBelow=0);
 

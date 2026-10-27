@@ -28,6 +28,9 @@
 #include <stdlib.h>
 
 #include <libhrutil.h>
+
+#include <array>
+#include <memory>
 #include <libIncField.h>
 #include <libscuff.h>
 
@@ -86,8 +89,8 @@ double SCR9[]={
 void GetFlux(RWGGeometry *G, IncField *IF, HVector *KN,
              cdouble Omega, double *kBloch, int NQPoints,
              double ZAbove, double ZBelow, bool FromAbove,
-             PlaneWave *ReflectedPW[NUMPOLS],
-             PlaneWave *TransmittedPW[2],
+             std::array<std::unique_ptr<PlaneWave>, NUMPOLS> &ReflectedPW,
+             std::array<std::unique_ptr<PlaneWave>, NUMPOLS> &TransmittedPW,
              double *Flux, cdouble tIntegral[NUMPOLS], cdouble rIntegral[NUMPOLS],
              double *nHatAbove, double *nHatBelow)
 {

@@ -86,6 +86,8 @@ scuff_add_application(scuff-transmission
   scuff-transmission/GetFlux.cc
   scuff-transmission/GetAmplitudes.cc
 )
+# Fifth typed CLI11 migration.
+target_link_libraries(scuff-transmission PRIVATE scuff_cli11)
 
 # ---------------------------------------------------------------------------
 # Optional developer programs

@@ -30,6 +30,12 @@
 #include <config.h>
 #endif
 
+#include <array>
+#include <memory>
+#include <string>
+#include <vector>
+
+#include <ScuffCLI.h>
 #include <libIncField.h>
 #include "scuff-transmission.h"
 
@@ -124,9 +130,9 @@ void WriteFilePreamble(FILE *f)
 /***************************************************************/
 void UpdateStandardPWs(cdouble Omega, double Theta, bool FromAbove,
                        MatProp *SourceMP, MatProp *DestMP,
-                       PlaneWave *IncidentPW[2],
-                       PlaneWave *ReflectedPW[2],
-                       PlaneWave *TransmittedPW[2])
+                       std::array<std::unique_ptr<PlaneWave>, NUMPOLS> &IncidentPW,
+                       std::array<std::unique_ptr<PlaneWave>, NUMPOLS> &ReflectedPW,
+                       std::array<std::unique_ptr<PlaneWave>, NUMPOLS> &TransmittedPW)
 {
   cdouble IndexRatio
    = SourceMP->GetRefractiveIndex(Omega) / DestMP->GetRefractiveIndex(Omega);
@@ -189,13 +195,13 @@ int main(int argc, char *argv[])
   InitializeLog(argv[0]);
 
   /*--------------------------------------------------------------*/
+  /* process options                                              */
   /*--------------------------------------------------------------*/
-  /*--------------------------------------------------------------*/
-  char *GeoFileName=0;
-  cdouble OmegaVals[MAXFREQ];	int nOmegaVals;
-  cdouble LambdaVals[MAXFREQ];	int nLambdaVals;
-  char *OmegaFile=0;
-  char *LambdaFile=0;
+  std::string GeoFileName;
+  std::vector<cdouble> OmegaVals;
+  std::vector<cdouble> LambdaVals;
+  std::string OmegaFile;
+  std::string LambdaFile;
   double Theta=0.0;
   double ThetaMin=0.0;
   double ThetaMax=0.0;
@@ -203,59 +209,59 @@ int main(int argc, char *argv[])
   double ZAbove=2.0;
   double ZBelow=-1.0;
   int NQPoints=0;
-  char *FileBase=0;
+  std::string FileBase;
   bool FromAbove=false;
-  /* name        type    #args  max_instances  storage    count  description*/
-  OptStruct OSArray[]=
-   { {"geometry",    PA_STRING,  1, 1,       (void *)&GeoFileName,  0,       ".scuffgeo file"},
-/**/
-     {"Omega",       PA_CDOUBLE, 1, MAXFREQ, (void *)OmegaVals,     &nOmegaVals, "(angular) frequency"},
-     {"Lambda",      PA_CDOUBLE, 1, MAXFREQ, (void *)LambdaVals,     &nLambdaVals, "(free-space) wavelength"},
-     {"OmegaFile",   PA_STRING,  1, 1,       (void *)&OmegaFile,    0,       "list of (angular) frequencies"},
-     {"LambdaFile",  PA_STRING,  1, 1,       (void *)&LambdaFile,   0,       "list of (free-space) wavelengths"},
-/**/
-     {"Theta",       PA_DOUBLE,  1, 1,       (void *)&Theta,        0,       "incident angle in degrees"},
-     {"ThetaMin",    PA_DOUBLE,  1, 1,       (void *)&ThetaMin,     0,       "minimum incident angle in degrees"},
-     {"ThetaMax",    PA_DOUBLE,  1, 1,       (void *)&ThetaMax,     0,       "maximum incident angle in degrees"},
-     {"ThetaPoints", PA_INT,     1, 1,       (void *)&ThetaPoints,  0,       "number of incident angles"},
-/**/
-     {"ZAbove",      PA_DOUBLE,  1, 1,       (void *)&ZAbove,       0,       "Z-coordinate of upper integration plane"},
-     {"ZBelow",      PA_DOUBLE,  1, 1,       (void *)&ZBelow,       0,       "Z-coordinate of lower integration plane"},
-/**/
-/**/
-     {"NQPoints",    PA_INT,     1, 1,       (void *)&NQPoints,     0,       "number of quadrature points per dimension"},
-/**/
-     {"FileBase",    PA_STRING,  1, 1,       (void *)&FileBase,     0,       "base file name for output files"},
-/**/
-     {"FromAbove",   PA_BOOL,    0, 1,       (void *)&FromAbove,    0,       "plane wave impinges from above"},
-     {0,0,0,0,0,0,0}
-   };
-  ProcessOptions(argc, argv, OSArray);
+
+  CLI::App App{"compute transmission through thin films and metamaterial arrays"};
+  App.option_defaults()->ignore_case();
+
+  App.add_option("--geometry", GeoFileName, ".scuffgeo file")
+     ->required()
+     ->take_last();
+  scuff::cli::AddComplexVectorOption(App, "--Omega", OmegaVals,
+                                     "(angular) frequency", MAXFREQ);
+  scuff::cli::AddComplexVectorOption(App, "--Lambda", LambdaVals,
+                                     "(free-space) wavelength", MAXFREQ);
+  App.add_option("--OmegaFile", OmegaFile, "list of (angular) frequencies")
+     ->take_last();
+  App.add_option("--LambdaFile", LambdaFile, "list of (free-space) wavelengths")
+     ->take_last();
+  App.add_option("--Theta", Theta, "incident angle in degrees")->take_last();
+  App.add_option("--ThetaMin", ThetaMin, "minimum incident angle in degrees")->take_last();
+  App.add_option("--ThetaMax", ThetaMax, "maximum incident angle in degrees")->take_last();
+  App.add_option("--ThetaPoints", ThetaPoints, "number of incident angles")->take_last();
+  App.add_option("--ZAbove", ZAbove, "Z-coordinate of upper integration plane")->take_last();
+  App.add_option("--ZBelow", ZBelow, "Z-coordinate of lower integration plane")->take_last();
+  App.add_option("--NQPoints", NQPoints,
+                 "number of quadrature points per dimension")->take_last();
+  App.add_option("--FileBase", FileBase, "base file name for output files")->take_last();
+  App.add_flag("--FromAbove", FromAbove, "plane wave impinges from above");
+
+  if (auto Status=scuff::cli::Parse(App,argc,argv))
+   return *Status;
 
   /*******************************************************************/
   /*******************************************************************/
   /*******************************************************************/
-  if (GeoFileName==0)
-   OSUsage(argv[0], VERSION, OSArray, "--geometry option is mandatory");
-  if (!FileBase)
-   FileBase=vstrdup(GetFileBase(GeoFileName));
-  SetLogFileName("%s.log",FileBase);
+  if (FileBase.empty())
+   FileBase=GetFileBase(GeoFileName.c_str());
+  SetLogFileName("%s.log",FileBase.c_str());
   Log("scuff-transmission" VERSION " running on %s",GetHostName());
-  
+
   /*******************************************************************/
   /*- create the RWGGeometry                                        -*/
   /*******************************************************************/
   RWGGeometry::UseHRWGFunctions=false;
-  RWGGeometry *G=new RWGGeometry(GeoFileName);
+  std::unique_ptr<RWGGeometry> G(new RWGGeometry(GeoFileName.c_str()));
   if (G->LDim!=2)
-   ErrExit("%s: geometry must have two-dimensional lattice periodicity",GeoFileName);
+   ErrExit("%s: geometry must have two-dimensional lattice periodicity",GeoFileName.c_str());
 
   /*******************************************************************/
   /* determine the indices of the regions from which the plane wave  */
   /* emanates and into which it eventually propagates                */
   /*******************************************************************/
   int SDIndex[2]; // "source, dest index"
-  bool DestIsPEC        = GetSourceDestRegions(G, FromAbove, SDIndex);
+  bool DestIsPEC        = GetSourceDestRegions(G.get(), FromAbove, SDIndex);
   int SourceRegionIndex = SDIndex[0];
   int   DestRegionIndex = SDIndex[1];
   int  UpperRegionIndex = (FromAbove) ? SourceRegionIndex : DestRegionIndex;
@@ -267,9 +273,17 @@ int main(int argc, char *argv[])
   /* process frequency/wavelength options to construct a list of     */
   /* frequencies at which to run calculations.                       */
   /*******************************************************************/
-  HVector *OmegaVector=GetOmegaList(OmegaFile, OmegaVals, nOmegaVals, LambdaFile, LambdaVals, nLambdaVals);
-  if ( !OmegaVector || OmegaVector->N==0)
-   OSUsage(argv[0], VERSION, OSArray, "you must specify at least one frequency");
+  std::unique_ptr<HVector> OmegaVector(
+    GetOmegaList(OmegaFile.empty() ? 0 : OmegaFile.c_str(),
+                 OmegaVals.data(), (int)OmegaVals.size(),
+                 LambdaFile.empty() ? 0 : LambdaFile.c_str(),
+                 LambdaVals.data(), (int)LambdaVals.size()) );
+  if ( OmegaVector.get()==0 || OmegaVector->N==0)
+   { CLI::ValidationError Error("scuff-transmission",
+        "you must specify at least one frequency");
+     App.exit(Error);
+     return 1;
+   };
 
   /*******************************************************************/
   /* process incident-angle-related options to construct a list of   */
@@ -279,21 +293,25 @@ int main(int argc, char *argv[])
   /*       but internally the entries of the ThetaVector vector are  */
   /*       in radians (values between 0 and Pi/2).                   */
   /*******************************************************************/
-  HVector *ThetaVector;
+  std::unique_ptr<HVector> ThetaVector;
   if ( ThetaMax!=0.0 )
    { if ( ThetaMax<ThetaMin )
-      OSUsage(argv[0], VERSION, OSArray, "--ThetaMin must not be greater than --ThetaMax");
-     if ( ThetaMax==ThetaMin )  
+      { CLI::ValidationError Error("scuff-transmission",
+           "--ThetaMin must not be greater than --ThetaMax");
+        App.exit(Error);
+        return 1;
+      };
+     if ( ThetaMax==ThetaMin )
       ThetaPoints=1;
-     ThetaVector=LinSpace(ThetaMin*DEG2RAD, ThetaMax*DEG2RAD, ThetaPoints);
+     ThetaVector.reset( LinSpace(ThetaMin*DEG2RAD, ThetaMax*DEG2RAD, ThetaPoints) );
    }
-  else 
-   { ThetaVector=new HVector(1);
+  else
+   { ThetaVector.reset(new HVector(1));
      ThetaVector->SetEntry(0,Theta*DEG2RAD);
    };
   if (ThetaPoints==1)
    Log("Calculating at the single incident angle Theta=%e degrees",ThetaVector->GetEntryD(0)*RAD2DEG);
-  else 
+  else
    Log("Calculating at %i incident angles in range Theta=(%e,%e) degrees",
        ThetaVector->N, ThetaVector->GetEntryD(0)*RAD2DEG,
        ThetaVector->GetEntryD(ThetaVector->N-1)*RAD2DEG);
@@ -305,34 +323,30 @@ int main(int argc, char *argv[])
   double nHat[3]={0.0, 0.0, 1.0};
   PlaneWave PW(E0, nHat, G->RegionLabels[SourceRegionIndex]);
 
-  HMatrix *M   = G->AllocateBEMMatrix();
-  HVector *KN  = G->AllocateRHSVector();
+  std::unique_ptr<HMatrix> M(G->AllocateBEMMatrix());
+  std::unique_ptr<HVector> KN(G->AllocateRHSVector());
 
-  PlaneWave *IncidentPW[2];
-  PlaneWave *ReflectedPW[2];
-  PlaneWave *TransmittedPW[2];
+  std::array<std::unique_ptr<PlaneWave>, NUMPOLS> IncidentPW, ReflectedPW, TransmittedPW;
   for(int np=0; np<NUMPOLS; np++)
-   { IncidentPW[np] = new PlaneWave(E0, nHat, G->RegionLabels[SourceRegionIndex]);
-     ReflectedPW[np] = new PlaneWave(E0, nHat, G->RegionLabels[SourceRegionIndex]);
-     TransmittedPW[np] = new PlaneWave(E0, nHat, G->RegionLabels[DestRegionIndex]);
+   { IncidentPW[np].reset(new PlaneWave(E0, nHat, G->RegionLabels[SourceRegionIndex]));
+     ReflectedPW[np].reset(new PlaneWave(E0, nHat, G->RegionLabels[SourceRegionIndex]));
+     TransmittedPW[np].reset(new PlaneWave(E0, nHat, G->RegionLabels[DestRegionIndex]));
    };
 
   /*******************************************************************/
   /* set up output files *********************************************/
   /*******************************************************************/
-  FILE *f;
-  if (!FileBase)
-   FileBase=GetFileBase(GeoFileName);
-  f=vfopen("%s.transmission","a",FileBase);
-  if (!f) ErrExit("could not open file %s.transmission",FileBase);
-  WriteFilePreamble(f);
+  std::unique_ptr<FILE, int (*)(FILE *)> f(fopen((FileBase+".transmission").c_str(),"a"), &fclose);
+  if (!f)
+   ErrExit("could not open file %s.transmission",FileBase.c_str());
+  WriteFilePreamble(f.get());
 
   /*******************************************************************/
   /* loop over frequencies and incident angles   *********************/
   /*******************************************************************/
   for(int nOmega=0; nOmega<OmegaVector->N; nOmega++)
    for(int nTheta=0; nTheta<ThetaVector->N; nTheta++)
-    { 
+    {
       /*--------------------------------------------------------------*/
       /*--------------------------------------------------------------*/
       /*--------------------------------------------------------------*/
@@ -353,7 +367,7 @@ int main(int argc, char *argv[])
        Warn("complex wavenumber in source region (behavior undefined)");
       double kBloch[2] = {0.0, 0.0};
       kBloch[0] = real(kSource)*SinTheta;
-      G->AssembleBEMMatrix(Omega, kBloch, M);
+      G->AssembleBEMMatrix(Omega, kBloch, M.get());
       M->LUFactorize();
 
       /*--------------------------------------------------------------*/
@@ -374,97 +388,97 @@ int main(int argc, char *argv[])
       cdouble UpperAmplitude2[NUMPOLS][NUMPOLS], LowerAmplitude2[NUMPOLS][NUMPOLS];
       cdouble UpperAmplitude3[NUMPOLS][NUMPOLS], LowerAmplitude3[NUMPOLS][NUMPOLS];
       cdouble tIntegral[NUMPOLS][NUMPOLS], rIntegral[NUMPOLS][NUMPOLS];
-      
+
       for(int IncPol = POL_TE; IncPol<=POL_TM; IncPol++)
-       { 
+       {
          E0[0]=EpsVectors[IncPol][0];
          E0[1]=EpsVectors[IncPol][1];
          E0[2]=EpsVectors[IncPol][2];
          PW.SetE0(E0);
-         G->AssembleRHSVector(Omega, kBloch, &PW, KN);
-         M->LUSolve(KN);
+         G->AssembleRHSVector(Omega, kBloch, &PW, KN.get());
+         M->LUSolve(KN.get());
 
          double Flux[NUMREGIONS];
-         GetFlux(G, &PW, KN, Omega, kBloch, NQPoints, 
+         GetFlux(G.get(), &PW, KN.get(), Omega, kBloch, NQPoints,
                  ZAbove, ZBelow, FromAbove,
-                 ReflectedPW, TransmittedPW, 
+                 ReflectedPW, TransmittedPW,
                  Flux, tIntegral[IncPol], rIntegral[IncPol]);
          UpperFluxRatio[IncPol] = Flux[REGION_UPPER];
          LowerFluxRatio[IncPol] = Flux[REGION_LOWER];
 
          cdouble aTETM[2];
-         GetPlaneWaveAmplitudes(G, KN, Omega, kBloch, UpperRegionIndex, true, aTETM, true);
+         GetPlaneWaveAmplitudes(G.get(), KN.get(), Omega, kBloch, UpperRegionIndex, true, aTETM, true);
          UpperAmplitude[IncPol][POL_TE] = aTETM[POL_TE];
          UpperAmplitude[IncPol][POL_TM] = aTETM[POL_TM];
 
-         GetPlaneWaveAmplitudes(G, KN, Omega, kBloch, LowerRegionIndex, false, aTETM, true);
+         GetPlaneWaveAmplitudes(G.get(), KN.get(), Omega, kBloch, LowerRegionIndex, false, aTETM, true);
          LowerAmplitude[IncPol][POL_TE] = aTETM[POL_TE];
          LowerAmplitude[IncPol][POL_TM] = aTETM[POL_TM];
 
          for(int DestPol = POL_TE; DestPol<=POL_TM; DestPol++)
-          { 
-            PlaneWave *UpperPW = FromAbove ? ReflectedPW[DestPol]   : TransmittedPW[DestPol];
-            PlaneWave *LowerPW = FromAbove ? TransmittedPW[DestPol] : ReflectedPW[DestPol];
+          {
+            PlaneWave *UpperPW = FromAbove ? ReflectedPW[DestPol].get()   : TransmittedPW[DestPol].get();
+            PlaneWave *LowerPW = FromAbove ? TransmittedPW[DestPol].get() : ReflectedPW[DestPol].get();
             cdouble Terms[2];
-            UpperAmplitude2[IncPol][DestPol] = G->GetPlaneWaveAmplitude(Omega, kBloch, KN, UpperPW, Terms);
+            UpperAmplitude2[IncPol][DestPol] = G->GetPlaneWaveAmplitude(Omega, kBloch, KN.get(), UpperPW, Terms);
             UpperAmplitude3[IncPol][DestPol] = Terms[0];
-            LowerAmplitude2[IncPol][DestPol] = G->GetPlaneWaveAmplitude(Omega, kBloch, KN, LowerPW, Terms);
+            LowerAmplitude2[IncPol][DestPol] = G->GetPlaneWaveAmplitude(Omega, kBloch, KN.get(), LowerPW, Terms);
             LowerAmplitude3[IncPol][DestPol] = Terms[0];
           }
        }
 
       // write results to file
-      fprintf(f,"%s %e ", z2s(Omega), Theta*RAD2DEG);
+      fprintf(f.get(),"%s %e ", z2s(Omega), Theta*RAD2DEG);
 
-      fprintf(f,"%e %e ", UpperFluxRatio[POL_TE], LowerFluxRatio[POL_TE]);
-      fprintf(f,"%e %e ", UpperFluxRatio[POL_TM], LowerFluxRatio[POL_TM]);
+      fprintf(f.get(),"%e %e ", UpperFluxRatio[POL_TE], LowerFluxRatio[POL_TE]);
+      fprintf(f.get(),"%e %e ", UpperFluxRatio[POL_TM], LowerFluxRatio[POL_TM]);
 
-      fprintf(f,"%e %e ", abs(UpperAmplitude[POL_TE][POL_TE]), arg(UpperAmplitude[POL_TE][POL_TE]));
-      fprintf(f,"%e %e ", abs(UpperAmplitude[POL_TE][POL_TM]), arg(UpperAmplitude[POL_TE][POL_TM]));
-      fprintf(f,"%e %e ", abs(UpperAmplitude[POL_TM][POL_TE]), arg(UpperAmplitude[POL_TM][POL_TE]));
-      fprintf(f,"%e %e ", abs(UpperAmplitude[POL_TM][POL_TM]), arg(UpperAmplitude[POL_TM][POL_TM]));
-      fprintf(f,"%e %e ", abs(LowerAmplitude[POL_TE][POL_TE]), arg(LowerAmplitude[POL_TE][POL_TE]));
-      fprintf(f,"%e %e ", abs(LowerAmplitude[POL_TE][POL_TM]), arg(LowerAmplitude[POL_TE][POL_TM]));
-      fprintf(f,"%e %e ", abs(LowerAmplitude[POL_TM][POL_TE]), arg(LowerAmplitude[POL_TM][POL_TE]));
-      fprintf(f,"%e %e ", abs(LowerAmplitude[POL_TM][POL_TM]), arg(LowerAmplitude[POL_TM][POL_TM]));
+      fprintf(f.get(),"%e %e ", abs(UpperAmplitude[POL_TE][POL_TE]), arg(UpperAmplitude[POL_TE][POL_TE]));
+      fprintf(f.get(),"%e %e ", abs(UpperAmplitude[POL_TE][POL_TM]), arg(UpperAmplitude[POL_TE][POL_TM]));
+      fprintf(f.get(),"%e %e ", abs(UpperAmplitude[POL_TM][POL_TE]), arg(UpperAmplitude[POL_TM][POL_TE]));
+      fprintf(f.get(),"%e %e ", abs(UpperAmplitude[POL_TM][POL_TM]), arg(UpperAmplitude[POL_TM][POL_TM]));
+      fprintf(f.get(),"%e %e ", abs(LowerAmplitude[POL_TE][POL_TE]), arg(LowerAmplitude[POL_TE][POL_TE]));
+      fprintf(f.get(),"%e %e ", abs(LowerAmplitude[POL_TE][POL_TM]), arg(LowerAmplitude[POL_TE][POL_TM]));
+      fprintf(f.get(),"%e %e ", abs(LowerAmplitude[POL_TM][POL_TE]), arg(LowerAmplitude[POL_TM][POL_TE]));
+      fprintf(f.get(),"%e %e ", abs(LowerAmplitude[POL_TM][POL_TM]), arg(LowerAmplitude[POL_TM][POL_TM]));
 
-      fprintf(f,"%e %e ", abs(tIntegral[POL_TE][POL_TE]), arg(tIntegral[POL_TE][POL_TE]));
-      fprintf(f,"%e %e ", abs(tIntegral[POL_TE][POL_TM]), arg(tIntegral[POL_TE][POL_TM]));
-      fprintf(f,"%e %e ", abs(tIntegral[POL_TM][POL_TE]), arg(tIntegral[POL_TM][POL_TE]));
-      fprintf(f,"%e %e ", abs(tIntegral[POL_TM][POL_TM]), arg(tIntegral[POL_TM][POL_TM]));
-      fprintf(f,"%e %e ", abs(rIntegral[POL_TE][POL_TE]), arg(rIntegral[POL_TE][POL_TE]));
-      fprintf(f,"%e %e ", abs(rIntegral[POL_TE][POL_TM]), arg(rIntegral[POL_TE][POL_TM]));
-      fprintf(f,"%e %e ", abs(rIntegral[POL_TM][POL_TE]), arg(rIntegral[POL_TM][POL_TE]));
-      fprintf(f,"%e %e ", abs(rIntegral[POL_TM][POL_TM]), arg(rIntegral[POL_TM][POL_TM]));
+      fprintf(f.get(),"%e %e ", abs(tIntegral[POL_TE][POL_TE]), arg(tIntegral[POL_TE][POL_TE]));
+      fprintf(f.get(),"%e %e ", abs(tIntegral[POL_TE][POL_TM]), arg(tIntegral[POL_TE][POL_TM]));
+      fprintf(f.get(),"%e %e ", abs(tIntegral[POL_TM][POL_TE]), arg(tIntegral[POL_TM][POL_TE]));
+      fprintf(f.get(),"%e %e ", abs(tIntegral[POL_TM][POL_TM]), arg(tIntegral[POL_TM][POL_TM]));
+      fprintf(f.get(),"%e %e ", abs(rIntegral[POL_TE][POL_TE]), arg(rIntegral[POL_TE][POL_TE]));
+      fprintf(f.get(),"%e %e ", abs(rIntegral[POL_TE][POL_TM]), arg(rIntegral[POL_TE][POL_TM]));
+      fprintf(f.get(),"%e %e ", abs(rIntegral[POL_TM][POL_TE]), arg(rIntegral[POL_TM][POL_TE]));
+      fprintf(f.get(),"%e %e ", abs(rIntegral[POL_TM][POL_TM]), arg(rIntegral[POL_TM][POL_TM]));
 
-      fprintf(f,"%e %e ", abs(UpperAmplitude2[POL_TE][POL_TE]), arg(UpperAmplitude2[POL_TE][POL_TE]));
-      fprintf(f,"%e %e ", abs(UpperAmplitude2[POL_TE][POL_TM]), arg(UpperAmplitude2[POL_TE][POL_TM]));
-      fprintf(f,"%e %e ", abs(UpperAmplitude2[POL_TM][POL_TE]), arg(UpperAmplitude2[POL_TM][POL_TE]));
-      fprintf(f,"%e %e ", abs(UpperAmplitude2[POL_TM][POL_TM]), arg(UpperAmplitude2[POL_TM][POL_TM]));
-      fprintf(f,"%e %e ", abs(LowerAmplitude2[POL_TE][POL_TE]), arg(LowerAmplitude2[POL_TE][POL_TE]));
-      fprintf(f,"%e %e ", abs(LowerAmplitude2[POL_TE][POL_TM]), arg(LowerAmplitude2[POL_TE][POL_TM]));
-      fprintf(f,"%e %e ", abs(LowerAmplitude2[POL_TM][POL_TE]), arg(LowerAmplitude2[POL_TM][POL_TE]));
-      fprintf(f,"%e %e ", abs(LowerAmplitude2[POL_TM][POL_TM]), arg(LowerAmplitude2[POL_TM][POL_TM]));
+      fprintf(f.get(),"%e %e ", abs(UpperAmplitude2[POL_TE][POL_TE]), arg(UpperAmplitude2[POL_TE][POL_TE]));
+      fprintf(f.get(),"%e %e ", abs(UpperAmplitude2[POL_TE][POL_TM]), arg(UpperAmplitude2[POL_TE][POL_TM]));
+      fprintf(f.get(),"%e %e ", abs(UpperAmplitude2[POL_TM][POL_TE]), arg(UpperAmplitude2[POL_TM][POL_TE]));
+      fprintf(f.get(),"%e %e ", abs(UpperAmplitude2[POL_TM][POL_TM]), arg(UpperAmplitude2[POL_TM][POL_TM]));
+      fprintf(f.get(),"%e %e ", abs(LowerAmplitude2[POL_TE][POL_TE]), arg(LowerAmplitude2[POL_TE][POL_TE]));
+      fprintf(f.get(),"%e %e ", abs(LowerAmplitude2[POL_TE][POL_TM]), arg(LowerAmplitude2[POL_TE][POL_TM]));
+      fprintf(f.get(),"%e %e ", abs(LowerAmplitude2[POL_TM][POL_TE]), arg(LowerAmplitude2[POL_TM][POL_TE]));
+      fprintf(f.get(),"%e %e ", abs(LowerAmplitude2[POL_TM][POL_TM]), arg(LowerAmplitude2[POL_TM][POL_TM]));
 
-      fprintf(f,"%e %e ", abs(UpperAmplitude3[POL_TE][POL_TE]), arg(UpperAmplitude3[POL_TE][POL_TE]));
-      fprintf(f,"%e %e ", abs(UpperAmplitude3[POL_TE][POL_TM]), arg(UpperAmplitude3[POL_TE][POL_TM]));
-      fprintf(f,"%e %e ", abs(UpperAmplitude3[POL_TM][POL_TE]), arg(UpperAmplitude3[POL_TM][POL_TE]));
-      fprintf(f,"%e %e ", abs(UpperAmplitude3[POL_TM][POL_TM]), arg(UpperAmplitude3[POL_TM][POL_TM]));
-      fprintf(f,"%e %e ", abs(LowerAmplitude3[POL_TE][POL_TE]), arg(LowerAmplitude3[POL_TE][POL_TE]));
-      fprintf(f,"%e %e ", abs(LowerAmplitude3[POL_TE][POL_TM]), arg(LowerAmplitude3[POL_TE][POL_TM]));
-      fprintf(f,"%e %e ", abs(LowerAmplitude3[POL_TM][POL_TE]), arg(LowerAmplitude3[POL_TM][POL_TE]));
-      fprintf(f,"%e %e ", abs(LowerAmplitude3[POL_TM][POL_TM]), arg(LowerAmplitude3[POL_TM][POL_TM]));
+      fprintf(f.get(),"%e %e ", abs(UpperAmplitude3[POL_TE][POL_TE]), arg(UpperAmplitude3[POL_TE][POL_TE]));
+      fprintf(f.get(),"%e %e ", abs(UpperAmplitude3[POL_TE][POL_TM]), arg(UpperAmplitude3[POL_TE][POL_TM]));
+      fprintf(f.get(),"%e %e ", abs(UpperAmplitude3[POL_TM][POL_TE]), arg(UpperAmplitude3[POL_TM][POL_TE]));
+      fprintf(f.get(),"%e %e ", abs(UpperAmplitude3[POL_TM][POL_TM]), arg(UpperAmplitude3[POL_TM][POL_TM]));
+      fprintf(f.get(),"%e %e ", abs(LowerAmplitude3[POL_TE][POL_TE]), arg(LowerAmplitude3[POL_TE][POL_TE]));
+      fprintf(f.get(),"%e %e ", abs(LowerAmplitude3[POL_TE][POL_TM]), arg(LowerAmplitude3[POL_TE][POL_TM]));
+      fprintf(f.get(),"%e %e ", abs(LowerAmplitude3[POL_TM][POL_TE]), arg(LowerAmplitude3[POL_TM][POL_TE]));
+      fprintf(f.get(),"%e %e ", abs(LowerAmplitude3[POL_TM][POL_TM]), arg(LowerAmplitude3[POL_TM][POL_TM]));
 
-      fprintf(f,"\n");
-      fflush(f);
+      fprintf(f.get(),"\n");
+      fflush(f.get());
 
-   }; 
-  fclose(f);
+   };
+  f.reset();
 
   /*--------------------------------------------------------------*/
   /*--------------------------------------------------------------*/
   /*--------------------------------------------------------------*/
-  printf("Transmission/reflection data written to %s.transmission\n",FileBase);
+  printf("Transmission/reflection data written to %s.transmission\n",FileBase.c_str());
   printf("Thank you for your support.\n");
 
 }
