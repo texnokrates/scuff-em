@@ -782,6 +782,19 @@ GetBZIArgStruct *InitBZIArgs(int argc, char **argv)
 }
 
 /***************************************************************/
+/* free a structure created by InitBZIArgs.  The DataBuffer    */
+/* entries are interior pointers into DataBuffer[0], which is  */
+/* allocated internally; RLBasis is the caller's and is not    */
+/* touched.                                                    */
+/***************************************************************/
+void DestroyBZIArgs(GetBZIArgStruct *BZIArgs)
+{
+  if (BZIArgs==0) return;
+  free(BZIArgs->DataBuffer[0]);
+  free(BZIArgs);
+}
+
+/***************************************************************/
 /***************************************************************/
 /***************************************************************/
 bool LatticeIsSquare(HMatrix *LBasis)

@@ -93,6 +93,7 @@ void GetBZIntegral(GetBZIArgStruct *Args, cdouble Omega,
                    double *BZIntegral);
 
 GetBZIArgStruct *InitBZIArgs(int argc=0, char **argv=0);
+void DestroyBZIArgs(GetBZIArgStruct *BZIArgs);
 void UpdateBZIArgs(GetBZIArgStruct *BZIArgs, HMatrix *RLBasis,
                    double RLVolume);
 

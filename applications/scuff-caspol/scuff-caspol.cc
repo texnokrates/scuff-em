@@ -371,6 +371,7 @@ int main(int argc, char *argv[])
   /***************************************************************/
   /***************************************************************/
   /***************************************************************/
+  DestroyBZIArgs(BZIArgs);
   printf("Frequency-resolved data written to file %s.\n",SCPD->ByXiFileName);
   printf("Thank you for your support.\n");
 

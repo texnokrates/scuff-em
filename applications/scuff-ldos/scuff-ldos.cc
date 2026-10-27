@@ -252,4 +252,5 @@ int main(int argc, char *argv[])
       };
    };
 
+  DestroyBZIArgs(BZIArgs);
 }

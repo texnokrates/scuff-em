@@ -115,7 +115,7 @@ void GetAngularFunctionArray(int LMax, double X[3],
   CoordinateC2S(X, &r, &Theta, &Phi);
   GetAngularFunctionArray(LMax, Theta, Phi, Workspace, AAMatrix);
 
-  for(int nc=0; nc<AAMatrix->NC; AAMatrix++)
+  for(int nc=0; nc<AAMatrix->NC; nc++)
    VectorS2C(Theta, Phi, (cdouble *)AAMatrix->GetColumnPointer(nc));
 }
 

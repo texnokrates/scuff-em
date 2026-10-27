@@ -662,8 +662,10 @@ char *vec2str(const char *Label, dVec V)
 {
 #define NUMBUFS 10
 #define BUFLEN  1000
-  static char buffers[NUMBUFS][BUFLEN];
-  static int bufHead=0;
+  /* per-thread ring so that concurrent calls (and combinations of two
+     calls within one Log statement) do not clobber each other's text */
+  static thread_local char buffers[NUMBUFS][BUFLEN];
+  static thread_local int bufHead=0;
  
   bufHead = (bufHead+1) % NUMBUFS;
   char *buffer=buffers[bufHead];

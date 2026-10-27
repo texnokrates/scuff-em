@@ -578,11 +578,11 @@ HVector *HMatrix::Eig(HVector *Lambda, HMatrix *U)
              &liworkOptimal, &MinusOne, &info);
      lworkOptimal = (int)dlworkOptimal;
      if (lworkOptimal > lwork)
-      { work=realloc(work,lworkOptimal*sizeof(double));
+      { work=reallocEC(work,lworkOptimal*sizeof(double));
         lwork=lworkOptimal;
       };
      if (liworkOptimal > liwork)
-      { iwork=(int *)realloc(iwork,liworkOptimal*sizeof(int));
+      { iwork=(int *)reallocEC(iwork,liworkOptimal*sizeof(int));
         liwork=liworkOptimal;
       };
 
@@ -614,7 +614,7 @@ HVector *HMatrix::Eig(HVector *Lambda, HMatrix *U)
      int rworkSize = (int)dlrworkOptimal;
      lworkOptimal = 2*workSize + rworkSize;
      if (lworkOptimal > lwork)
-      { work=realloc(work,lworkOptimal*sizeof(double));
+      { work=reallocEC(work,lworkOptimal*sizeof(double));
         lwork=lworkOptimal;
       };
 
@@ -622,7 +622,7 @@ HVector *HMatrix::Eig(HVector *Lambda, HMatrix *U)
      double *rwork = (double *)(zwork + workSize);
 
      if (liworkOptimal > liwork)
-      { iwork=(int *)realloc(iwork,liworkOptimal*sizeof(int));
+      { iwork=(int *)reallocEC(iwork,liworkOptimal*sizeof(int));
         liwork=liworkOptimal;
       };
 
@@ -698,7 +698,7 @@ HVector *HMatrix::NSEig(HVector *Lambda, HMatrix *U)
 
      lworkOptimal = (int)dlworkOptimal;
      if (lworkOptimal > lwork)
-      { work=realloc(work,lworkOptimal*sizeof(double));
+      { work=reallocEC(work,lworkOptimal*sizeof(double));
         lwork=lworkOptimal;
       };
 
@@ -821,7 +821,7 @@ HVector *HMatrix::SVD(HVector *Sigma, HMatrix *U, HMatrix *VT)
 
      lworkOptimal = (int)dlworkOptimal;
      if (lworkOptimal > lwork)
-      { work=realloc(work,lworkOptimal*sizeof(double));
+      { work=reallocEC(work,lworkOptimal*sizeof(double));
         lwork=lworkOptimal;
       };
 
@@ -846,7 +846,7 @@ HVector *HMatrix::SVD(HVector *Sigma, HMatrix *U, HMatrix *VT)
 
      lworkOptimal = 2*(int)(real(zlworkOptimal));
      if (lworkOptimal > lwork)
-      { work=realloc(work,lworkOptimal*sizeof(double));
+      { work=reallocEC(work,lworkOptimal*sizeof(double));
         lwork=lworkOptimal;
       };
 
@@ -881,7 +881,7 @@ double HMatrix::GetNorm(bool UseInfinityNorm)
      /*--------------------------------------------------------------*/
      int lworkOptimal = UseInfinityNorm ? NR : 0;
      if (lworkOptimal > lwork)
-      { work=realloc(work,lworkOptimal*sizeof(double));
+      { work=reallocEC(work,lworkOptimal*sizeof(double));
         lwork=lworkOptimal;
       };
 
@@ -895,7 +895,7 @@ double HMatrix::GetNorm(bool UseInfinityNorm)
      /*--------------------------------------------------------------*/
      int lworkOptimal = UseInfinityNorm ? NR : 0;
      if (lworkOptimal > lwork)
-      { work=realloc(work,lworkOptimal*sizeof(double));
+      { work=reallocEC(work,lworkOptimal*sizeof(double));
         lwork=lworkOptimal;
       };
      double *rwork  = (double *)work;
@@ -924,12 +924,12 @@ double HMatrix::GetRCond(double ANorm, bool UseInfinityNorm)
      /*--------------------------------------------------------------*/
      int lworkOptimal = 4*NR;
      if (lworkOptimal > lwork)
-      { work=realloc(work,lworkOptimal*sizeof(double));
+      { work=reallocEC(work,lworkOptimal*sizeof(double));
         lwork=lworkOptimal;
       };
      int iworkOptimal = NR;
      if (iworkOptimal > liwork)
-      { iwork=(int *)realloc(iwork,iworkOptimal*sizeof(int));
+      { iwork=(int *)reallocEC(iwork,iworkOptimal*sizeof(int));
         liwork=iworkOptimal;
       };
 
@@ -944,7 +944,7 @@ double HMatrix::GetRCond(double ANorm, bool UseInfinityNorm)
      /*--------------------------------------------------------------*/
      int lworkOptimal = 6*NR; // 2N doubles plus 2N cdoubles
      if (lworkOptimal > lwork)
-      { work=realloc(work,lworkOptimal*sizeof(double));
+      { work=reallocEC(work,lworkOptimal*sizeof(double));
         lwork=lworkOptimal;
       };
   
