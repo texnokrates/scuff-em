@@ -29,6 +29,8 @@ scuff_add_application(scuff-ldos
   scuff-ldos/GetLDOS.cc
   scuff-ldos/AnalyticalDGFs.cc
 )
+# Fourth typed CLI11 migration.
+target_link_libraries(scuff-ldos PRIVATE scuff_cli11)
 
 scuff_add_application(scuff-neq
   scuff-neq/scuff-neq.cc

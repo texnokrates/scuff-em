@@ -42,7 +42,7 @@ void WriteData(SLDData *Data, cdouble Omega, double *kBloch,
   int LDim         = Data->G->LDim;
   HMatrix *XMatrix = Data->XMatrices[WhichMatrix];
   char *EPFileBase = Data->EPFileBases[WhichMatrix];
-  char *FileBase   = Data->FileBase;
+  const char *FileBase   = Data->FileBase;
 
   bool TwoPointDGF = (XMatrix->NC==6);
 

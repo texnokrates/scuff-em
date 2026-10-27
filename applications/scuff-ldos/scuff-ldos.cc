@@ -28,6 +28,11 @@
 #include <config.h>
 #endif
 
+#include <memory>
+#include <string>
+#include <vector>
+
+#include <ScuffCLI.h>
 #include <libhrutil.h>
 #include <libscuff.h>
 #include <libscuffInternals.h>
@@ -44,100 +49,129 @@ using namespace scuff;
 /***************************************************************/
 /***************************************************************/
 /***************************************************************/
-int main(int argc, char *argv[]) 
-{ 
+int main(int argc, char *argv[])
+{
   InstallHRSignalHandler();
   InitializeLog(argv[0]);
 
   /***************************************************************/
-  /* pre-process command-line arguments to extract arguments     */
-  /* any relevant for Brillouin-zone integration                 */
+  /* pre-process command-line arguments to extract the arguments */
+  /* relevant for Brillouin-zone integration.  InitBZIArgs       */
+  /* consumes its --BZI* options by nulling their argv slots,    */
+  /* which the typed option reader below then skips, exactly as  */
+  /* the legacy argv reader did.                                 */
   /***************************************************************/
   GetBZIArgStruct *BZIArgs=InitBZIArgs(argc, argv);
 
   /***************************************************************/
   /* process remaining command-line arguments ********************/
   /***************************************************************/
-  char *GeoFile;
-/**/
-  cdouble OmegaVals[MAXFREQ];	int nOmegaVals;
-  cdouble LambdaVals[MAXFREQ];	int nLambdaVals;
-  char *OmegaFile=0;
-  char *LambdaFile=0;
-  char *OkBFile=0;
-/**/
-  char *EPFiles[MAXEPFILES];   int nEPFiles=0;
-/**/
-  char *TransFile=0;
-/**/
+  std::string GeoFile;
+  std::vector<cdouble> OmegaVals;
+  std::vector<cdouble> LambdaVals;
+  std::string OmegaFile;
+  std::string LambdaFile;
+  std::string OkBFile;
+  std::vector<std::string> EPFiles;
+  std::string TransFile;
   bool GroundPlane=false;
-  char *HalfSpace=0;
+  std::string HalfSpace;
   bool SkipBZIntegration=false;
-/**/
   double RelTol=1.0e-2;
   double AbsTol=1.0e-8;
   int MaxEvals=10000;
-/**/
-  char *FileBase=0;
+  std::string FileBase;
   bool LDOSOnly=false;
   bool FullTPDGF=false;
-/**/
-  /* name        type    #args  max_instances  storage    count  description*/
-  OptStruct OSArray[]=
-   { {"geometry",    PA_STRING,  1, 1, (void *)&GeoFile,      0,  ".scuffgeo file"},
-//
-     {"HalfSpace",   PA_STRING,  1, 1, (void *)&HalfSpace,    0,  "simulate an infinite half-space for z<0 with the given material"},
-     {"GroundPlane", PA_BOOL,    1, 1, (void *)&GroundPlane,  0,  "simulate an infinite PEC ground plane at z=0"},
-     {"SkipBZIntegration", PA_BOOL,  1, 1, (void *)&SkipBZIntegration, 0,  "bypass BZ integration for analytical half-space/ground-plane calculation"},
-//
-     {"EPFile",      PA_STRING,  1, MAXEPFILES, (void *)EPFiles, &nEPFiles,  "list of evaluation points"},
-//
-     {"TransFile",   PA_STRING,  1, 1, (void *)&TransFile,    0,  "list of geometrical transformations"},
-//
-     {"Omega",       PA_CDOUBLE, 1, MAXFREQ, (void *)OmegaVals,  &nOmegaVals,  "angular frequency"},
-     {"Lambda",      PA_CDOUBLE, 1, MAXFREQ, (void *)LambdaVals, &nLambdaVals, "(free-space) wavelength"},
-     {"OmegaFile",   PA_STRING,  1, 1, (void *)&OmegaFile,    0,  "list of omega points "},
-     {"LambdaFile",  PA_STRING,  1, 1,       (void *)&LambdaFile,   0,       "list of (free-space) wavelengths"},
-     {"OmegakBlochFile",   PA_STRING,  1, 1, (void *)&OkBFile,    0,  "list of (omega,kBloch) points "},
-//
-     {"RelTol",      PA_DOUBLE,  1, 1, (void *)&RelTol,        0,  "relative tolerance"},
-     {"AbsTol",      PA_DOUBLE,  1, 1, (void *)&AbsTol,        0,  "absolute tolerance"},
-     {"MaxEvals",    PA_INT,     1, 1, (void *)&MaxEvals,      0,  "maximum number of integrand/summand evaluation"},
-//
-     {"FileBase",    PA_STRING,  1, 1, (void *)&FileBase,      0,  "base name for output files"},
-     {"LDOSOnly",    PA_BOOL,    0, 1, (void *)&LDOSOnly,      0,  "omit DGF components from Brillouin-zone integration"},
-     {"FullTPDGF",   PA_BOOL,    0, 1, (void *)&FullTPDGF,     0,  "compute full (bare+scattered) two-point DGF (default is scattering part only)"},
-     {0,0,0,0,0,0,0}
+
+  CLI::App App{"compute the local density of states and two-point \
+differential Green's functions of a compact or periodic object"};
+  App.option_defaults()->ignore_case();
+
+  App.add_option("--geometry", GeoFile, ".scuffgeo file")
+     ->take_last();
+  App.add_option("--HalfSpace", HalfSpace,
+                 "simulate an infinite half-space for z<0 with the given material")
+     ->take_last();
+  App.add_flag("--GroundPlane", GroundPlane,
+               "simulate an infinite PEC ground plane at z=0");
+  App.add_flag("--SkipBZIntegration", SkipBZIntegration,
+               "bypass BZ integration for analytical half-space/ground-plane calculation");
+  App.add_option("--EPFile", EPFiles, "list of evaluation points")
+     ->expected(1, MAXEPFILES);
+  App.add_option("--TransFile", TransFile,
+                 "list of geometrical transformations")
+     ->take_last();
+  scuff::cli::AddComplexVectorOption(App, "--Omega", OmegaVals,
+                                     "angular frequency", MAXFREQ);
+  scuff::cli::AddComplexVectorOption(App, "--Lambda", LambdaVals,
+                                     "(free-space) wavelength", MAXFREQ);
+  App.add_option("--OmegaFile", OmegaFile, "list of omega points ")
+     ->take_last();
+  App.add_option("--LambdaFile", LambdaFile,
+                 "list of (free-space) wavelengths")
+     ->take_last();
+  App.add_option("--OmegakBlochFile", OkBFile, "list of (omega,kBloch) points ")
+     ->take_last();
+  App.add_option("--RelTol", RelTol, "relative tolerance")
+     ->take_last();
+  App.add_option("--AbsTol", AbsTol, "absolute tolerance")
+     ->take_last();
+  App.add_option("--MaxEvals", MaxEvals,
+                 "maximum number of integrand/summand evaluation")
+     ->take_last();
+  App.add_option("--FileBase", FileBase, "base name for output files")
+     ->take_last();
+  App.add_flag("--LDOSOnly", LDOSOnly,
+               "omit DGF components from Brillouin-zone integration");
+  App.add_flag("--FullTPDGF", FullTPDGF,
+               "compute full (bare+scattered) two-point DGF (default is scattering part only)");
+
+  if (auto Status=scuff::cli::Parse(App,argc,argv))
+   return *Status;
+
+  /***************************************************************/
+  /***************************************************************/
+  /***************************************************************/
+  if (GeoFile.empty() && !SkipBZIntegration)
+   { CLI::ValidationError Error("scuff-ldos","--geometry option is mandatory");
+     App.exit(Error);
+     return 1;
    };
-  ProcessOptions(argc, argv, OSArray);
-  if (GeoFile==0 && (SkipBZIntegration==false) )
-   OSUsage(argv[0], VERSION, OSArray,"--geometry option is mandatory");
-  if (nEPFiles==0)
-   OSUsage(argv[0], VERSION, OSArray,"you must specify at least one --EPFile");
-  if (!FileBase)
-   FileBase = vstrdup(GetFileBase(GeoFile));
-  if (HalfSpace)
-   { char *NewFileBase=vstrdup("%s.%s",FileBase,HalfSpace);
-     FileBase=NewFileBase;
+  if (EPFiles.empty())
+   { CLI::ValidationError Error("scuff-ldos",
+        "you must specify at least one --EPFile");
+     App.exit(Error);
+     return 1;
    };
+  if (FileBase.empty() && !GeoFile.empty())
+   FileBase=GetFileBase(GeoFile.c_str());
+  if (!HalfSpace.empty())
+   FileBase = FileBase + "." + HalfSpace;
   if (GroundPlane)
-   { char *NewFileBase=vstrdup("%s.GroundPlane",FileBase);
-     FileBase=NewFileBase;
-   };
+   FileBase = FileBase + ".GroundPlane";
+
+  std::vector<const char *> EPFilePtrs;
+  for(const std::string &EPFile : EPFiles)
+   EPFilePtrs.push_back(EPFile.c_str());
 
   /***************************************************************/
   /* process --Omega, --OmegaFile, --OmegakBlochFile arguments   */
   /***************************************************************/
-  HVector *OmegaPoints=0;
-  HMatrix *OkBPoints=0;
-  if (OkBFile)
-   { OkBPoints = new HMatrix(OkBFile);
+  std::unique_ptr<HMatrix> OkBPoints;
+  std::unique_ptr<HVector> OmegaPoints;
+  if (!OkBFile.empty())
+   { OkBPoints.reset(new HMatrix(OkBFile.c_str()));
      if (OkBPoints->ErrMsg)
-      ErrExit(OkBPoints->ErrMsg);
+      ErrExit("%s",OkBPoints->ErrMsg);
    }
   else
-   { OmegaPoints=GetOmegaList(OmegaFile, OmegaVals, nOmegaVals, LambdaFile, LambdaVals, nLambdaVals);
-     if (!OmegaPoints)
+   { OmegaPoints.reset(
+      GetOmegaList(OmegaFile.empty() ? 0 : OmegaFile.c_str(),
+                   OmegaVals.data(), (int)OmegaVals.size(),
+                   LambdaFile.empty() ? 0 : LambdaFile.c_str(),
+                   LambdaVals.data(), (int)LambdaVals.size()) );
+     if (OmegaPoints.get()==0)
       ErrExit("you must specify at least one frequency");
    };
 
@@ -145,45 +179,50 @@ int main(int argc, char *argv[])
   /***************************************************************/
   /***************************************************************/
   if (SkipBZIntegration)
-   { if (OkBFile)
+   { if (OkBPoints.get()!=0)
       ErrExit("--SkipBZIntegration is incompatible with --OmegakBlochFile");
-     if ( !GroundPlane && HalfSpace==0 )
+     if ( !GroundPlane && HalfSpace.empty() )
       ErrExit("--SkipBZIntegration requires either --HalfSpace or --GroundPlane");
-     ProcessHalfSpaceDGFs(OmegaPoints, EPFiles, nEPFiles,
-                          HalfSpace, RelTol, AbsTol, MaxEvals);
-     exit(1);
-   };  
+     ProcessHalfSpaceDGFs(OmegaPoints.get(), EPFilePtrs.data(), (int)EPFiles.size(),
+                          HalfSpace.empty() ? 0 : HalfSpace.c_str(),
+                          RelTol, AbsTol, MaxEvals);
+     return 0;   /* was exit(1), reporting failure on the success path */
+   };
 
   /***************************************************************/
   /* create the SLDData structure that will be passed to all     */
   /* computational routines                                      */
   /***************************************************************/
-  SLDData *Data     = CreateSLDData(GeoFile, TransFile, 
-                                    EPFiles, nEPFiles);
+  SLDData *Data     = CreateSLDData(GeoFile.c_str(),
+                                    TransFile.empty() ? 0 : TransFile.c_str(),
+                                    EPFilePtrs.data(), (int)EPFiles.size());
   Data->RelTol      = RelTol;
   Data->AbsTol      = AbsTol;
   Data->MaxEvals    = MaxEvals;
-  Data->FileBase    = FileBase;
+  Data->FileBase    = FileBase.c_str();
   Data->LDOSOnly    = LDOSOnly;
   Data->ScatteringOnly = !FullTPDGF;
   Data->GroundPlane = GroundPlane;
-  Data->HalfSpaceMP = HalfSpace ? new MatProp(HalfSpace) : 0;
+  Data->HalfSpaceMP = HalfSpace.empty() ? 0 : new MatProp(HalfSpace.c_str());
 
   // set LDOSOnly = false if any EPFiles have 6 coordinates
   // (for two-point DGF calculations)
-  for(int n=0; n<nEPFiles; n++)
+  for(int n=0; n<Data->NumXMatrices; n++)
    if (Data->XMatrices[n]->NC==6)
     Data->LDOSOnly=false;
 
   int LDim = Data->G->LDim;
-  if (HalfSpace && LDim!=2)
-   OSUsage(argv[0], VERSION, OSArray,
-       "--HalfSpace requires a 2D-periodic geometry unless you also say --SkipBZIntegration");
+  if (!HalfSpace.empty() && LDim!=2)
+   { CLI::ValidationError Error("scuff-ldos",
+        "--HalfSpace requires a 2D-periodic geometry unless you also say --SkipBZIntegration");
+     App.exit(Error);
+     return 1;
+   };
 
   int NX         = Data->TotalEvalPoints;
   int NFun       = Data->LDOSOnly ? 2 : 38; // # outputs per eval pt
   int FDim       = NX*NFun;
-  double *Result = (double *)mallocEC(FDim*sizeof(double));
+  std::vector<double> Result(FDim, 0.0);
 
   /***************************************************************/
   /* now switch off to figure out what to do:                    */
@@ -205,25 +244,25 @@ int main(int argc, char *argv[])
   /*-                   each requested Omega value                */
   /*--------------------------------------------------------------*/
   if (LDim==0)
-   {  
+   {
      for(int no=0; no<OmegaPoints->N; no++)
-      GetLDOS( (void *)Data, OmegaPoints->GetEntry(no), 0, Result);
+      GetLDOS( (void *)Data, OmegaPoints->GetEntry(no), 0, Result.data());
    }
   /*--------------------------------------------------------------*/
   /*- PBC structure with specified kBloch points: do a periodic   */
   /*- DGF calculation at each (Omega, kBloch) point               */
   /*--------------------------------------------------------------*/
-  else if (OkBPoints)
-   {  
+  else if (OkBPoints.get()!=0)
+   {
      for(int nokb=0; nokb<OkBPoints->NR; nokb++)
-      { 
+      {
         cdouble Omega=OkBPoints->GetEntry(nokb,0);
 
         double kBloch[3]={0.0, 0.0, 0.0};
         for(int d=0; d<LDim; d++)
          kBloch[d]=OkBPoints->GetEntryD(nokb,1+d);
 
-        GetLDOS( (void *)Data, Omega, kBloch, Result);
+        GetLDOS( (void *)Data, Omega, kBloch, Result.data());
       };
    }
   /*--------------------------------------------------------------*/
@@ -247,10 +286,11 @@ int main(int argc, char *argv[])
      for(int no=0; no<OmegaPoints->N; no++)
       { cdouble Omega=OmegaPoints->GetEntry(no);
         Log("Evaluating Brillouin-zone integral at omega=%s",z2s(Omega));
-        GetBZIntegral(BZIArgs, Omega, Result);
-        WriteData(Data, Omega, 0, FILETYPE_LDOS, Result, BZIArgs->BZIError);
+        GetBZIntegral(BZIArgs, Omega, Result.data());
+        WriteData(Data, Omega, 0, FILETYPE_LDOS, Result.data(), BZIArgs->BZIError);
       };
    };
 
   DestroyBZIArgs(BZIArgs);
+  return 0;
 }

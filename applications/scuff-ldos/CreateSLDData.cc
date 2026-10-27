@@ -92,8 +92,8 @@ void WriteFilePreamble(char *FileName, int FileType, int LDim,
 /***************************************************************/
 /***************************************************************/
 /***************************************************************/
-SLDData *CreateSLDData(char *GeoFile, char *TransFile,
-                       char **EPFiles, int nEPFiles)
+SLDData *CreateSLDData(const char *GeoFile, const char *TransFile,
+                       const char **EPFiles, int nEPFiles)
 {
   SetDefaultCD2SFormat("%.8e %.8e");
 

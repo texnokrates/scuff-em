@@ -62,7 +62,7 @@ typedef struct SLDData
    void **ABMBCache;
 
    // other miscellaneous options
-   char *FileBase;
+   const char *FileBase;
    double RelTol, AbsTol;
    int MaxEvals;
    bool LDOSOnly;
@@ -83,8 +83,8 @@ typedef struct SLDData
 // CreateLDOSData.cc
 void WriteFilePreamble(char *FileName, int FileType, int LDim, 
                        bool HaveGTCList, bool TwoPointDGF);
-SLDData *CreateSLDData(char *GeoFile, char *TransFile,
-                       char **EPFiles, int nEPFiles);
+SLDData *CreateSLDData(const char *GeoFile, const char *TransFile,
+                       const char **EPFiles, int nEPFiles);
 
 // GetLDOS.cc
 void WriteData(SLDData *Data, cdouble Omega, double *kBloch,
@@ -116,8 +116,8 @@ void GetGroundPlaneDGFs(HMatrix *XMatrix,
                         HMatrix *GMatrix);
 
 void ProcessHalfSpaceDGFs(HVector *OmegaPoints,
-                          char **EPFiles, int nEPFiles,
-                          char *HalfSpace,
+                          const char **EPFiles, int nEPFiles,
+                          const char *HalfSpace,
                           double RelTol, double AbsTol, int MaxEvals);
 
 #endif //#ifndef SCUFFLDOS_H

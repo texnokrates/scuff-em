@@ -85,10 +85,13 @@ std::vector<std::string> CollectArgs(int argc, char *argv[])
 {
   std::vector<std::string> Tokens;
 
-  /* Legacy order: stdin first, then argv. */
+  /* Legacy order: stdin first, then argv.  NULL argv slots are skipped
+     to preserve the legacy interop convention in which a pre-parser
+     (e.g. InitBZIArgs) nulls out the slots it consumed. */
   AppendStdinTokens(Tokens);
   for(int n=1; n<argc; n++)
-   Tokens.emplace_back(argv[n]);
+   if (argv[n])
+    Tokens.emplace_back(argv[n]);
 
   /* CLI11's vector parser consumes tokens from the back, so reverse the
      normalized stream to make it parse in the order built above. */

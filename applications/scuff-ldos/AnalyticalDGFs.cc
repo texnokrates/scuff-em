@@ -451,13 +451,13 @@ int GetVacuumDGFs(double *XSource, double *XDest,
 /* the Brillouin-zone sum.                                     */
 /***************************************************************/
 void ProcessHalfSpaceDGFs(HVector *OmegaPoints,
-                          char **EPFiles, int nEPFiles,
-                          char *HalfSpace,
+                          const char **EPFiles, int nEPFiles,
+                          const char *HalfSpace,
                           double RelTol, double AbsTol, int MaxEvals)
 {
   MatProp::SetLengthUnit(1.0e-6);
   MatProp *MP = HalfSpace ? new MatProp(HalfSpace) : 0;
-  char *Label = HalfSpace ? HalfSpace : const_cast<char *>("GroundPlane");
+  const char *Label = HalfSpace ? HalfSpace : "GroundPlane";
 
   for(int nep=0; nep<nEPFiles; nep++)
    { 
