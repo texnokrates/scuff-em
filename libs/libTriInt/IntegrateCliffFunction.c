@@ -1,11 +1,22 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
+#include <stdbool.h>
+#include <math.h>
 #include <time.h>
+#include <unistd.h>
 #include <sys/time.h>
 
-#include <libhrutil.h>
-#include <libTriInt.h>
 #include <libSGJC.h>
+#include "libTriIntC.h"
+
+/* C-compatible stand-in for libhrutil's GetHostName(). */
+static const char *CGetHostName(void)
+{ static char HostName[256];
+  if ( gethostname(HostName,sizeof(HostName)-1) != 0 )
+   strcpy(HostName,"unknown");
+  return HostName;
+}
 
 /***************************************************************/
 /* Estimate the integral of fCliff over interval [x0,x0+Delta] */
@@ -103,7 +114,7 @@ int IntegrateCliffFunction(CliffFunction fCliff, void *UserData, int nFun,
 {
   if (LogFileName)
    { FILE *f=fopen(LogFileName,"a");
-     fprintf(f,"\n## Cliff integrator running on %s\n",GetHostName());
+     fprintf(f,"\n## Cliff integrator running on %s\n",CGetHostName());
      fprintf(f,"## Columns: \n");
      fprintf(f,"## 1 integrand index\n");
      fprintf(f,"## 2 x \n");
@@ -136,13 +147,13 @@ int IntegrateCliffFunction(CliffFunction fCliff, void *UserData, int nFun,
   /***************************************************************/
   /***************************************************************/
   /***************************************************************/
-  bool *Converged = new bool[nFun];
+  bool *Converged = (bool *)malloc(nFun*sizeof(bool));
   memset(Converged, 0, nFun*sizeof(bool));
 
-  int *ConvergedIters = new int[nFun];
+  int *ConvergedIters = (int *)malloc(nFun*sizeof(int));
   memset(ConvergedIters, 0, nFun*sizeof(int));
 
-  double *Workspace = new double[7*nFun];
+  double *Workspace = (double *)malloc(7*nFun*sizeof(double));
 
   double *fBuffer[3];
   double *fLeft  = fBuffer[0] = Workspace + 0*nFun;
@@ -298,9 +309,9 @@ int IntegrateCliffFunction(CliffFunction fCliff, void *UserData, int nFun,
 
    };
 
-  delete[] Workspace;
-  delete[] ConvergedIters;
-  delete[] Converged;
+  free(Workspace);
+  free(ConvergedIters);
+  free(Converged);
   return fEvals;
-  
+
 }

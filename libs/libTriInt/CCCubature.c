@@ -18,21 +18,39 @@
  */
 
 /*
- * CCCubature.cc -- clenshaw-curtis quadrature routines
+ * CCCubature.c -- clenshaw-curtis quadrature routines
  *
  * homer reid  -- 6/2014
  *
  */
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <math.h>
 #include <stdarg.h>
 
-#include <libhrutil.h>
 #include <libSGJC.h>
-#include <libTriInt.h>
+#include "libTriIntC.h"
 
 #define MAXDIM 10
+
+/* C-compatible stand-in for libhrutil's ErrExit(). */
+static void CCCError(const char *format, ...)
+{
+  va_list ap;
+  va_start(ap,format);
+  fprintf(stderr,"error: ");
+  vfprintf(stderr,format,ap);
+  fprintf(stderr," (aborting)\n");
+  va_end(ap);
+  exit(1);
+}
+
+/* C-compatible stand-in for libhrutil's VecPlusEquals(): v1 += Alpha*v2 */
+static double *CVecPlusEquals(double *v1, double Alpha, const double *v2, int N)
+{ for(int n=0; n<N; n++) v1[n] += Alpha*v2[n];
+  return v1;
+}
 
 /***************************************************************/
 /***************************************************************/
@@ -51,10 +69,10 @@ int CCCubature(int Order, unsigned fdim, integrand f, void *fdata,
 
   double *CCQR = GetCCRule(Order);
   if (!CCQR) 
-   ErrExit("invalid CCRule order (%i) in CCCubature",Order);
+   CCCError("invalid CCRule order (%i) in CCCubature",Order);
 
   if (dim>MAXDIM) 
-   ErrExit("dimension too high in CCCubature");
+   CCCError("dimension too high in CCCubature");
 
   double uAvg[MAXDIM], uDelta[MAXDIM];
   for(unsigned d=0; d<dim; d++)
@@ -86,7 +104,7 @@ int CCCubature(int Order, unsigned fdim, integrand f, void *fdata,
       };
 
      f(dim, u, fdata, fdim, Integrand);
-     VecPlusEquals(Integral, w, Integrand, fdim);
+     CVecPlusEquals(Integral, w, Integrand, fdim);
      nCalls++;
    };
 
@@ -134,7 +152,7 @@ void ECC2D(int p, double xMin[2], double xMax[2],
      case 5: N=33;  NSub=17; break;
      case 6: N=65;  NSub=33; break;
      case 7: N=129; NSub=65; break;
-     default: ErrExit("unsupported cubature order in ECC2D");
+     default: CCCError("unsupported cubature order in ECC2D");
    };
   double *FullQR=GetCCRule(N);
   double *OuterQR=GetCCRule(NSub);
@@ -229,7 +247,7 @@ void ECC(int p, double xMin, double xMax,
      case 4: N=17;  NSub=9;  break;
      case 5: N=33;  NSub=17; break;
      case 6: N=65;  NSub=33; break;
-     default: ErrExit("unsupported cubature order in ECC2D");
+     default: CCCError("unsupported cubature order in ECC2D");
    };
   double *FullQR=GetCCRule(N);
   double *OuterQR=GetCCRule(NSub);
@@ -302,7 +320,7 @@ int RRCubature(int Order, int *Orders,
 
   for(int d=0; d<IDim; d++)
    if (N[d]<=0)
-    ErrExit("invalid order %i in RRCubature",N[d]);
+    CCCError("invalid order %i in RRCubature",N[d]);
 
   double Delta[MAXDIM];
   double Weight=1.0;
@@ -333,7 +351,7 @@ int RRCubature(int Order, int *Orders,
       };
 
      f(IDim, x, UserData, FDim, Integrand);
-     VecPlusEquals(Integral, Weight, Integrand, FDim);
+     CVecPlusEquals(Integral, Weight, Integrand, FDim);
      nCalls++;
    };
 

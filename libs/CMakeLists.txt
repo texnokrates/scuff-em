@@ -72,14 +72,14 @@ scuff_add_module(scuff_matprop
 )
 
 scuff_add_module(scuff_triint
-  libTriInt/libTriInt.cc
+  libTriInt/libTriInt.c
   libTriInt/CCRules.cc
   libTriInt/LebedevRules.cc
-  libTriInt/CCCubature.cc
-  libTriInt/TCR.cc
+  libTriInt/CCCubature.c
+  libTriInt/TCR.c
   libTriInt/BZIntegration.cc
   libTriInt/LatticeSum.cc
-  libTriInt/IntegrateCliffFunction.cc
+  libTriInt/IntegrateCliffFunction.c
 )
 
 scuff_add_module(scuff_spherical

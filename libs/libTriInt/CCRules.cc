@@ -1,5 +1,10 @@
+/* (generated data table; the only hand-maintained part is the GetCCRule
+   accessor, whose declaration in libTriIntC.h carries C linkage so the
+   plain-C CCCubature.c can call it) */
 #include <stdlib.h>
 #include <string.h>
+
+#include "libTriIntC.h"
 
 double CCRule1[2]={
  0.000000000000000e+00, 2.000000000000000e-00};

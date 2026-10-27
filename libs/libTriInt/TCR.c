@@ -65,7 +65,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include "libTriInt.h"
+#include "libTriIntC.h"
 
 /* case 0:  TCR=TCR1;   NumPts=1;  break; */
 static double TCR1[]=

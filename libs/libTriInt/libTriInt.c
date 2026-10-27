@@ -18,7 +18,7 @@
  */
 
 /*
- * libTriInt.cc -- implementation of libTriInt 
+ * libTriInt.c -- implementation of libTriInt
  *
  * homer reid   -- 12/2008
  */
@@ -30,10 +30,33 @@
 #include <math.h>
 #include <time.h>
 
-#include "libTriInt.h"
-#include "libhrutil.h"
+#include "libTriIntC.h"
 
-extern FILE *LogFile;
+/* C-compatible stand-ins for the libhrutil helpers used here. */
+static void *CCheckedMalloc(size_t N)
+{ void *p=malloc(N);
+  if ( N && !p )
+   { fprintf(stderr,"error: libTriInt: out of memory (aborting)\n");
+     exit(1);
+   };
+  return p;
+}
+
+static char *CCheckedStrDup(const char *s)
+{ char *p=strdup(s);
+  if ( !p )
+   { fprintf(stderr,"error: libTriInt: out of memory (aborting)\n");
+     exit(1);
+   };
+  return p;
+}
+
+static void CCVsnprintf(char *buffer, size_t N, const char *format, va_list ap)
+{ if ( vsnprintf(buffer,N,format,ap) >= (int)N )
+   { fprintf(stderr,"error: libTriInt: formatted string too long (aborting)\n");
+     exit(1);
+   };
+}
 
 /*--------------------------------------------------------------*/
 /*--------------------------------------------------------------*/
@@ -100,7 +123,7 @@ void *CreateTIWorkspace(int nFun, int MaxIters)
      T->E=TIW->EBuffer + nt*nFun;
    };
 
-  TIW->LogFileName=strdupEC("libTriInt.log");
+  TIW->LogFileName=CCheckedStrDup("libTriInt.log");
   return TIW;
 
 } 
@@ -132,12 +155,12 @@ void SetTriIntLogFileName(void *pTIW, const char *format, ...)
   va_list ap;
   
   va_start(ap,format);
-  vsnprintfEC(buffer,200,format,ap);
+  CCVsnprintf(buffer,200,format,ap);
   va_end(ap);
 
   free(TIW->LogFileName);
 
-  TIW->LogFileName=strdupEC(buffer);
+  TIW->LogFileName=CCheckedStrDup(buffer);
 }
 
 /*--------------------------------------------------------------*/
@@ -246,7 +269,7 @@ static void Log(TIWorkspace *TIW, const char *format, ...)
   return;
 
  va_start(ap,format);
- vsnprintfEC(buffer,200,format,ap);
+ CCVsnprintf(buffer,200,format,ap);
  va_end(ap);
 
  MyTime=time(0);
