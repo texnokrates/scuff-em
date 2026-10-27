@@ -33,6 +33,11 @@
 #include <config.h>
 #endif
 
+#include <memory>
+#include <string>
+#include <vector>
+
+#include <ScuffCLI.h>
 #include "scuff-cas3D.h"
 
 /***************************************************************/
@@ -53,145 +58,141 @@ int main(int argc, char *argv[])
 
   /***************************************************************/
   /* pre-process command-line arguments to extract arguments     */
-  /* any relevant for Brillouin-zone integration                 */
+  /* any relevant for Brillouin-zone integration.  InitBZIArgs   */
+  /* consumes its --BZI* options by nulling their argv slots,    */
+  /* which the typed option reader below then skips.             */
   /***************************************************************/
   GetBZIArgStruct *BZIArgs=InitBZIArgs(argc, argv);
 
   /***************************************************************/
   /* process options *********************************************/
   /***************************************************************/
-  char *GeoFile=0;
-  char *TransFile=0;
-
-  //
-  // options specifying quantities computed
-  //
+  std::string GeoFile;
+  std::string TransFile;
   bool Energy=false;
   bool XForce=false;
   bool YForce=false;
   bool ZForce=false;
-  double TorqueAxes[9];                     int nTorque;
+  std::vector<double> TorqueAxes;   // 3 values per occurrence
   bool AllTorque=false;
-
-  //
-  // options affecting frequency integration or sampling
-  //
-  double Temperature=0.0;                   int nTemperature;
-  double XiVals[MAXFREQ];	            int nXiVals;
-  char *XiFile=0;
-  char *XikBlochFile=0;
-  char *XiQuadrature=0;
+  double Temperature=0.0;
+  std::vector<double> XiVals;
+  std::string XiFile;
+  std::string XikBlochFile;
+  std::string XiQuadrature;
   double XiMin=0.001;
   int MaxXiPoints=10000;
   int Intervals=50;
   double AbsTol=0.0;
   double RelTol=1.0e-2;
-
-  //
-  // option allowing user to override default output file names
-  //
-  char *FileBase=0;
-
-  //
-  // cache options
-  //
-  char *Cache=0;
-  char *ReadCache[MAXCACHE];                int nReadCache;
-  char *WriteCache=0;
-
-  //
-  // other miscellaneous flags
-  //
+  std::string FileBase;
+  std::string Cache, WriteCache;
+  std::vector<std::string> ReadCache;
   bool UseExistingData = false;
   bool NewEnergyMethod = false;
   bool WriteHDF5Files  = false;
 
-//
-  /* name               type    #args  max_instances  storage           count         description*/
-  OptStruct OSArray[]=
-   { {"Geometry",       PA_STRING,  1, 1,       (void *)&GeoFile,       0,             "geometry file"},
-     {"TransFile",      PA_STRING,  1, 1,       (void *)&TransFile,     0,             "list of geometrical transformation"},
-//
-     {"Energy",         PA_BOOL,    0, 1,       (void *)&Energy,        0,             "compute Casimir energy"},
-     {"XForce",         PA_BOOL,    0, 1,       (void *)&XForce,        0,             "compute x-directed Casimir force"},
-     {"YForce",         PA_BOOL,    0, 1,       (void *)&YForce,        0,             "compute y-directed Casimir force"},
-     {"ZForce",         PA_BOOL,    0, 1,       (void *)&ZForce,        0,             "compute z-directed Casimir force"},
-     {"Torque",         PA_DOUBLE,  3, 3,       (void *)TorqueAxes,     &nTorque,      "compute Casimir torque about a given axis"},
-     {"AllTorque",      PA_BOOL,    0, 1,       (void *)&AllTorque,     0,             "compute all three Casimir torque components"},
-//
-     {"Temperature",    PA_DOUBLE,  1, 1,       (void *)&Temperature,   &nTemperature, "temperature in Kelvin"},
-     {"Xi",             PA_DOUBLE,  1, MAXFREQ, (void *)XiVals,         &nXiVals,      "imaginary frequency"},
-     {"XiFile",         PA_STRING,  1, 1,       (void *)&XiFile,        0,             "file containing Xi values"},
-     {"XikBlochFile",   PA_STRING,  1, 1,       (void *)&XikBlochFile,       0,             "file containing (Xi, kx, ky) values"},
-     {"XiQuadrature",   PA_STRING,  1, 1,       (void *)&XiQuadrature,  0,             "quadrature method for Xi integration"},
-     {"XiMin",          PA_DOUBLE,  1, 1,       (void *)&XiMin,         0,             "assume Xi integrand constant below this value"},
-     {"MaxXiPoints",    PA_INT,     1, 1,       (void *)&MaxXiPoints,   0,             "maximum number of Xi integrand evaluations"},
-     {"Intervals",      PA_INT,     1, 1,       (void *)&Intervals,     0,             "number of subintervals for frequency quadrature"},
-     {"AbsTol",         PA_DOUBLE,  1, 1,       (void *)&AbsTol,        0,             "absolute tolerance for sums and integrations"},
-     {"RelTol",         PA_DOUBLE,  1, 1,       (void *)&RelTol,        0,             "relative tolerance for sums and integrations"},
-//
-     {"FileBase",       PA_STRING,  1, 1,       (void *)&FileBase,      0,             "base filename for output files"},
-//
-     {"Cache",          PA_STRING,  1, 1,       (void *)&Cache,         0,             "read/write cache"},
-     {"ReadCache",      PA_STRING,  1, MAXCACHE,(void *)ReadCache,      &nReadCache,   "read cache"},
-     {"WriteCache",     PA_STRING,  1, 1,       (void *)&WriteCache,    0,             "write cache"},
-//
-     {"UseExistingData", PA_BOOL,   0, 1,       (void *)&UseExistingData, 0,           "reuse data from existing .byXi files"},
-//
-     {"NewEnergyMethod", PA_BOOL,   0, 1,       (void *)&NewEnergyMethod, 0,           "use alternative method for energy calculation"},
-//
-     {"WriteHDF5Files", PA_BOOL,    1, 1,       (void *)&WriteHDF5Files,0,             "write BEM matrices to .hdf5 files"},
-     {0,0,0,0,0,0,0}
-   };
-  ProcessOptions(argc, argv, OSArray);
+  CLI::App App{"compute Casimir energies, forces, and torques"};
+  App.option_defaults()->ignore_case();
+
+  App.add_option("--geometry", GeoFile, "geometry file")
+     ->required()
+     ->take_last();
+  App.add_option("--transfile", TransFile,
+                 "list of geometrical transformation")->take_last();
+
+  App.add_flag("--energy", Energy, "compute Casimir energy");
+  App.add_flag("--xforce", XForce, "compute x-directed Casimir force");
+  App.add_flag("--yforce", YForce, "compute y-directed Casimir force");
+  App.add_flag("--zforce", ZForce, "compute z-directed Casimir force");
+  App.add_option("--torque", TorqueAxes,
+                 "compute Casimir torque about a given axis")
+     ->type_size(3)
+     ->expected(1, 3);
+  App.add_flag("--alltorque", AllTorque,
+               "compute all three Casimir torque components");
+
+  App.add_option("--temperature", Temperature, "temperature in Kelvin")->take_last();
+  App.add_option("--xi", XiVals, "imaginary frequency")
+     ->expected(1, MAXFREQ);
+  App.add_option("--xifile", XiFile, "file containing Xi values")->take_last();
+  App.add_option("--xikblochfile", XikBlochFile,
+                 "file containing (Xi, kx, ky) values")->take_last();
+  App.add_option("--xiquadrature", XiQuadrature,
+                 "quadrature method for Xi integration")->take_last();
+  App.add_option("--ximin", XiMin,
+                 "assume Xi integrand constant below this value")->take_last();
+  App.add_option("--maxxipoints", MaxXiPoints,
+                 "maximum number of Xi integrand evaluations")->take_last();
+  App.add_option("--intervals", Intervals,
+                 "number of subintervals for frequency quadrature")->take_last();
+  App.add_option("--abstol", AbsTol,
+                 "absolute tolerance for sums and integrations")->take_last();
+  App.add_option("--reltol", RelTol,
+                 "relative tolerance for sums and integrations")->take_last();
+
+  App.add_option("--filebase", FileBase, "base filename for output files")->take_last();
+
+  App.add_option("--cache", Cache, "read/write cache")->take_last();
+  App.add_option("--readcache", ReadCache, "read cache")->expected(1, MAXCACHE);
+  App.add_option("--writecache", WriteCache, "write cache")->take_last();
+
+  App.add_flag("--useexistingdata", UseExistingData,
+               "reuse data from existing .byXi files");
+  App.add_flag("--newenergymethod", NewEnergyMethod,
+               "use alternative method for energy calculation");
+  App.add_flag("--writehdf5files", WriteHDF5Files,
+               "write BEM matrices to .hdf5 files");
+
+  if (auto Status=scuff::cli::Parse(App,argc,argv))
+   return *Status;
 
   /*******************************************************************/
   /*******************************************************************/
   /*******************************************************************/
-  if (GeoFile==0)
-   OSUsage(argv[0], VERSION, OSArray, "--geometry option is mandatory");
-  if (!FileBase)
-   FileBase=vstrdup(GetFileBase(GeoFile));
+  if (FileBase.empty())
+   FileBase=GetFileBase(GeoFile.c_str());
 
   /***************************************************************/
   /* try to create the geometry  *********************************/
   /***************************************************************/
-  RWGGeometry *G = new RWGGeometry(GeoFile);
-  //G->SetLogLevel(SCUFF_TERSELOGGING);
+  std::unique_ptr<RWGGeometry> G(new RWGGeometry(GeoFile.c_str()));
   G->SetLogLevel(SCUFF_VERBOSELOGGING);
 
   /***************************************************************/
   /* process frequency- and kBloch-related options               */
   /***************************************************************/
-  HMatrix *XiPoints=0;
-  HMatrix *XiKPoints=0;
+  std::unique_ptr<HMatrix> XiPoints;
+  std::unique_ptr<HMatrix> XiKPoints;
+  bool TemperatureSpecified = App.get_option("--temperature")->count() > 0;
+  int nTorque = (int)TorqueAxes.size()/3;
 
-  if ( XikBlochFile )
-   { if (XiFile)       ErrExit("--XikBlochFile and --XiFile options are mutually exclusive");
-     if (nXiVals>0)    ErrExit("--XikBlochFile and --Xi options are mutually exclusive");
-     if (nTemperature) ErrExit("--XikBlochFile and --Temperature options are mutually exclusive");
-     if (G->LDim==0)   ErrExit("--XikBlochFile may only be used for periodic geometries");
-     XiKPoints=new HMatrix(XikBlochFile,LHM_TEXT,"--nc 3 --strict");
+  if ( !XikBlochFile.empty() )
+   { if (!XiFile.empty())      ErrExit("--XikBlochFile and --XiFile options are mutually exclusive");
+     if (XiVals.size()>0)      ErrExit("--XikBlochFile and --Xi options are mutually exclusive");
+     if (TemperatureSpecified) ErrExit("--XikBlochFile and --Temperature options are mutually exclusive");
+     if (G->LDim==0)           ErrExit("--XikBlochFile may only be used for periodic geometries");
+     XiKPoints.reset(new HMatrix(XikBlochFile.c_str(),LHM_TEXT,"--nc 3 --strict"));
      if (XiKPoints->ErrMsg)
-      ErrExit(XiKPoints->ErrMsg);
-     Log("Read %i (Xi, kBloch) points from file %s.",XiKPoints->NR, XikBlochFile);
+      ErrExit("%s",XiKPoints->ErrMsg);
+     Log("Read %i (Xi, kBloch) points from file %s.",XiKPoints->NR, XikBlochFile.c_str());
    }
-  else if ( XiFile )
-   { if (nXiVals>0)    ErrExit("--XiFile and --Xi options are mutually exclusive");
-     if (nTemperature) ErrExit("--XiFile and --Temperature options are mutually exclusive");
-     XiPoints = new HMatrix(XiFile,LHM_TEXT,"--nc 1 --strict");
+  else if ( !XiFile.empty() )
+   { if (XiVals.size()>0)      ErrExit("--XiFile and --Xi options are mutually exclusive");
+     if (TemperatureSpecified) ErrExit("--XiFile and --Temperature options are mutually exclusive");
+     XiPoints.reset(new HMatrix(XiFile.c_str(),LHM_TEXT,"--nc 1 --strict"));
      if (XiPoints->ErrMsg)
-      ErrExit(XiPoints->ErrMsg);
-     Log("Read %i Xi points from file %s.",XiPoints->NR, XiFile);
+      ErrExit("%s",XiPoints->ErrMsg);
+     Log("Read %i Xi points from file %s.",XiPoints->NR, XiFile.c_str());
    }
-  else if ( nXiVals>0 )
-   { if (nTemperature) ErrExit("--Xi and --Temperature options are mutually exclusive");
-     XiPoints = new HMatrix(nXiVals, 1);
-     for(int nxv=0; nxv<nXiVals; nxv++) 
-      XiPoints->SetEntry(nxv, 0, XiVals[nxv]);
-     Log("Performing Casimir calculations at %i command-line Xi points.",nXiVals);
+  else if ( XiVals.size()>0 )
+   { if (TemperatureSpecified) ErrExit("--Xi and --Temperature options are mutually exclusive");
+     XiPoints.reset(new HMatrix((int)XiVals.size(), 1));
+     for(size_t nxv=0; nxv<XiVals.size(); nxv++)
+      XiPoints->SetEntry((int)nxv, 0, XiVals[nxv]);
+     Log("Performing Casimir calculations at %i command-line Xi points.",(int)XiVals.size());
    }
-  else if ( nTemperature==1 )
+  else if ( TemperatureSpecified )
    Log("Computing full Matsubara-summed Casimir quantities at T=%e Kelvin.",Temperature);
   else
    Log("Computing full zero-temperature Casimir quantities.");
@@ -199,29 +200,29 @@ int main(int argc, char *argv[])
   /*******************************************************************/
   /* process integration options *************************************/
   /*******************************************************************/
-  if ( XiQuadrature && XiPoints )
+  if ( !XiQuadrature.empty() && XiPoints )
    ErrExit("--XiQuadrature is incompatible with --Xi or --XiFile");
-  if ( XiQuadrature && XiKPoints )
+  if ( !XiQuadrature.empty() && XiKPoints )
    ErrExit("--XiQuadrature is incompatible with --XikBlochFile ");
-  if ( XiQuadrature && XiKPoints )
+  if ( !XiQuadrature.empty() && TemperatureSpecified )
    ErrExit("--XiQuadrature is incompatible with --Temperature ");
 
   int XiQMethod = QMETHOD_CLIFF;
-  if (XiQuadrature)
-   { if ( !strcasecmp(XiQuadrature,"CLIFF") )
+  if (!XiQuadrature.empty())
+   { if ( !strcasecmp(XiQuadrature.c_str(),"CLIFF") )
       { XiQMethod = QMETHOD_CLIFF;
         Log("Using cliff integration method for Xi quadrature.");
       }
-     else if ( !strcasecmp(XiQuadrature,"TRAPSIMP") )
+     else if ( !strcasecmp(XiQuadrature.c_str(),"TRAPSIMP") )
       { XiQMethod = QMETHOD_TRAPSIMP;
         Log("Using trap/simp integration method (%i intervals) for Xi quadrature.",Intervals);
       }
-     else if ( !strcasecmp(XiQuadrature,"ADAPTIVE") )
+     else if ( !strcasecmp(XiQuadrature.c_str(),"ADAPTIVE") )
       { XiQMethod = QMETHOD_ADAPTIVE;
         Log("Using adaptive integration method for Xi quadrature.");
       }
      else
-      ErrExit("unknown value %s specified for --XiQuadrature",XiQuadrature);
+      ErrExit("unknown value %s specified for --XiQuadrature",XiQuadrature.c_str());
    };
 
   /*******************************************************************/
@@ -242,10 +243,10 @@ int main(int argc, char *argv[])
   if (nTorque>2) { NumQuantities++; WhichQuantities |= QUANTITY_TORQUE3; };
   if (AllTorque)
    { if (nTorque>0) ErrExit("--AllTorque and --Torque options are mutually exclusive");
-     NumQuantities+=3; 
+     NumQuantities+=3;
      WhichQuantities |= (QUANTITY_TORQUE1 + QUANTITY_TORQUE2 + QUANTITY_TORQUE3);
      nTorque=3;
-     memset(TorqueAxes, 0, 9*sizeof(double));
+     TorqueAxes.assign(9, 0.0);
      TorqueAxes[0]=TorqueAxes[4]=TorqueAxes[8]=1.0;
    };
 
@@ -253,24 +254,24 @@ int main(int argc, char *argv[])
   /* preload the scuff cache with any cache preload files the user   */
   /* may have specified                                              */
   /*******************************************************************/
-  if ( Cache!=0 && WriteCache!=0 )
+  if ( !Cache.empty() && !WriteCache.empty() )
    ErrExit("--cache and --writecache options are mutually exclusive");
-  for (int nrc=0; nrc<nReadCache; nrc++)
-   PreloadCache( ReadCache[nrc] );
-  if (Cache)
-   PreloadCache( Cache );
+  for (size_t nrc=0; nrc<ReadCache.size(); nrc++)
+   PreloadCache( ReadCache[nrc].c_str() );
+  if (!Cache.empty())
+   PreloadCache( Cache.c_str() );
 
-  if (Cache) WriteCache=Cache;
+  if (!Cache.empty()) WriteCache=Cache;
 
   /*******************************************************************/
   /* create the SC3Data structure that contains all the info needed  */
   /* to evaluate the contributions of a single frequency and kBloch  */
   /* point to the Casimir quantities                                 */
   /*******************************************************************/
-  SC3Data *SC3D=CreateSC3Data(G, TransFile, WhichQuantities, NumQuantities,
-                              nTorque, TorqueAxes, NewEnergyMethod, FileBase);
+  SC3Data *SC3D=CreateSC3Data(G.get(), TransFile.c_str(), WhichQuantities, NumQuantities,
+                              nTorque, TorqueAxes.data(), NewEnergyMethod, FileBase.c_str());
 
-  SC3D->WriteCache         = WriteCache;
+  SC3D->WriteCache         = WriteCache.empty() ? 0 : WriteCache.c_str();
   SC3D->WriteHDF5Files     = WriteHDF5Files;
   SC3D->AbsTol             = AbsTol;
   SC3D->RelTol             = RelTol;
@@ -290,46 +291,46 @@ int main(int argc, char *argv[])
   /* now switch off based on the requested frequency behavior to     */
   /* perform the actual calculations                                 */
   /*******************************************************************/
-  double *EFT = new double[SC3D->NTNQ];
-  double *Error=0; 
-  if ( XiKPoints )
-   { 
+  std::vector<double> EFT(SC3D->NTNQ, 0.0);
+  std::vector<double> Error;
+  if ( XiKPoints.get()!=0 )
+   {
      for(int nr=0; nr<XiKPoints->NR; nr++)
-      { 
+      {
         double Xi, kBloch[2]={0.0, 0.0};
         Xi        = XiKPoints->GetEntryD(nr, 0);
         kBloch[0] = XiKPoints->GetEntryD(nr, 1);
         if (G->LDim>=2)
          kBloch[1] = XiKPoints->GetEntryD(nr, 2);
-        GetCasimirIntegrand(SC3D, cdouble(0.0,Xi), kBloch, EFT);
+        GetCasimirIntegrand(SC3D, cdouble(0.0,Xi), kBloch, EFT.data());
       };
    }
-  else if ( XiPoints )
-   { 
+  else if ( XiPoints.get()!=0 )
+   {
      for (int nr=0; nr<XiPoints->NR; nr++)
-      GetXiIntegrand(SC3D, XiPoints->GetEntryD(nr,0), EFT);
+      GetXiIntegrand(SC3D, XiPoints->GetEntryD(nr,0), EFT.data());
    }
   else if ( Temperature > 0.0)
-   { 
-     Error = new double[SC3D->NTNQ];
-     GetMatsubaraSum(SC3D, Temperature, EFT, Error);
+   {
+     Error.assign(SC3D->NTNQ, 0.0);
+     GetMatsubaraSum(SC3D, Temperature, EFT.data(), Error.data());
    }
   else // full Xi integration for zero-temperature casimir quantities
-   { 
-     Error = new double[SC3D->NTNQ];
+   {
+     Error.assign(SC3D->NTNQ, 0.0);
      if (XiQMethod == QMETHOD_ADAPTIVE)
-      GetXiIntegral_Adaptive(SC3D, EFT, Error);
+      GetXiIntegral_Adaptive(SC3D, EFT.data(), Error.data());
      else if (XiQMethod == QMETHOD_TRAPSIMP)
-      GetXiIntegral_TrapSimp(SC3D, Intervals, EFT, Error);
+      GetXiIntegral_TrapSimp(SC3D, Intervals, EFT.data(), Error.data());
      else
-      GetXiIntegral_Cliff(SC3D, EFT, Error);
+      GetXiIntegral_Cliff(SC3D, EFT.data(), Error.data());
    };
 
   /***************************************************************/
   /* write output file if we computed summed or integrated quantities */
   /***************************************************************/
-  if (Error)
-   { 
+  if (!Error.empty())
+   {
      WriteFilePreamble(SC3D, PREAMBLE_OUT);
      FILE *OutFile=fopen(SC3D->OutFileName,"a");
      int ntnq=0;
@@ -339,11 +340,9 @@ int main(int argc, char *argv[])
          fprintf(OutFile,"%e %e ",EFT[ntnq],Error[ntnq]);
         fprintf(OutFile,"\n");
       };
-     fclose(OutFile); 
-     delete[] Error;
+     fclose(OutFile);
    };
 
-  delete[] EFT;
   DestroyBZIArgs(BZIArgs);
 
   /***************************************************************/

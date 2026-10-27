@@ -99,7 +99,8 @@ typedef struct SC3Data
    // storage of ... explain me
    double *UTIntegralBuffer[2];
 
-   char *FileBase, *ByXiFileName, *ByXiKFileName, *OutFileName;
+   const char *FileBase;
+   char *ByXiFileName, *ByXiKFileName, *OutFileName;
 
    // adaptive frequency integration limits
    double XiMin;
@@ -113,14 +114,14 @@ typedef struct SC3Data
    // various other miscellaneous items
    bool UseExistingData;
    bool WriteHDF5Files;
-   char *WriteCache;
+   const char *WriteCache;
 
  } SC3Data;
 
-SC3Data *CreateSC3Data(RWGGeometry *G, char *TransFile,
+SC3Data *CreateSC3Data(RWGGeometry *G, const char *TransFile,
                        int WhichQuantities, int NumQuantities,
                        int NumTorqueAxes, double TorqueAxes[9],
-                       bool NewEnergyMethod, char *FileBase);
+                       bool NewEnergyMethod, const char *FileBase);
 
 void WriteFilePreamble(SC3Data *SC3D, int PreambleType);
 

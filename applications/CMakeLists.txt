@@ -13,6 +13,8 @@ scuff_add_application(scuff-cas3D
   scuff-cas3D/SumsIntegrals.cc
   scuff-cas3D/scuff-cas3D.cc
 )
+# Seventh typed CLI11 migration.
+target_link_libraries(scuff-cas3D PRIVATE scuff_cli11)
 # This application calls LAPACK directly.
 target_link_libraries(scuff-cas3D PRIVATE LAPACK::LAPACK BLAS::BLAS)
 

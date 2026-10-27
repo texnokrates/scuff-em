@@ -39,10 +39,10 @@ using namespace scuff;
 /***************************************************************/
 /***************************************************************/
 /***************************************************************/
-SC3Data *CreateSC3Data(RWGGeometry *G, char *TransFile,
+SC3Data *CreateSC3Data(RWGGeometry *G, const char *TransFile,
                        int WhichQuantities, int NumQuantities,
                        int NumTorqueAxes, double TorqueAxes[9],
-                       bool NewEnergyMethod, char *FileBase)
+                       bool NewEnergyMethod, const char *FileBase)
 {
   SC3Data *SC3D=(SC3Data *)mallocEC(sizeof(*SC3D));
   SC3D->G = G;
