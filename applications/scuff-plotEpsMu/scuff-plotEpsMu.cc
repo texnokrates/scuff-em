@@ -53,6 +53,10 @@
 #include <string.h>
 #include <math.h>
 
+#include <memory>
+#include <string>
+
+#include <ScuffCLI.h>
 #include "libhrutil.h"
 #include "libMatProp.h"
 #include "libscuff.h"
@@ -71,24 +75,28 @@ int main(int argc, char *argv[])
   /***************************************************************/
   /*- process command-line arguments  ****************************/
   /***************************************************************/
+  std::string Material;
   double OmegaMin=OMEGAMIN;
   double OmegaMax=OMEGAMAX;
   double LengthUnit=0.0;
-  int GnuPlot=0;
-  char *Material=0;
-  char *GeoFile=0; 
-  ArgStruct ASArray[]=
-   { {"material",   PA_STRING, (void *)&Material,   0, "name of material"},
-     {"OmegaMin",   PA_DOUBLE, (void *)&OmegaMin,   0, "minimum angular frequency"},
-     {"OmegaMax",   PA_DOUBLE, (void *)&OmegaMax,   0, "maximum angular frequency"},
-     {"LengthUnit", PA_DOUBLE, (void *)&LengthUnit, 0, "length unit"},
-     {"gnuplot",    PA_BOOL,   (void *)&GnuPlot,    0, "use GNUPLOT to plot results"},
-     {"geometry",   PA_STRING, (void *)&GeoFile,    0, ".scuffgeo file containing material definition"},
-     {0,0,0,0,0}
-   };
-  ProcessArguments(argc, argv, ASArray);
-  if (Material==0)
-   ASUsage(argv[0],ASArray,"--material option is mandatory");
+  bool GnuPlot=false;
+  std::string GeoFile;
+
+  CLI::App App{"plot epsilon and mu versus frequency for a material"};
+  App.option_defaults()->ignore_case();
+
+  App.add_option("--material", Material, "name of material")
+     ->required()
+     ->take_last();
+  App.add_option("--OmegaMin", OmegaMin, "minimum angular frequency")->take_last();
+  App.add_option("--OmegaMax", OmegaMax, "maximum angular frequency")->take_last();
+  App.add_option("--LengthUnit", LengthUnit, "length unit")->take_last();
+  App.add_flag("--gnuplot", GnuPlot, "use GNUPLOT to plot results");
+  App.add_option("--geometry", GeoFile,
+                 ".scuffgeo file containing material definition")->take_last();
+
+  if (auto Status=scuff::cli::Parse(App,argc,argv))
+   return *Status;
 
   if (LengthUnit!=0.0)
    MatProp::SetLengthUnit(LengthUnit);
@@ -103,8 +111,8 @@ int main(int argc, char *argv[])
   /* RWGGeometry for it in order to get its MATERIAL definitions */
   /* into the system.                                            */
   /***************************************************************/
-  RWGGeometry *G = GeoFile ? new RWGGeometry(GeoFile) : 0;
-  if (G)
+  std::unique_ptr<RWGGeometry> G( GeoFile.empty() ? 0 : new RWGGeometry(GeoFile.c_str()) );
+  if (G.get()!=0)
    { Log("Reading material definitions from geometry file %s.\n",G->GeoFileName);
      MatProp::SetFreqUnit(1.0);
    };
@@ -112,9 +120,9 @@ int main(int argc, char *argv[])
   /***************************************************************/
   /* try to create a MatProp for the specified material          */
   /***************************************************************/
-  MatProp *MP=new MatProp(Material);
+  std::unique_ptr<MatProp> MP(new MatProp(Material.c_str()));
   if (MP->ErrMsg)
-   ErrExit(MP->ErrMsg);
+   ErrExit("%s",MP->ErrMsg);
 
   /***************************************************************/
   /***************************************************************/

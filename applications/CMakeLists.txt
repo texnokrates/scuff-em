@@ -53,6 +53,8 @@ target_link_libraries(scuff-integrate PRIVATE scuff_cli11)
 scuff_add_application(scuff-plotEpsMu
   scuff-plotEpsMu/scuff-plotEpsMu.cc
 )
+# Twelfth typed CLI11 migration.
+target_link_libraries(scuff-plotEpsMu PRIVATE scuff_cli11)
 
 scuff_add_application(scuff-rf
   scuff-rf/scuff-rf.cc
