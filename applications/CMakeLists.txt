@@ -56,6 +56,8 @@ scuff_add_application(scuff-scatter
   scuff-scatter/scuff-scatter.cc
   scuff-scatter/OutputModules.cc
 )
+# Second typed CLI11 migration.
+target_link_libraries(scuff-scatter PRIVATE scuff_cli11)
 
 scuff_add_application(scuff-spectrum
   scuff-spectrum/scuff-spectrum.cc

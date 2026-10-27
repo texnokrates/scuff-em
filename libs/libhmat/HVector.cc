@@ -331,8 +331,8 @@ cdouble HVector::Min()
 /* helper routine to process frequency-related options to      */
 /* construct a list of angular frequencies                     */
 /***************************************************************/
-HVector *GetOmegaList(char *OmegaFile,  cdouble *OmegaVals,  int nOmegaVals,
-                      char *LambdaFile, cdouble *LambdaVals, int nLambdaVals)
+HVector *GetOmegaList(const char *OmegaFile,  cdouble *OmegaVals,  int nOmegaVals,
+                      const char *LambdaFile, cdouble *LambdaVals, int nLambdaVals)
 {
   HVector *OmegaList=0;
   int TotalFreqs=0;

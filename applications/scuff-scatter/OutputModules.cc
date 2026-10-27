@@ -41,7 +41,7 @@
 /* compute scattered and total fields at a user-specified list */
 /* of evaluation points                                        */
 /***************************************************************/
-void ProcessEPFile(SSData *SSD, char *EPFileName)
+void ProcessEPFile(SSData *SSD, const char *EPFileName)
 { 
   /*--------------------------------------------------------------*/
   /*--------------------------------------------------------------*/
@@ -51,7 +51,7 @@ void ProcessEPFile(SSData *SSD, char *EPFileName)
   HVector  *KN    = SSD->KN;
   cdouble  Omega  = SSD->Omega;
   double *kBloch  = SSD->kBloch;
-  char *FileBase  = SSD->FileBase;
+  const char *FileBase  = SSD->FileBase;
 
   /*--------------------------------------------------------------*/
   /*- try to read eval points from file --------------------------*/
@@ -133,7 +133,7 @@ static const char *FieldTitles[]=
 
 #define NUMFIELDFUNCS 8
 
-void WriteFVMesh(SSData *SSD, RWGSurface *S, FILE *f, char *FuncString)
+void WriteFVMesh(SSData *SSD, RWGSurface *S, FILE *f, const char *FuncString)
 {
   /*--------------------------------------------------------------*/
   /*- create an Nx3 HMatrix whose columns are the coordinates of  */
@@ -231,7 +231,7 @@ void WriteFVMesh(SSData *SSD, RWGSurface *S, FILE *f, char *FuncString)
 /* fields on a user-specified surface mesh for visualization   */
 /* in GMSH.                                                    */
 /***************************************************************/
-void VisualizeFields(SSData *SSD, char *FVMesh, char *TransFile, char *FuncList)
+void VisualizeFields(SSData *SSD, const char *FVMesh, const char *TransFile, const char *FuncList)
 { 
   GTCList GTCs=ReadTransFile(TransFile);
   int NT = GTCs.size();
@@ -241,8 +241,8 @@ void VisualizeFields(SSData *SSD, char *FVMesh, char *TransFile, char *FuncList)
   /*--------------------------------------------------------------*/
   RWGSurface *S=new RWGSurface(FVMesh);
 
-  char *GeoFileBase=SSD->FileBase; 
-  char *FVMFileBase=GetFileBase(FVMesh);
+  const char *GeoFileBase=SSD->FileBase; 
+  const char *FVMFileBase=GetFileBase(FVMesh);
   for(int nt=0; nt<NT; nt++)
    {
      char *Tag = GTCs[nt]->Tag;
@@ -277,7 +277,7 @@ void VisualizeFields(SSData *SSD, char *FVMesh, char *TransFile, char *FuncList)
 /***************************************************************/
 /* evaluate the induced dipole moments                         */
 /***************************************************************/
-void GetMoments(SSData *SSD, char *MomentFile)
+void GetMoments(SSData *SSD, const char *MomentFile)
 {
   char *TransformLabel = SSD->TransformLabel;
   char *IFLabel        = SSD->IFLabel;
@@ -368,7 +368,7 @@ void WritePFTFilePreamble(FILE *f, char *TransformLabel, char *IFLabel)
 /***************************************************************/
 /***************************************************************/
 void WritePFTFile(SSData *SSD, PFTOptions *PFTOpts, int Method,
-                  bool PlotFlux, char *FileName)
+                  bool PlotFlux, const char *FileName)
 {
   /***************************************************************/
   /***************************************************************/
@@ -462,7 +462,7 @@ void WritePFTFile(SSData *SSD, PFTOptions *PFTOpts, int Method,
 /***************************************************************/
 /***************************************************************/
 /***************************************************************/
-void WritePSDFile(SSData *SSD, char *PSDFile)
+void WritePSDFile(SSData *SSD, const char *PSDFile)
 {
   /* write output file preamble if necessary */
   char *TransformLabel = SSD->TransformLabel;

@@ -46,20 +46,20 @@ typedef struct SSData
    double *kBloch;
    IncField *IF;
    char *TransformLabel, *IFLabel;
-   char *FileBase;
+   const char *FileBase;
  } SSData;
- 
+
 
 /***************************************************************/
 /* these are the 'output modules' that compute and process the */
 /* scattered fields in various ways.                           */
 /***************************************************************/
 void WritePFTFile(SSData *SSD, PFTOptions *PFTOpts, int Method,
-                  bool PlotFlux, char *FileName);
-void WritePSDFile(SSData *SSD, char *PSDFile);
-void GetMoments(SSData *SSD, char *MomentFile);
-void ProcessEPFile(SSData *SSData, char *EPFileName);
-void VisualizeFields(SSData *SSData, 
-                     char *FVMesh, char *FVMeshTransFile, char *FuncList);
+                  bool PlotFlux, const char *FileName);
+void WritePSDFile(SSData *SSD, const char *PSDFile);
+void GetMoments(SSData *SSD, const char *MomentFile);
+void ProcessEPFile(SSData *SSData, const char *EPFileName);
+void VisualizeFields(SSData *SSData,
+                     const char *FVMesh, const char *FVMeshTransFile, const char *FuncList);
 
 #endif

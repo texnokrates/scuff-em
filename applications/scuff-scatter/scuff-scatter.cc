@@ -18,9 +18,9 @@
  */
 
 /*
- * scuff-scatter.cc  -- a standalone code within the scuff-EM suite for 
- *                   -- solving problems involving the scattering of 
- *                   -- electromagnetic radiation from an arbitrary 
+ * scuff-scatter.cc  -- a standalone code within the scuff-EM suite for
+ *                   -- solving problems involving the scattering of
+ *                   -- electromagnetic radiation from an arbitrary
  *                   -- compact object
  *
  * homer reid        -- 10/2006 -- 1/2012
@@ -37,10 +37,17 @@
 #include <config.h>
 #endif
 
+#include <array>
+#include <memory>
+#include <string>
+#include <vector>
+
+#include "ScuffCLI.h"
 #include "scuff-scatter.h"
 
 /***************************************************************/
-/***************************************************************/
+/* legacy limits on the number of occurrences of the repeatable*/
+/* options (kept as caps on the corresponding vectors)         */
 /***************************************************************/
 #define MAXPW    10    // max number of plane waves
 #define MAXGB    1     // max number of gaussian beams
@@ -53,6 +60,29 @@
 #define MAXSTR   1000
 
 /***************************************************************/
+/* Deletes an IncFieldList created by ReadIncFieldList or      */
+/* AddIncFieldToList: the list owns each incident-field chain  */
+/* (DeleteIncFieldChain walks the ->Next links) and the strdup'd*/
+/* labels.                                                     */
+/***************************************************************/
+struct IncFieldListDeleter
+{
+  void operator()(IncFieldList *List) const
+  {
+    if (List==0)
+     return;
+    for(int n=0; n<List->NumIFs; n++)
+     { DeleteIncFieldChain(List->IFs[n]);
+       if (List->Labels[n])
+        free(List->Labels[n]);
+     };
+    free(List->IFs);
+    free(List->Labels);
+    free(List);
+  }
+};
+
+/***************************************************************/
 /***************************************************************/
 /***************************************************************/
 int main(int argc, char *argv[])
@@ -63,182 +93,227 @@ int main(int argc, char *argv[])
   InstallHRSignalHandler();
   InitializeLog(argv[0]);
 
-//
-  char *GeoFile=0;
-//
-  cdouble OmegaVals[MAXFREQ];        int nOmegaVals;
-  char *OmegaFile=0;
-  cdouble LambdaVals[MAXFREQ];       int nLambdaVals;
-  char *LambdaFile=0;
-//
-  double pwDir[3*MAXPW];             int npwDir;
-  cdouble pwPol[3*MAXPW];            int npwPol;
-//
-  double gbDir[3*MAXGB];             int ngbDir;
-  cdouble gbPol[3*MAXGB];            int ngbPol;
-  double gbCenter[3*MAXGB];          int ngbCenter;
-  double gbWaist[MAXGB];             int ngbWaist;
-//
-  double psLoc[3*MAXPS];             int npsLoc;
-  cdouble psStrength[3*MAXPS];       int npsStrength;
-//
-  char *IFFile=0;
-//
-  char *TransFile=0;                 
-//
-  char *EPFiles[MAXEPF];             int nEPFiles;
-  char *FileBase=0;
-//
-  char *FVMeshes[MAXFVM];            int nFVMeshes;
-  char *FVMeshTransFiles[MAXFVM];    int nFVMeshTransFiles;
-  char *FVFuncs[MAXFVM];             int nFVFuncs;
-  memset(FVMeshTransFiles, 0, MAXFVM*sizeof(char *));
-  memset(FVFuncs,          0, MAXFVM*sizeof(char *));
-//
-  char *PFTFile=0;
-  char *OPFTFile=0;
-  char *MomentPFTFile=0;
-  char *EMTPFTFile=0;
-  char *DSIPFTFile = 0;
+  std::string GeoFile;
+  std::vector<cdouble> OmegaVals;
+  std::string OmegaFile;
+  std::vector<cdouble> LambdaVals;
+  std::string LambdaFile;
+  std::vector<double> pwDirection;      // 3 values per occurrence
+  std::vector<cdouble> pwPolarization;  // 3 values per occurrence
+  std::vector<double> gbDirection;      // 3 values, single occurrence
+  std::vector<cdouble> gbPolarization;  // 3 values, single occurrence
+  std::vector<double> gbCenter;         // 3 values, single occurrence
+  double gbWaist=0.0;
+  std::vector<double> psLocation;       // 3 values per occurrence
+  std::vector<cdouble> psStrength;      // 3 values per occurrence
+  std::string IFFile;
+  std::string TransFile;
+  std::vector<std::string> EPFiles;
+  std::string FileBase;
+  std::vector<std::string> FVMeshes, FVMeshTransFiles, FVFuncs;
+  std::string PFTFile, OPFTFile, MomentPFTFile, EMTPFTFile, DSIPFTFile;
   double DSIRadius = 0.0;
   int DSIPoints    = 302;
   int DSIPoints2   = 0;
-  char *DSIMesh    = 0;
+  std::string DSIMesh;
   bool DSIFarField = false;
-//
   bool GetRegionPFTs = false;
-//
   bool PlotPFTFlux=false;
-//
-  char *MomentFile=0;
-  char *PSDFile=0;
+  std::string MomentFile, PSDFile;
   bool PlotSurfaceCurrents=false;
-//
-  char *HDF5File=0;
-  char *Cache=0;
-  char *ReadCache[MAXCACHE];         int nReadCache;
-  char *WriteCache=0;
-  char *LogLevel=0;
-  /* name               type    #args  max_instances  storage           count         description*/
-  OptStruct OSArray[]=
-   { 
-     {"geometry",       PA_STRING,  1, 1,       (void *)&GeoFile,    0,             "geometry file\n"},
-/**/
-     {"Omega",          PA_CDOUBLE, 1, MAXFREQ, (void *)OmegaVals,   &nOmegaVals,   "(angular) frequency"},
-     {"OmegaFile",      PA_STRING,  1, 1,       (void *)&OmegaFile,  0,             "file listing angular frequencies"},
-     {"Lambda",         PA_CDOUBLE, 1, MAXFREQ, (void *)LambdaVals,  &nLambdaVals,  "wavelength"},
-     {"LambdaFile",     PA_STRING,  1, 1,       (void *)&LambdaFile, 0,             "file listing wavelengths\n"},
-/**/
-     {"pwDirection",    PA_DOUBLE,  3, MAXPW,   (void *)pwDir,       &npwDir,       "plane wave direction"},
-     {"pwPolarization", PA_CDOUBLE, 3, MAXPW,   (void *)pwPol,       &npwPol,       "plane wave polarization\n"},
-/**/
-     {"gbDirection",    PA_DOUBLE,  3, MAXGB,   (void *)gbDir,       &ngbDir,       "gaussian beam direction"},
-     {"gbPolarization", PA_CDOUBLE, 3, MAXGB,   (void *)gbPol,       &ngbPol,       "gaussian beam polarization"},
-     {"gbCenter",       PA_DOUBLE,  3, MAXGB,   (void *)gbCenter,    &ngbCenter,    "gaussian beam center"},
-     {"gbWaist",        PA_DOUBLE,  1, MAXGB,   (void *)gbWaist,     &ngbWaist,     "gaussian beam waist\n"},
-/**/
-     {"psLocation",     PA_DOUBLE,  3, MAXPS,   (void *)psLoc,       &npsLoc,       "point source location"},
-     {"psStrength",     PA_CDOUBLE, 3, MAXPS,   (void *)psStrength,  &npsStrength,  "point source strength\n"},
-/**/
-     {"IFFile",         PA_STRING,  1, 1,       (void *)&IFFile,     0,             "list of incident fields\n"},
-/**/
-     {"TransFile",      PA_STRING,  1, 1,       (void *)&TransFile,  0,             "list of geometrical transformations\n"},
-/**/
-     {"EPFile",         PA_STRING,  1, MAXEPF,  (void *)EPFiles,     &nEPFiles,     "list of evaluation points"},
-     {"FileBase",       PA_STRING,  1, 1,       (void *)&FileBase,   0,             "base filename for EPFile output\n\n"},
-/**/
-     {"FVMesh",         PA_STRING,  1, MAXFVM,  (void *)FVMeshes,    &nFVMeshes,    "field visualization mesh"},
-     {"FVMeshTransFile", PA_STRING,  1, MAXFVM,  (void *)FVMeshTransFiles,    &nFVMeshTransFiles,    "list of geometrical transformations applied to FVMesh"},
-     {"FVFunctions",    PA_STRING,  1, MAXFVM,  (void *)FVFuncs,     &nFVFuncs,     "comma-separated list of field functions to visualize\n"},
-/**/
-     {"PFTFile",        PA_STRING,  1, 1,       (void *)&PFTFile,    0,             "name of power, force, and torque output file\n"},
-/**/
-     {"OPFTFile",       PA_STRING,  1, 1,       (void *)&OPFTFile,   0,             "name of overlap PFT output file"},
-     {"MomentPFTFile",  PA_STRING,  1, 1,       (void *)&MomentPFTFile,   0,        "name of multipole-moment PFT output file"},
-     {"EMTPFTFile",     PA_STRING,  1, 1,       (void *)&EMTPFTFile, 0,             "name of energy/momentum-transfer PFT output file"},
-     {"DSIPFTFile",     PA_STRING,  1, 1,       (void *)&DSIPFTFile, 0,             "name of displaced surface-integral PFT output file"},
-     {"DSIMesh",        PA_STRING,  1, 1,       (void *)&DSIMesh,    0,             "mesh file for surface-integral PFT"},
-     {"DSIRadius",      PA_DOUBLE,  1, 1,       (void *)&DSIRadius,  0,             "radius of bounding sphere for surface-integral PFT"},
-     {"DSIPoints",      PA_INT,     1, 1,       (void *)&DSIPoints,  0,             "number of quadrature points for surface-integral PFT (6, 14, 26, 38, 50, 74, 86, 110, 146, 170, 194, 230, 266, 302, 350, 434, 590, 770, 974, 1202, 1454, 1730, 2030, 2354, 2702, 3074, 3470, 3890, 4334, 4802, 5294, 5810)"},
-     {"DSIPoints2",     PA_INT,     1, 1,       (void *)&DSIPoints2, 0,             "number of quadrature points for DSIPFT second opinion"},
-     {"DSIFarField",    PA_BOOL,    0, 1,       (void *)&DSIFarField, 0,            "retain only far-field contributions to DSIPFT\n"},
-/**/
-     {"GetRegionPFTs",  PA_BOOL,    0, 1,       (void *)&GetRegionPFTs,   0,          "report PFTs for each region"},
-     {"PlotPFTFlux",    PA_BOOL,    0, 1,       (void *)&PlotPFTFlux,   0,          "generate plots of spatially-resolved PFT flux\n"},
-/**/
-     {"MomentFile",     PA_STRING,  1, 1,       (void *)&MomentFile, 0,             "name of dipole moment output file"},
-     {"PSDFile",        PA_STRING,  1, 1,       (void *)&PSDFile,    0,             "name of panel source density file"},
-     {"PlotSurfaceCurrents", PA_BOOL, 0, 1,     (void *)&PlotSurfaceCurrents,  0,   "generate surface current visualization files\n"},
-/**/
-     {"HDF5File",       PA_STRING,  1, 1,       (void *)&HDF5File,   0,             "name of HDF5 file for BEM matrix/vector export\n"},
-/**/
-     {"LogLevel",       PA_STRING,  1, 1,       (void *)&LogLevel,   0,             "none | terse | verbose | verbose2\n"},
-/**/
-     {"Cache",          PA_STRING,  1, 1,       (void *)&Cache,      0,             "read/write cache"},
-     {"ReadCache",      PA_STRING,  1, MAXCACHE,(void *)ReadCache,   &nReadCache,   "read cache"},
-     {"WriteCache",     PA_STRING,  1, 1,       (void *)&WriteCache, 0,             "write cache"},
-/**/
-     {0,0,0,0,0,0,0}
-   };
-  ProcessOptions(argc, argv, OSArray);
+  std::string HDF5File;
+  std::string Cache, WriteCache;
+  std::vector<std::string> ReadCache;
+  std::string LogLevel;
 
-  if (GeoFile==0)
-   OSUsage(argv[0], VERSION, OSArray, "--geometry option is mandatory");
+  CLI::App App{"solve scattering problems for arbitrary compact objects"};
+  App.option_defaults()->ignore_case();
 
-  if (FileBase==0) 
-   FileBase=vstrdup(GetFileBase(GeoFile));
+  App.add_option("--geometry", GeoFile, "geometry file")
+     ->required()
+     ->take_last();
+  scuff::cli::AddComplexVectorOption(App, "--Omega", OmegaVals,
+                                     "(angular) frequency", MAXFREQ);
+  App.add_option("--OmegaFile", OmegaFile, "file listing angular frequencies")
+     ->take_last();
+  scuff::cli::AddComplexVectorOption(App, "--Lambda", LambdaVals,
+                                     "wavelength", MAXFREQ);
+  App.add_option("--LambdaFile", LambdaFile, "file listing wavelengths")
+     ->take_last();
+
+  App.add_option("--pwDirection", pwDirection, "plane wave direction")
+     ->type_size(3)
+     ->expected(1, MAXPW);
+  scuff::cli::AddComplexVectorOption(App, "--pwPolarization", pwPolarization,
+                                     "plane wave polarization", MAXPW, 3);
+
+  App.add_option("--gbDirection", gbDirection, "gaussian beam direction")
+     ->type_size(3)
+     ->expected(1, MAXGB);
+  scuff::cli::AddComplexVectorOption(App, "--gbPolarization", gbPolarization,
+                                     "gaussian beam polarization", MAXGB, 3);
+  App.add_option("--gbCenter", gbCenter, "gaussian beam center")
+     ->type_size(3)
+     ->expected(1, MAXGB);
+  App.add_option("--gbWaist", gbWaist, "gaussian beam waist")
+     ->take_last();
+
+  App.add_option("--psLocation", psLocation, "point source location")
+     ->type_size(3)
+     ->expected(1, MAXPS);
+  scuff::cli::AddComplexVectorOption(App, "--psStrength", psStrength,
+                                     "point source strength", MAXPS, 3);
+
+  App.add_option("--IFFile", IFFile, "list of incident fields")
+     ->take_last();
+
+  App.add_option("--TransFile", TransFile, "list of geometrical transformations")
+     ->take_last();
+
+  App.add_option("--EPFile", EPFiles, "list of evaluation points")
+     ->expected(1, MAXEPF);
+  App.add_option("--FileBase", FileBase, "base filename for EPFile output")
+     ->take_last();
+
+  App.add_option("--FVMesh", FVMeshes, "field visualization mesh")
+     ->expected(1, MAXFVM);
+  App.add_option("--FVMeshTransFile", FVMeshTransFiles,
+                 "list of geometrical transformations applied to FVMesh")
+     ->expected(1, MAXFVM);
+  App.add_option("--FVFunctions", FVFuncs,
+                 "comma-separated list of field functions to visualize")
+     ->expected(1, MAXFVM);
+
+  App.add_option("--PFTFile", PFTFile,
+                 "name of power, force, and torque output file")
+     ->take_last();
+
+  App.add_option("--OPFTFile", OPFTFile, "name of overlap PFT output file")
+     ->take_last();
+  App.add_option("--MomentPFTFile", MomentPFTFile,
+                 "name of multipole-moment PFT output file")
+     ->take_last();
+  App.add_option("--EMTPFTFile", EMTPFTFile,
+                 "name of energy/momentum-transfer PFT output file")
+     ->take_last();
+  App.add_option("--DSIPFTFile", DSIPFTFile,
+                 "name of displaced surface-integral PFT output file")
+     ->take_last();
+  App.add_option("--DSIMesh", DSIMesh, "mesh file for surface-integral PFT")
+     ->take_last();
+  App.add_option("--DSIRadius", DSIRadius,
+                 "radius of bounding sphere for surface-integral PFT")
+     ->take_last();
+  App.add_option("--DSIPoints", DSIPoints,
+                 "number of quadrature points for surface-integral PFT "
+                 "(6, 14, 26, 38, 50, 74, 86, 110, 146, 170, 194, 230, 266, "
+                 "302, 350, 434, 590, 770, 974, 1202, 1454, 1730, 2030, "
+                 "2354, 2702, 3074, 3470, 3890, 4334, 4802, 5294, 5810)")
+     ->take_last();
+  App.add_option("--DSIPoints2", DSIPoints2,
+                 "number of quadrature points for DSIPFT second opinion")
+     ->take_last();
+  App.add_flag("--DSIFarField", DSIFarField,
+               "retain only far-field contributions to DSIPFT");
+
+  App.add_flag("--GetRegionPFTs", GetRegionPFTs, "report PFTs for each region");
+  App.add_flag("--PlotPFTFlux", PlotPFTFlux,
+               "generate plots of spatially-resolved PFT flux");
+
+  App.add_option("--MomentFile", MomentFile, "name of dipole moment output file")
+     ->take_last();
+  App.add_option("--PSDFile", PSDFile, "name of panel source density file")
+     ->take_last();
+  App.add_flag("--PlotSurfaceCurrents", PlotSurfaceCurrents,
+               "generate surface current visualization files");
+
+  App.add_option("--HDF5File", HDF5File,
+                 "name of HDF5 file for BEM matrix/vector export")
+     ->take_last();
+
+  App.add_option("--LogLevel", LogLevel, "none | terse | verbose | verbose2")
+     ->take_last();
+
+  App.add_option("--Cache", Cache, "read/write cache")
+     ->take_last();
+  App.add_option("--ReadCache", ReadCache, "read cache")
+     ->expected(1, MAXCACHE);
+  App.add_option("--WriteCache", WriteCache, "write cache")
+     ->take_last();
+
+  if (auto Status=scuff::cli::Parse(App,argc,argv))
+   return *Status;
 
   /*******************************************************************/
   /* process frequency-related options                               */
   /*******************************************************************/
-  HVector *OmegaList=GetOmegaList(OmegaFile, OmegaVals, nOmegaVals,
-                                  LambdaFile, LambdaVals, nLambdaVals);
-  if (OmegaList==0)
-   OSUsage(argv[0], VERSION, OSArray, "you must specify at least one frequency");
+  std::unique_ptr<HVector> OmegaList(
+    GetOmegaList(OmegaFile.empty() ? 0 : OmegaFile.c_str(),
+                 OmegaVals.data(), (int)OmegaVals.size(),
+                 LambdaFile.empty() ? 0 : LambdaFile.c_str(),
+                 LambdaVals.data(), (int)LambdaVals.size()));
+  if (OmegaList.get()==0)
+   { CLI::ValidationError Error("scuff-scatter",
+        "you must specify at least one frequency");
+     App.exit(Error);
+     return 1;
+   };
 
   /*******************************************************************/
   /* process incident-field-related options to construct the data    */
   /* used to generate the incident field in our scattering problem.  */
   /*******************************************************************/
-  if ( npwPol != npwDir )
+  if ( pwPolarization.size() != pwDirection.size() )
    ErrExit("numbers of --pwPolarization and --pwDirection options must agree");
-  if ( ngbPol != ngbDir || ngbDir!=ngbCenter || ngbCenter!=ngbWaist )
+  /* the legacy parser read an uninitialized stack value for the waist
+     when the other gaussian-beam options were given without --gbWaist;
+     it is now required, matching the documented agreement rule */
+  bool gbWaistSpecified = App.get_option("--gbWaist")->count() > 0;
+  if (    gbPolarization.size() != gbDirection.size()
+       || gbDirection.size() != gbCenter.size()
+       || (gbCenter.size()>0 && !gbWaistSpecified) )
    ErrExit("numbers of --gbPolarization, --gbDirection, --gbCenter, and --gbWaist options must agree ");
-  if ( npsLoc!=npsStrength )
+  if ( psLocation.size() != psStrength.size() )
    ErrExit("numbers of --psLocation and --psStrength options must agree");
 
   IncField *IF=0;
-  for(int npw=0; npw<npwPol; npw++)
-   { PlaneWave *PW=new PlaneWave(pwPol + 3*npw, pwDir + 3*npw);
+  for(size_t npw=0; npw<pwPolarization.size()/3; npw++)
+   { PlaneWave *PW=new PlaneWave(pwPolarization.data() + 3*npw,
+                                 pwDirection.data() + 3*npw);
      PW->Next=IF;
      IF=PW;
    };
-  for(int ngb=0; ngb<ngbCenter; ngb++)
-   { GaussianBeam *GB=new GaussianBeam(gbCenter + 3*ngb, gbDir + 3*ngb, gbPol + 3*ngb, gbWaist[ngb]);
+  for(size_t ngb=0; ngb<gbCenter.size()/3; ngb++)
+   { GaussianBeam *GB=new GaussianBeam(gbCenter.data() + 3*ngb,
+                                      gbDirection.data() + 3*ngb,
+                                      gbPolarization.data() + 3*ngb,
+                                      gbWaist);
      GB->Next=IF;
      IF=GB;
    };
-  for(int nps=0; nps<npsLoc; nps++)
-   { PointSource *PS=new PointSource(psLoc + 3*nps, psStrength + 3*nps);
+  for(size_t nps=0; nps<psLocation.size()/3; nps++)
+   { PointSource *PS=new PointSource(psLocation.data() + 3*nps,
+                                     psStrength.data() + 3*nps);
      PS->Next=IF;
      IF=PS;
    };
 
-  IncFieldList *IFList=0;
-  if (IFFile!=0 && IF!=0)
+  std::unique_ptr<IncFieldList, IncFieldListDeleter> IFListOwner;
+  if ( !IFFile.empty() && IF!=0 )
    ErrExit("--IFFile is incompatible with other incident-field specifications");
-  else if (IFFile!=0 && IF==0)
-   IFList = ReadIncFieldList(IFFile);
-  else if (IFFile==0 && IF!=0)
-   IFList = AddIncFieldToList(IF,const_cast<char *>("Default"));
+  else if ( !IFFile.empty() )
+   IFListOwner.reset( ReadIncFieldList(IFFile.c_str()) );
+  else if ( IF!=0 )
+   IFListOwner.reset( AddIncFieldToList(IF,"Default") );
+  IncFieldList *IFList=IFListOwner.get();
 
   /*******************************************************************/
   /* make --PFTFile synonymous with --EMTPFTFile *********************/
   /*******************************************************************/
-  if (PFTFile)
-   { if (EMTPFTFile)
+  if ( !PFTFile.empty() )
+   { if ( !EMTPFTFile.empty() )
       Warn("specifying both --PFTFile and --EMTPFTFile is redundant (ignoring --PFTFile)");
-     else 
+     else
       EMTPFTFile=PFTFile;
    };
 
@@ -246,13 +321,13 @@ int main(int argc, char *argv[])
   /* sanity check to make sure the user specified an incident field  */
   /* if one is required for the outputs the user requested           */
   /*******************************************************************/
-  bool NeedIncidentField = (    MomentFile!=0
-                             || OPFTFile!=0
-                             || MomentPFTFile!=0
-                             || EMTPFTFile!=0
-                             || DSIPFTFile!=0
-                             || nEPFiles>0
-                             || nFVMeshes>0
+  bool NeedIncidentField = (    !MomentFile.empty()
+                             || !OPFTFile.empty()
+                             || !MomentPFTFile.empty()
+                             || !EMTPFTFile.empty()
+                             || !DSIPFTFile.empty()
+                             || EPFiles.size()>0
+                             || FVMeshes.size()>0
                              || PlotSurfaceCurrents
                            );
   if ( NeedIncidentField && IFList==0 )
@@ -261,9 +336,9 @@ int main(int argc, char *argv[])
   /*******************************************************************/
   /*******************************************************************/
   /*******************************************************************/
-  if (nFVMeshTransFiles!=0 && nFVMeshes!=nFVMeshTransFiles)
+  if ( FVMeshTransFiles.size()>0 && FVMeshes.size()!=FVMeshTransFiles.size() )
    ErrExit("--FVMeshTransFile must be specified for every --FVMesh");
-  if (nFVFuncs!=0 && nFVMeshes!=nFVFuncs)
+  if ( FVFuncs.size()>0 && FVMeshes.size()!=FVFuncs.size() )
    ErrExit("--FVFuncs must be specified for every --FVMesh");
 
   /*******************************************************************/
@@ -271,15 +346,16 @@ int main(int argc, char *argv[])
   /*******************************************************************/
   PFTOptions MyPFTOpts, *PFTOpts=&MyPFTOpts;
   InitPFTOptions(PFTOpts);
-  PFTOpts->DSIMesh       = DSIMesh;
+  PFTOpts->DSIMesh       = DSIMesh.empty() ? 0 : const_cast<char *>(DSIMesh.c_str());
   PFTOpts->DSIRadius     = DSIRadius;
   PFTOpts->DSIPoints     = DSIPoints;
   PFTOpts->DSIFarField   = DSIFarField;
   PFTOpts->GetRegionPFTs = GetRegionPFTs;
 
-  char *DSIPFTFile2 = 0;
-  if (DSIPFTFile && DSIPoints2)
-   DSIPFTFile2=vstrdup("%s.DSI%i",GetFileBase(DSIPFTFile),DSIPoints2);
+  std::string DSIPFTFile2;
+  if ( !DSIPFTFile.empty() && DSIPoints2 )
+   DSIPFTFile2=std::string(GetFileBase(DSIPFTFile.c_str())) + ".DSI"
+               + std::to_string(DSIPoints2);
 
   /*******************************************************************/
   /* create the SSData structure containing everything we need to    */
@@ -287,17 +363,24 @@ int main(int argc, char *argv[])
   /*******************************************************************/
   SSData MySSData, *SSD=&MySSData;
 
-  RWGGeometry *G      = SSD->G   = new RWGGeometry(GeoFile);
-  HMatrix *M          = SSD->M   = G->AllocateBEMMatrix();
-  HVector *RHS        = SSD->RHS = G->AllocateRHSVector();
-  HVector *KN         = SSD->KN  = G->AllocateRHSVector();
-  double *kBloch      = SSD->kBloch = 0;
+  std::unique_ptr<RWGGeometry> G(new RWGGeometry(GeoFile.c_str()));
+  std::unique_ptr<HMatrix> M(G->AllocateBEMMatrix());
+  std::unique_ptr<HVector> RHS(G->AllocateRHSVector());
+  std::unique_ptr<HVector> KN(G->AllocateRHSVector());
+  SSD->G   = G.get();
+  SSD->M   = M.get();
+  SSD->RHS = RHS.get();
+  SSD->KN  = KN.get();
+  std::array<double,3> kBlochBuffer{0.0, 0.0, 0.0};
+  double *kBloch = 0;
+  SSD->kBloch         = 0;
   SSD->IF             = 0;
   SSD->TransformLabel = 0;
   SSD->IFLabel        = 0;
-  SSD->FileBase       = FileBase;
+  SSD->FileBase       = FileBase.c_str();
 
-  if (LogLevel) G->SetLogLevel(LogLevel);
+  if ( !LogLevel.empty() )
+   G->SetLogLevel(LogLevel.c_str());
 
   /*--------------------------------------------------------------*/
   /*- read the transformation file if one was specified and check */
@@ -306,11 +389,11 @@ int main(int argc, char *argv[])
   /*- this case the list of GTComplices is initialized to contain */
   /*- a single empty GTComplex and the check automatically passes.*/
   /*--------------------------------------------------------------*/
-  GTCList GTCs=ReadTransFile(TransFile);
+  GTCList GTCs=ReadTransFile(TransFile.empty() ? 0 : TransFile.c_str());
   int NumTransformations=GTCs.size();
   char *ErrMsg=G->CheckGTCList(GTCs);
   if (ErrMsg)
-   ErrExit("file %s: %s",TransFile,ErrMsg);
+   ErrExit("file %s: %s",TransFile.c_str(),ErrMsg);
 
   /*******************************************************************/
   /* for periodic geometries, all incident field sources that are    */
@@ -318,57 +401,62 @@ int main(int argc, char *argv[])
   /* source, which must be a plane wave, and the bloch wavevector    */
   /* is extracted from the plane wave direction                      */
   /*******************************************************************/
-  double kBlochBuffer[3];
   if (G->LDim>0)
-   { if ( npwPol!=1 || ngbCenter!=0 || npsLoc!=0 )
+   { if ( pwPolarization.size()!=3 || gbCenter.size()!=0 || psLocation.size()!=0 )
       ErrExit("for extended geometries, the incident field must be a single plane wave");
-     kBloch = SSD->kBloch = kBlochBuffer;
+     kBloch = SSD->kBloch = kBlochBuffer.data();
    };
 
   /*******************************************************************/
   /* preload the scuff cache with any cache preload files the user   */
   /* may have specified                                              */
   /*******************************************************************/
-  if ( Cache!=0 && WriteCache!=0 )
+  if ( !Cache.empty() && !WriteCache.empty() )
    ErrExit("--cache and --writecache options are mutually exclusive");
-  if (Cache) 
+  if ( !Cache.empty() )
    WriteCache=Cache;
-  for (int nrc=0; nrc<nReadCache; nrc++)
-   PreloadCache( ReadCache[nrc] );
-  if (Cache)
-   PreloadCache( Cache );
+  for (size_t nrc=0; nrc<ReadCache.size(); nrc++)
+   PreloadCache( ReadCache[nrc].c_str() );
+  if ( !Cache.empty() )
+   PreloadCache( Cache.c_str() );
 
   /*******************************************************************/
   /*******************************************************************/
   /*******************************************************************/
   void *HDF5Context=0;
-  if (HDF5File)
-   HDF5Context=HMatrix::OpenHDF5Context(HDF5File);
+  if ( !HDF5File.empty() )
+   HDF5Context=HMatrix::OpenHDF5Context(HDF5File.c_str());
 
   /*******************************************************************/
   /* if we have more than one geometrical transformation,            */
-  /* allocate storage for BEM matrix blocks                          */
+  /* allocate storage for BEM matrix blocks.  the owner vectors      */
+  /* hold every allocated block; the view vectors include the        */
+  /* mate-aliased entries, which point at another surface's block    */
+  /* and are not owned.                                              */
   /*******************************************************************/
-  HMatrix **TBlocks=0, **UBlocks=0;
+  std::vector<std::unique_ptr<HMatrix>> TBlockOwner, UBlockOwner;
+  std::vector<HMatrix *> TBlocks, UBlocks;
   int NS=G->NumSurfaces;
   if (NumTransformations>1)
    { int NADB = NS*(NS-1)/2; // number of above-diagonal blocks
-     TBlocks  = (HMatrix **)mallocEC(NS*sizeof(HMatrix *));
-     UBlocks  = (HMatrix **)mallocEC(NADB*sizeof(HMatrix *));
+     TBlocks.resize(NS, 0);
+     UBlocks.resize(NADB, 0);
      for(int ns=0, nb=0; ns<NS; ns++)
-      { 
+      {
         int nsMate = G->Mate[ns];
         if ( nsMate!=-1 )
          TBlocks[ns] = TBlocks[nsMate];
         else
          { int NBF=G->Surfaces[ns]->NumBFs;
            TBlocks[ns] = new HMatrix(NBF, NBF, M->RealComplex);
+           TBlockOwner.emplace_back(TBlocks[ns]);
          };
 
         for(int nsp=ns+1; nsp<NS; nsp++, nb++)
          { int NBF=G->Surfaces[ns]->NumBFs;
            int NBFp=G->Surfaces[nsp]->NumBFs;
            UBlocks[nb] = new HMatrix(NBF, NBFp, M->RealComplex);
+           UBlockOwner.emplace_back(UBlocks[nb]);
          };
       };
    };
@@ -377,7 +465,7 @@ int main(int argc, char *argv[])
   /* loop over frequencies *******************************************/
   /*******************************************************************/
   for(int nFreq=0; nFreq<OmegaList->N; nFreq++)
-   { 
+   {
      cdouble Omega = OmegaList->GetEntry(nFreq);
      SSD->Omega    = Omega;
 
@@ -392,8 +480,8 @@ int main(int argc, char *argv[])
       { cdouble EpsExterior, MuExterior;
         G->RegionMPs[0]->GetEpsMu(Omega, &EpsExterior, &MuExterior);
         double kExterior = real( csqrt2(EpsExterior*MuExterior) * Omega );
-        kBloch[0] = kExterior*pwDir[0];
-        kBloch[1] = kExterior*pwDir[1];
+        kBloch[0] = kExterior*pwDirection[0];
+        kBloch[1] = kExterior*pwDirection[1];
         kBloch[2] = 0.0;
       };
 
@@ -403,7 +491,7 @@ int main(int argc, char *argv[])
      /* whole matrix                                                    */
      /*******************************************************************/
      if (NumTransformations==1)
-      G->AssembleBEMMatrix(Omega, kBloch, M);
+      G->AssembleBEMMatrix(Omega, kBloch, M.get());
      else
       for(int ns=0; ns<G->NumSurfaces; ns++)
        if (G->Mate[ns]==-1)
@@ -417,9 +505,9 @@ int main(int argc, char *argv[])
      /* will have been computed and the cache will not grow any further */
      /* for the rest of the program run.                                */
      /*******************************************************************/
-     if (WriteCache)
-      { StoreCache( WriteCache );
-        WriteCache=0;       
+     if ( !WriteCache.empty() )
+      { StoreCache( WriteCache.c_str() );
+        WriteCache.clear();
       };
 
      /*******************************************************************/
@@ -428,7 +516,7 @@ int main(int argc, char *argv[])
      for(int nt=0; nt<NumTransformations; nt++)
       {
         char TransformStr[100]="";
-        if (TransFile)
+        if ( !TransFile.empty() )
          { G->Transform(GTCs[nt]);
            SSD->TransformLabel=GTCs[nt]->Tag;
            Log("Working at transformation %s...",SSD->TransformLabel);
@@ -479,90 +567,90 @@ int main(int argc, char *argv[])
         /* loop over incident fields                                   */
         /***************************************************************/
         for(int nIF=0; nIF<IFList->NumIFs; nIF++)
-         { 
+         {
            IF = SSD->IF = IFList->IFs[nIF];
-           SSD->IFLabel = IFFile ? IFList->Labels[nIF] : 0;
+           SSD->IFLabel = !IFFile.empty() ? IFList->Labels[nIF] : 0;
            if (SSD->IFLabel)
             Log("  Processing incident field %s...",SSD->IFLabel);
 
            char IFStr[100]="";
            if (SSD->IFLabel)
             snprintf(IFStr,100,"_%s",SSD->IFLabel);
-   
+
            /***************************************************************/
            /* assemble RHS vector and solve BEM system*********************/
            /***************************************************************/
            Log("  Assembling RHS vector...");
-           G->AssembleRHSVector(Omega, kBloch, IF, KN);
-           RHS->Copy(KN); // copy RHS vector for later 
+           G->AssembleRHSVector(Omega, kBloch, IF, KN.get());
+           RHS->Copy(KN.get()); // copy RHS vector for later
            Log("  Solving the BEM system...");
-           M->LUSolve(KN);
-   
+           M->LUSolve(KN.get());
+
            if (HDF5Context)
             { RHS->ExportToHDF5(HDF5Context,"RHS_%s%s%s",OmegaStr,TransformStr,IFStr);
               KN->ExportToHDF5(HDF5Context,"KN_%s%s%s",OmegaStr,TransformStr,IFStr);
             };
-   
+
            /***************************************************************/
            /* now process all requested outputs                           */
            /***************************************************************/
-   
+
            /*--------------------------------------------------------------*/
            /*- power, force, torque by various methods --------------------*/
            /*--------------------------------------------------------------*/
-           if (OPFTFile)
-            WritePFTFile(SSD, PFTOpts, SCUFF_PFT_OVERLAP, PlotPFTFlux, OPFTFile);
-      
-           if (MomentPFTFile)
-            WritePFTFile(SSD, PFTOpts, SCUFF_PFT_MOMENTS, PlotPFTFlux, MomentPFTFile);
-      
-           if (DSIPFTFile)
+           if ( !OPFTFile.empty() )
+            WritePFTFile(SSD, PFTOpts, SCUFF_PFT_OVERLAP, PlotPFTFlux, OPFTFile.c_str());
+
+           if ( !MomentPFTFile.empty() )
+            WritePFTFile(SSD, PFTOpts, SCUFF_PFT_MOMENTS, PlotPFTFlux, MomentPFTFile.c_str());
+
+           if ( !DSIPFTFile.empty() )
             { PFTOpts->DSIPoints=DSIPoints;
-              WritePFTFile(SSD, PFTOpts, SCUFF_PFT_DSI, PlotPFTFlux, DSIPFTFile);
+              WritePFTFile(SSD, PFTOpts, SCUFF_PFT_DSI, PlotPFTFlux, DSIPFTFile.c_str());
             };
-      
-           if (DSIPFTFile2)
+
+           if ( !DSIPFTFile2.empty() )
             { PFTOpts->DSIPoints=DSIPoints2;
-              WritePFTFile(SSD, PFTOpts, SCUFF_PFT_DSI, PlotPFTFlux, DSIPFTFile2);
+              WritePFTFile(SSD, PFTOpts, SCUFF_PFT_DSI, PlotPFTFlux, DSIPFTFile2.c_str());
             };
-      
-           if (EMTPFTFile)
-            WritePFTFile(SSD, PFTOpts, SCUFF_PFT_EMT, PlotPFTFlux, EMTPFTFile);
-      
+
+           if ( !EMTPFTFile.empty() )
+            WritePFTFile(SSD, PFTOpts, SCUFF_PFT_EMT, PlotPFTFlux, EMTPFTFile.c_str());
+
            /*--------------------------------------------------------------*/
            /*- panel source densities -------------------------------------*/
            /*--------------------------------------------------------------*/
-           if (PSDFile)
-            WritePSDFile(SSD, PSDFile);
-       
+           if ( !PSDFile.empty() )
+            WritePSDFile(SSD, PSDFile.c_str());
+
            /*--------------------------------------------------------------*/
            /*- scattered fields at user-specified points ------------------*/
            /*--------------------------------------------------------------*/
-           int nepf;
-           for(nepf=0; nepf<nEPFiles; nepf++)
-            ProcessEPFile(SSD, EPFiles[nepf]);
-      
+           for(size_t nepf=0; nepf<EPFiles.size(); nepf++)
+            ProcessEPFile(SSD, EPFiles[nepf].c_str());
+
            /*--------------------------------------------------------------*/
            /*- induced dipole moments       -------------------------------*/
            /*--------------------------------------------------------------*/
-           if (MomentFile)
-            GetMoments(SSD, MomentFile);
-      
+           if ( !MomentFile.empty() )
+            GetMoments(SSD, MomentFile.c_str());
+
            /*--------------------------------------------------------------*/
            /*- surface current visualization-------------------------------*/
            /*--------------------------------------------------------------*/
            if (PlotSurfaceCurrents)
-            G->PlotSurfaceCurrents(KN, Omega, SSD->kBloch, "%s.pp", FileBase);
-      
+            G->PlotSurfaceCurrents(KN.get(), Omega, SSD->kBloch, "%s.pp", FileBase.c_str());
+
            /*--------------------------------------------------------------*/
            /*- field visualization meshes ---------------------------------*/
            /*--------------------------------------------------------------*/
-           int nfm;
-           for(nfm=0; nfm<nFVMeshes; nfm++)
-            VisualizeFields(SSD, FVMeshes[nfm], FVMeshTransFiles[nfm], FVFuncs[nfm]);
+           for(size_t nfm=0; nfm<FVMeshes.size(); nfm++)
+            VisualizeFields(SSD, FVMeshes[nfm].c_str(),
+                            FVMeshTransFiles.size() ? FVMeshTransFiles[nfm].c_str() : 0,
+                            FVFuncs.size() ? FVFuncs[nfm].c_str() : 0);
 
          }; // for(int nIF=0; nIF<IFList->NumIFs; nIF++
-      
+
         /*******************************************************************/
         /*******************************************************************/
         /*******************************************************************/
@@ -570,13 +658,13 @@ int main(int argc, char *argv[])
 
       }; // for(int nt=0; nt<NumTransformations; nt++)
 
-   }; //  for(nFreq=0; nFreq<NumFreqs; nFreqs++)
-  
+   }; //  for(nFreq=0; nFreq<NumFreqs; nFreq++)
+
   /***************************************************************/
   /***************************************************************/
   /***************************************************************/
   if (HDF5Context)
    HMatrix::CloseHDF5Context(HDF5Context);
   printf("Thank you for your support.\n");
-   
+
 }

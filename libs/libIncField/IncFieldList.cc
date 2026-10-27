@@ -129,7 +129,7 @@ IncField *ProcessIFTokens(char **Tokens, int NumTokens, char **pErrMsg)
 /***************************************************************/
 /***************************************************************/
 /***************************************************************/
-IncFieldList *AddIncFieldToList(IncField *IF, char *Label, IncFieldList *IFList)
+IncFieldList *AddIncFieldToList(IncField *IF, const char *Label, IncFieldList *IFList)
 {
   if (IFList==0)
    { IFList = (IncFieldList *)mallocEC(sizeof(IncFieldList));
@@ -177,7 +177,7 @@ void ProcessSinCos(char **Tokens, int NumTokens)
 /***************************************************************/
 /***************************************************************/
 /***************************************************************/
-IncFieldList *ReadIncFieldList(char *FileName)
+IncFieldList *ReadIncFieldList(const char *FileName)
 {
   IncFieldList *IFList=0;
 

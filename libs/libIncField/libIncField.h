@@ -242,7 +242,7 @@ typedef struct IncFieldList
    int NumIFs;
  } IncFieldList;
 
-IncFieldList *ReadIncFieldList(char *FileName);
-IncFieldList *AddIncFieldToList(IncField *IF, char *Label=0, IncFieldList *IFList=0); 
+IncFieldList *ReadIncFieldList(const char *FileName);
+IncFieldList *AddIncFieldToList(IncField *IF, const char *Label=0, IncFieldList *IFList=0); 
 
 #endif

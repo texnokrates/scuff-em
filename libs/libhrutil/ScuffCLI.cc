@@ -124,14 +124,14 @@ CLI::Option *AddComplexOption(CLI::App &App, const std::string &Name,
 CLI::Option *AddComplexVectorOption(CLI::App &App, const std::string &Name,
                                     std::vector<std::complex<double>> &Values,
                                     const std::string &Description,
-                                    int MaxOccurrences)
+                                    int MaxInstances, int NumArgs)
 {
   /* The values arrive in one callback call, in order of appearance.
      A vector-valued callback is required here: a scalar-valued
      callback option runs only once per parse regardless of the
      multi-occurrence policy.  expected() bounds are in units of
-     type_size, which is 1 for this option, so MaxOccurrences caps the
-     number of occurrences exactly like the legacy MaxInstances. */
+     type_size, so (1, MaxInstances) means 1..MaxInstances groups of
+     NumArgs values, exactly like the legacy NumArgs/MaxInstances. */
   return App.add_option_function<std::vector<std::string>>(
     Name,
     [&Values, Name](const std::vector<std::string> &Texts)
@@ -146,7 +146,8 @@ CLI::Option *AddComplexVectorOption(CLI::App &App, const std::string &Name,
     },
     Description)
     ->type_name("COMPLEX")
-    ->expected(1, MaxOccurrences)
+    ->type_size(NumArgs)
+    ->expected(1, MaxInstances)
     ->take_all();
 }
 

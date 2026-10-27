@@ -43,12 +43,15 @@ CLI::Option *AddComplexOption(CLI::App &App, const std::string &Name,
 /* accumulate in order of appearance, parsed with the legacy   */
 /* S2CD syntax.  This reproduces the legacy PA_CDOUBLE options */
 /* with MaxInstances>1 (for example scuff-scatter's --Omega    */
-/* and --Lambda); MaxInstances caps the number of occurrences. */
+/* and --Lambda); MaxInstances caps the number of occurrences  */
+/* and NumArgs values are consumed per occurrence (legacy      */
+/* PA_CDOUBLE with NumArgs>1, e.g. --psStrength).              */
 /***************************************************************/
 CLI::Option *AddComplexVectorOption(CLI::App &App, const std::string &Name,
                                     std::vector<std::complex<double>> &Values,
                                     const std::string &Description,
-                                    int MaxInstances = 1000000);
+                                    int MaxInstances = 1000000,
+                                    int NumArgs = 1);
 
 /***************************************************************/
 /* Parse App from argv and stdin.  Returns std::nullopt when   */
