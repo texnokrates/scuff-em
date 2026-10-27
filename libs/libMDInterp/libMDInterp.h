@@ -676,7 +676,11 @@ dVec GetXGrid(PhiVDFunc UserFunc, void *UserData, int NF, dVec XMin, dVec XMax, 
 
 /***************************************************************/
 /* non-member function for binary searching                    */
+/* (BinSearch.c, FindInterval, and freadEC are plain C with C  */
+/* linkage, so that they remain usable from C translation      */
+/* units as well.)                                             */
 /***************************************************************/
+extern "C" {
 void BinSearch(double X, double *XPoints, int N);
 
 bool FindInterval(double X, double *XPoints, int N, double XMin, double DX,
@@ -685,6 +689,7 @@ bool FindInterval(double X, double *XPoints, int N, double XMin, double DX,
 /***************************************************************/
 /* a version of fread() with simple error-checking *************/
 /***************************************************************/
-void freadEC(void *p, size_t size, size_t nmemb, FILE *f, const char *FileName); 
+void freadEC(void *p, size_t size, size_t nmemb, FILE *f, const char *FileName);
+}
 
 #endif // #ifndef LIBMDINTERP_H

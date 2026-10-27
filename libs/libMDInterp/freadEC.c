@@ -21,14 +21,16 @@
  * a version of fread() with simple error-checking
  */
 #include <stdio.h>
-#include <libhrutil.h>
+#include <stdlib.h>
 
 void freadEC(void *p, size_t size, size_t nmemb, FILE *f, const char *FileName)
 {
-  size_t nRead; 
+  size_t nRead;
 
   nRead=fread(p, size, nmemb, f);
-  if (nRead!=nmemb) 
-   ErrExit("%s: file is invalid", FileName);
- 
-} 
+  if (nRead!=nmemb)
+   { fprintf(stderr,"error: %s: file is invalid (aborting)\n",FileName);
+     exit(1);
+   }
+
+}

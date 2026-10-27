@@ -24,7 +24,12 @@
 
 #include <stdlib.h>
 #include <math.h>
-#include <libhrutil.h> // needed for EqualFloat()
+#include <stdbool.h>
+
+/* C-compatible stand-in for libhrutil's EqualFloat(): single-precision
+   comparison of double-precision numbers. */
+static bool EqualFloat(double a, double b)
+{ return (float)a == (float)b; }
 
 /***************************************************************/
 /* given an array of N points, which is ordered (i.e. for all  */

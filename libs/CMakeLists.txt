@@ -32,13 +32,13 @@ scuff_add_module(scuff_sgjc
 )
 
 scuff_add_module(scuff_mdinterp
-  libMDInterp/BinSearch.cc
+  libMDInterp/BinSearch.c
   libMDInterp/Interp1D.cc
   libMDInterp/Interp2D.cc
   libMDInterp/Interp3D.cc
   libMDInterp/Interp4D.cc
   libMDInterp/InterpND.cc
-  libMDInterp/freadEC.cc
+  libMDInterp/freadEC.c
 )
 
 # cmatheval was historically compiled as C++ (`CC = $(CXX)` in its
