@@ -148,7 +148,7 @@ void GetVSWRadialFunctions(int LMax, cdouble k, double r,
                            bool Conjugate)
 {
   if (r==0.0)
-   { memset(RFArray, 0, 3*(LMax+1));
+   { memset(RFArray, 0, 3*(LMax+1)*sizeof(cdouble));
      if (TimesrFactor) return;
      RFArray[3*1+1] = 2.0/3.0;
      RFArray[3*1+2] = -M_SQRT2/3.0; //-1.41421356237309504880/3.0;

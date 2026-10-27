@@ -17,6 +17,9 @@ target_link_libraries(scuff-typed-cli-tests PRIVATE scuff scuff_common scuff_cli
 add_executable(scuff-geometry-tests GeometryTest.cc)
 target_link_libraries(scuff-geometry-tests PRIVATE scuff scuff_common)
 
+add_executable(scuff-spherical-tests SphericalTest.cc)
+target_link_libraries(scuff-spherical-tests PRIVATE scuff scuff_common)
+
 # The geometry tests need real geometry and mesh files at run time; they
 # are copied into the build tree so the test does not depend on the
 # caller's working directory.
@@ -43,4 +46,7 @@ if(BUILD_TESTING)
   set_tests_properties(Geometry PROPERTIES
     WORKING_DIRECTORY "${GEOMETRY_TEST_DIR}"
     TIMEOUT 120)
+
+  add_test(NAME Spherical COMMAND scuff-spherical-tests)
+  set_tests_properties(Spherical PROPERTIES TIMEOUT 120)
 endif()

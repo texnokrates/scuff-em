@@ -278,8 +278,11 @@ cdouble GetYlm(int l, int m, double Theta, double Phi)
   cdouble RetVal;
 
   GetPlm(l, abs(m), cos(Theta), Plm, PlmPrime);
+  /* For negative m the harmonic is (-1)^m conjugate(Ylm(l,+m)):
+     GetPlm already includes the Condon-Shortley phase and the
+     normalization of P_l^{|m|}, so only the parity sign differs. */
   if (m<0)
-   RetVal = ((m%1) ? -1.0 : 1.0) * Plm[l-abs(m)] * exp(II*mPhi);
+   RetVal = ((m%2) ? -1.0 : 1.0) * Plm[l-abs(m)] * exp(II*mPhi);
   else
    RetVal = Plm[l-m]*exp(II*mPhi);
 
