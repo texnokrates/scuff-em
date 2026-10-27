@@ -40,7 +40,6 @@
 
 #include "libscuff.h"
 #include "StaticSolver.h"
-#include "StaticSubstrate.h"
 
 namespace scuff {
 
