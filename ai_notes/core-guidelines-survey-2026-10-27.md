@@ -416,8 +416,18 @@ suites pass with leak detection enabled.
 | `d7a8fde5` | `AddComplexVectorOption` in `ScuffCLI`: repeatable S2CD-parsed complex option with MaxInstances/NumArgs semantics.  Implementation note: a scalar-valued CLI11 callback option runs only once per parse regardless of the multi-occurrence policy, so the helper uses the vector-valued callback form; `expected()` bounds are in units of `type_size`. |
 | `7d3807a1` | **scuff-scatter migrated** (second Stage B application, first with full RAII): 38-entry OptStruct array → typed CLI11 declarations; fixed MAX* arrays → vectors with `expected()` caps; geometry/BEM matrix/RHS/KN/block matrices (owner vectors + mate-aliased views)/incident-field list freed via `unique_ptr` (exit leak ~74 MB/72k allocs → ~0.7 MB/2.5k, remainder is library-owned caches); `SSD->kBloch` initialized (latent garbage-pointer read by the EPFile/visualization modules, previously hidden by stack layout).  Supporting const-correctness: `GetOmegaList`, `ReadIncFieldList`, `AddIncFieldToList`, the output-module prototypes, and `SSData::FileBase` now take/hold `const char *`.  Verified: TypedCli scenarios, Args stdin run, mixed-case/negative/repeated-omega invocations, **byte-identical EPFile output against the pre-migration binary**, full CTest 8/8, ASan+UBSan runs of point-source and stdin plane-wave paths. |
 
-Next: the remaining applications (scuff-analyze, scuff-ldos, scuff-static,
-scuff-transmission, scuff-cas3D, scuff-rf, scuff-neq, scuff-spectrum,
-scuff-plotEpsMu, scuff-caspol) follow the same one-commit pattern
-(CLI11 + RAII + const-corrected seams); then the leaf-first library
-sweeps; then G4 (clang-tidy ratchet).
+Continued G3 (all verified against the pre-migration binaries built
+from a temporary worktree; output comparisons byte-identical or within
+the reference binary's own OpenMP run-to-run variation, which was
+verified first):
+
+| Commit | Scope |
+| --- | --- |
+| `6860a8ec` | **scuff-analyze**: typed options (--mesh/--meshfile aliases, 2-/3-value --EEPs/--WhichRegion, the bare-filename convenience preserved by shifting argv), unique_ptr surface/geometry, substrate error now %-formatted.  Geometry- and mesh-mode stdout byte-identical. |
+| `95395675` | **scuff-ldos**: typed options incl. repeatable complex --Omega/--Lambda; frequency/(omega,kBloch) lists and Result buffer RAII'd; the --SkipBZIntegration success path returned exit(1), now 0.  Interfaces const-corrected (CreateSLDData, ProcessHalfSpaceDGFs, SLDData::FileBase).  CollectArgs now skips NULL argv slots, preserving interop with InitBZIArgs's slot-nulling parser.  LDOS output byte-identical. |
+| `55214b40` | **scuff-transmission**: typed options, unique_ptr geometry/matrix/vectors and PlaneWave arrays (GetFlux/UpdateStandardPWs now take arrays of unique_ptr).  Output agrees with the reference binary within its own nondeterminism (old-vs-old verified). |
+| `4190f6d7` | **scuff-static**: typed options (4-/6-value --monopole/--dipole, PA_BOOL quirks as flags, lMax via option count), unique_ptr solver/RHS, per-iteration TransformLabel leak fixed.  Const-corrected: ReadExcitationFile, CreateSimpleSEList, ParsePotentialFile/ParseExcitationSection, StaticSolver::PlotChargeDensity/VisualizeFields, and the scuff-static output modules.  Capacitance data identical. |
+
+Remaining applications: scuff-cas3D, scuff-rf, scuff-neq (+scuff-integrate),
+scuff-spectrum (+tBeyn411), scuff-plotEpsMu, scuff-caspol.  Then the
+leaf-first library sweeps; then G4 (clang-tidy ratchet).
