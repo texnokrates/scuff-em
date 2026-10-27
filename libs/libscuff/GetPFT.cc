@@ -55,8 +55,8 @@ HMatrix *GetMomentPFTMatrix(RWGGeometry *G, cdouble Omega,
 // PFT by displaced-surface-integral method
 void GetDSIPFT(RWGGeometry *G, cdouble Omega, double *kBloch,
                HVector *KN, IncField *IF, double PFT[NUMPFT],
-               char *BSMesh, double R, int NumPoints,
-               bool FarField, char *PlotFileName, 
+               const char *BSMesh, double R, int NumPoints,
+               bool FarField, const char *PlotFileName,
                GTransformation *GT1, GTransformation *GT2);
 
 HMatrix *GetEMTPFTMatrix(RWGGeometry *G, cdouble Omega, IncField *IF,
@@ -68,8 +68,8 @@ HMatrix *GetEMTPFTMatrix(RWGGeometry *G, cdouble Omega, IncField *IF,
 // matrix-trace version of DSIPFT for non-equilibrium calculations
 void GetDSIPFTTrace(RWGGeometry *G, cdouble Omega, HMatrix *DRMatrix,
                     double PFT[NUMPFT],
-                    char *DSIMesh=0, double DSIRadius=0.0, int DSIPoints=302,
-                    bool FarField=false, char *PlotFileName=0,
+                    const char *DSIMesh=0, double DSIRadius=0.0, int DSIPoints=302,
+                    bool FarField=false, const char *PlotFileName=0,
                     GTransformation *GT1=0, GTransformation *GT2=0,
                     HMatrix *RFMatrix=0, bool RFMatrixDirty=true);
 
@@ -191,7 +191,7 @@ void RWGGeometry::GetPFT(int SurfaceIndex, HVector *KN,
    }
   else if ( PFTMethod==SCUFF_PFT_DSI )
    { 
-     char *DSIMesh        = Options->DSIMesh;
+     const char *DSIMesh        = Options->DSIMesh;
      double DSIRadius     = Options->DSIRadius;
      int DSIPoints        = Options->DSIPoints;
      bool DSIFarField     = Options->DSIFarField;

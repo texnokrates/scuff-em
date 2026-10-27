@@ -41,10 +41,14 @@ scuff_add_application(scuff-neq
   scuff-neq/WriteFlux.cc
   scuff-neq/CreateSNEQData.cc
 )
+# Ninth typed CLI11 migration.
+target_link_libraries(scuff-neq PRIVATE scuff_cli11)
 
 scuff_add_application(scuff-integrate
   scuff-neq/scuff-integrate.cc
 )
+# Tenth typed CLI11 migration.
+target_link_libraries(scuff-integrate PRIVATE scuff_cli11)
 
 scuff_add_application(scuff-plotEpsMu
   scuff-plotEpsMu/scuff-plotEpsMu.cc

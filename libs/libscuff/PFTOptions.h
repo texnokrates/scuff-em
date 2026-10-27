@@ -107,7 +107,7 @@ typedef struct PFTOptions
    HVector *RHSVector;
 
    // options affecting DSI PFT computation
-   char *DSIMesh;
+   const char *DSIMesh;
    double DSIRadius;
    int DSIPoints;
    bool DSIFarField;

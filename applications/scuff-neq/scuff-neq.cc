@@ -40,6 +40,12 @@
 #include "scuff-neq.h"
 #include <libhrutil.h>
 
+#include <memory>
+#include <string>
+#include <vector>
+
+#include <ScuffCLI.h>
+
 /***************************************************************/
 /***************************************************************/
 /***************************************************************/
@@ -59,96 +65,83 @@ int main(int argc, char *argv[])
   InitializeLog(argv[0]);
 
   /***************************************************************/
-  /* pre-process command-line arguments to extract arguments     */
-  /* any relevant for Brillouin-zone integration                 */
-  /***************************************************************/
-  //GetBZIArgStruct *BZIArgs=InitBZIArgs(argc, argv);
-
-  /***************************************************************/
   /* process options *********************************************/
   /***************************************************************/
-  char *GeoFile=0;
-  char *TransFile=0;
-  char *SourceObject=0;
-  char *DestObject=0;
-
-  /*--------------------------------------------------------------*/
-  char *EPFile=0;
-
-  /*--------------------------------------------------------------*/
-  cdouble OmegaVals[MAXFREQ];        int nOmegaVals;
-  char *OmegaFile;                   int nOmegaFiles;
-  char *OmegaKBFile=0;
-
-  /*--------------------------------------------------------------*/
+  std::string GeoFile;
+  std::string TransFile;
+  std::string SourceObject;
+  std::string DestObject;
+  std::string EPFile;
+  std::vector<cdouble> OmegaVals;
+  std::string OmegaFile;
+  std::string OmegaKBFile;
   bool EMTPFT      = false;
   bool OPFT        = false;
   bool DSIPFT      = false;
   int DSIPoints    = 0;
   int DSIPoints2   = 0;
-  char *DSIMesh    = 0;
+  std::string DSIMesh;
   double DSIRadius = 0.0;
   bool DSIFarField = false;
-  char *DSIOmegaFile = 0;
-
-  /*--------------------------------------------------------------*/
-  char *FileBase=0;
-
-  /*--------------------------------------------------------------*/
+  std::string DSIOmegaFile;
+  std::string FileBase;
   bool PlotFlux=false;
   bool OmitSelfTerms=false;
+  std::string Cache, WriteCache;
+  std::vector<std::string> ReadCache;
 
-  /*--------------------------------------------------------------*/
-  char *Cache=0;
-  char *ReadCache[MAXCACHE];         int nReadCache;
-  char *WriteCache=0;
+  CLI::App App{"compute nonequilibrium energy/heat exchange"};
+  App.option_defaults()->ignore_case();
 
-  /* name               type    #args  max_instances  storage           count         description*/
-  OptStruct OSArray[]=
-   { 
-     {"Geometry",       PA_STRING,  1, 1,       (void *)&GeoFile,    0,             "geometry file"},
-     {"TransFile",      PA_STRING,  1, 1,       (void *)&TransFile,  0,             "list of geometrical transformation"},
-/**/
-     {"SourceObject",   PA_STRING,  1, 1,       (void *)&SourceObject, 0,           "label of source object"},
-     {"DestObject",     PA_STRING,  1, 1,       (void *)&DestObject, 0,             "label of destination object"},
-/**/     
-     {"EPFile",         PA_STRING,  1, 1,       (void *)&EPFile, 0,             "list of evaluation points for spatially-resolved flux"},
-/**/     
-     {"Omega",          PA_CDOUBLE, 1, MAXFREQ, (void *)OmegaVals,   &nOmegaVals,   "(angular) frequency"},
-     {"OmegaFile",      PA_STRING,  1, 1,       (void *)&OmegaFile,  &nOmegaFiles,  "list of (angular) frequencies"},
-     {"OmegaKBFile",    PA_STRING,  1, 1,       (void *)&OmegaKBFile, 0,             "list of (Omega, kx, ky) points"},
-/**/
-     {"FileBase",       PA_STRING,  1, 1,       (void *)&FileBase,   0,             "prefix for names of .log, .flux, .out files"},
-/**/     
-     {"PlotFlux",       PA_BOOL,    0, 1,       (void *)&PlotFlux,   0,             "write spatially-resolved flux data"},
-     {"OmitSelfTerms",  PA_BOOL,    0, 1,       (void *)&OmitSelfTerms,   0,             "write spatially-resolved flux data"},
-/**/
-     {"EMTPFT",         PA_BOOL,    0, 1,       (void *)&EMTPFT,     0,             "compute SIFlux using EMT method"},
-     {"OPFT",           PA_BOOL,    0, 1,       (void *)&OPFT,       0,             "compute SIFlux using overlap method"},
-     {"DSIPFT",         PA_BOOL,    0, 1,       (void *)&DSIPFT,     0,             "compute SIFlux using displaced surface integral method"},
-     {"DSIRadius",      PA_DOUBLE,  1, 1,       (void *)&DSIRadius,  0,             "bounding-sphere radius for DSIPFT"},
-     {"DSIPoints",      PA_INT,     1, 1,       (void *)&DSIPoints,  0,             "number of cubature points for DSIPFT over sphere (6, 14, 26, 38, 50, 74, 86, 110, 146, 170, 194, 230, 266, 302, 350, 434, 590, 770, 974, 1202, 1454, 1730, 2030, 2354, 2702, 3074, 3470, 3890, 4334, 4802, 5294, 5810)"},
-     {"DSIPoints2",     PA_INT,     1, 1,       (void *)&DSIPoints2, 0,             "number of cubature points for DSIPFT second opinion"},
-     {"DSIMesh",        PA_STRING,  1, 1,       (void *)&DSIMesh,    0,             "bounding surface .msh file for DSIPFT"},
-     {"DSIOmegaFile",   PA_STRING,  1, 1,       (void *)&DSIOmegaFile,  0,          "list of frequencies at which to perform DSI calculations"},
-/**/
-     {"Cache",          PA_STRING,  1, 1,       (void *)&Cache,      0,             "read/write cache"},
-     {"ReadCache",      PA_STRING,  1, MAXCACHE,(void *)ReadCache,   &nReadCache,   "read cache"},
-     {"WriteCache",     PA_STRING,  1, 1,       (void *)&WriteCache, 0,             "write cache"},
-/**/     
-     {0,0,0,0,0,0,0}
-   };
-  ProcessOptions(argc, argv, OSArray);
+  App.add_option("--geometry", GeoFile, "geometry file")
+     ->required()
+     ->take_last();
+  App.add_option("--transfile", TransFile,
+                 "list of geometrical transformation")->take_last();
+  App.add_option("--sourceobject", SourceObject, "label of source object")->take_last();
+  App.add_option("--destobject", DestObject, "label of destination object")->take_last();
+  App.add_option("--EPFile", EPFile,
+                 "list of evaluation points for spatially-resolved flux")->take_last();
+  scuff::cli::AddComplexVectorOption(App, "--Omega", OmegaVals,
+                                     "(angular) frequency", MAXFREQ);
+  App.add_option("--OmegaFile", OmegaFile, "list of (angular) frequencies")->take_last();
+  App.add_option("--OmegaKBFile", OmegaKBFile, "list of (Omega, kx, ky) points")->take_last();
+  App.add_option("--FileBase", FileBase,
+                 "prefix for names of .log, .flux, .out files")->take_last();
+  App.add_flag("--PlotFlux", PlotFlux, "write spatially-resolved flux data");
+  App.add_flag("--OmitSelfTerms", OmitSelfTerms,
+               "omit contributions of an object to the PFT of itself");
+  App.add_flag("--EMTPFT", EMTPFT, "compute SIFlux using EMT method");
+  App.add_flag("--OPFT", OPFT, "compute SIFlux using overlap method");
+  App.add_flag("--DSIPFT", DSIPFT,
+               "compute SIFlux using displaced surface integral method");
+  App.add_option("--DSIRadius", DSIRadius,
+                 "bounding-sphere radius for DSIPFT")->take_last();
+  App.add_option("--DSIPoints", DSIPoints,
+                 "number of cubature points for DSIPFT over sphere "
+                 "(6, 14, 26, 38, 50, 74, 86, 110, 146, 170, 194, 230, 266, "
+                 "302, 350, 434, 590, 770, 974, 1202, 1454, 1730, 2030, "
+                 "2354, 2702, 3074, 3470, 3890, 4334, 4802, 5294, 5810)")->take_last();
+  App.add_option("--DSIPoints2", DSIPoints2,
+                 "number of cubature points for DSIPFT second opinion")->take_last();
+  App.add_option("--DSIMesh", DSIMesh,
+                 "bounding surface .msh file for DSIPFT")->take_last();
+  App.add_option("--DSIOmegaFile", DSIOmegaFile,
+                 "list of frequencies at which to perform DSI calculations")->take_last();
+  App.add_option("--cache", Cache, "read/write cache")->take_last();
+  App.add_option("--readcache", ReadCache, "read cache")->expected(1, MAXCACHE);
+  App.add_option("--writecache", WriteCache, "write cache")->take_last();
+
+  if (auto Status=scuff::cli::Parse(App,argc,argv))
+   return *Status;
 
   /*******************************************************************/
   /*******************************************************************/
   /*******************************************************************/
-  if (GeoFile==0)
-   OSUsage(argv[0], VERSION, OSArray, "--geometry option is mandatory");
-  if (!FileBase)
-   FileBase=vstrdup(GetFileBase(GeoFile));
+  if (FileBase.empty())
+   FileBase=GetFileBase(GeoFile.c_str());
 
-  if ( Cache!=0 && WriteCache!=0 )
+  if ( !Cache.empty() && !WriteCache.empty() )
    ErrExit("--cache and --writecache options are mutually exclusive");
 
   if (DSIPFT && DSIPoints==0)
@@ -157,121 +150,122 @@ int main(int argc, char *argv[])
   /*******************************************************************/
   /* determine which PFT methods were requested       ****************/
   /*******************************************************************/
-  int NumPFTMethods=0, PFTMethods[MAXPFTMETHODS];
+  std::vector<int> PFTMethods;
   if(EMTPFT)
-   PFTMethods[NumPFTMethods++] = SCUFF_PFT_EMT;
+   PFTMethods.push_back(SCUFF_PFT_EMT);
   if(OPFT)
-   PFTMethods[NumPFTMethods++] = SCUFF_PFT_OVERLAP;
-  if(DSIMesh)
-   PFTMethods[NumPFTMethods++] = -SCUFF_PFT_DSI;
+   PFTMethods.push_back(SCUFF_PFT_OVERLAP);
+  if(!DSIMesh.empty())
+   PFTMethods.push_back(-SCUFF_PFT_DSI);
   if(DSIPoints)
-   PFTMethods[NumPFTMethods++] = DSIPoints;
+   PFTMethods.push_back(DSIPoints);
   if(DSIPoints2)
-   PFTMethods[NumPFTMethods++] = DSIPoints2;
+   PFTMethods.push_back(DSIPoints2);
 
-  if (NumPFTMethods==0 && EPFile==0)
-   PFTMethods[NumPFTMethods++] = SCUFF_PFT_EMT;
+  if ( PFTMethods.empty() && EPFile.empty() )
+   PFTMethods.push_back(SCUFF_PFT_EMT);
 
-  if (DSIMesh) 
+  if (!DSIMesh.empty())
    PlotFlux=true;
 
   /*******************************************************************/
   /*******************************************************************/
   /*******************************************************************/
-  HMatrix *OmegaKBPoints=0;
-  if (OmegaKBFile)
-   { OmegaKBPoints = new HMatrix(OmegaKBFile,LHM_TEXT,"--ncol 3");
+  std::unique_ptr<HMatrix> OmegaKBPoints;
+  if (!OmegaKBFile.empty())
+   { OmegaKBPoints.reset(new HMatrix(OmegaKBFile.c_str(),LHM_TEXT,"--ncol 3"));
      if (OmegaKBPoints->ErrMsg)
-      ErrExit(OmegaKBPoints->ErrMsg);
+      ErrExit("%s",OmegaKBPoints->ErrMsg);
    };
 
   /*******************************************************************/
   /* process frequency-related options to construct a list of        */
   /* frequencies at which to run simulations                         */
   /*******************************************************************/
-  HVector *OmegaPoints=0, *OmegaPoints0;
+  std::unique_ptr<HVector> OmegaPoints;
   int NumFreqs=0;
-  if (nOmegaFiles==1) // first process --OmegaFile option if present
-   { 
-     OmegaPoints=new HVector(OmegaFile,LHM_TEXT);
+  if (!OmegaFile.empty()) // first process --OmegaFile option if present
+   {
+     OmegaPoints.reset(new HVector(OmegaFile.c_str(),LHM_TEXT));
      if (OmegaPoints->ErrMsg)
-      ErrExit(OmegaPoints->ErrMsg);
+      ErrExit("%s",OmegaPoints->ErrMsg);
      NumFreqs=OmegaPoints->N;
-     Log("Read %i frequencies from file %s.",NumFreqs,OmegaFile);
+     Log("Read %i frequencies from file %s.",NumFreqs,OmegaFile.c_str());
    };
 
   // now add any individually specified --Omega options
-  if (nOmegaVals>0)
-   { 
-     NumFreqs += nOmegaVals;
-     OmegaPoints0=OmegaPoints;
-     OmegaPoints=new HVector(NumFreqs, LHM_COMPLEX);
+  if (OmegaVals.size()>0)
+   {
+     std::unique_ptr<HVector> OmegaPoints0(std::move(OmegaPoints));
+     NumFreqs += (int)OmegaVals.size();
+     OmegaPoints.reset(new HVector(NumFreqs, LHM_COMPLEX));
      int nFreq=0;
      if (OmegaPoints0)
       { for(nFreq=0; nFreq<OmegaPoints0->N; nFreq++)
          OmegaPoints->SetEntry(nFreq, OmegaPoints0->GetEntry(nFreq));
-        delete OmegaPoints0;
       };
-     for(int nOV=0; nOV<nOmegaVals; nOV++)
-      OmegaPoints->SetEntry(nFreq+nOV, OmegaVals[nOV]);
-     Log("Read %i frequencies from command line.",nOmegaVals);
+     for(size_t nOV=0; nOV<OmegaVals.size(); nOV++)
+      OmegaPoints->SetEntry(nFreq+(int)nOV, OmegaVals[nOV]);
+     Log("Read %i frequencies from command line.",(int)OmegaVals.size());
    };
 
   /*******************************************************************/
   /* create the SNEQData structure that contains all the info needed */
   /* to evaluate the neq transfer at a single frequency              */
   /*******************************************************************/
-  SNEQData *SNEQD=CreateSNEQData(GeoFile, TransFile,
-                                 PFTMethods, NumPFTMethods,
-                                 EPFile, FileBase);
+  SNEQData *SNEQD=CreateSNEQData(GeoFile.c_str(), TransFile.c_str(),
+                                 PFTMethods.data(), (int)PFTMethods.size(),
+                                 EPFile.empty() ? 0 : EPFile.c_str(),
+                                 FileBase.c_str());
   RWGGeometry *G=SNEQD->G;
   SNEQD->PlotFlux                = PlotFlux;
   SNEQD->OmitSelfTerms           = OmitSelfTerms;
-  SNEQD->PFTOpts.DSIMesh         = DSIMesh;
+  SNEQD->PFTOpts.DSIMesh         = DSIMesh.empty() ? 0 : DSIMesh.c_str();
   SNEQD->PFTOpts.DSIRadius       = DSIRadius;
   SNEQD->PFTOpts.DSIFarField     = DSIFarField;
-  SNEQD->DSIOmegaPoints          = DSIOmegaFile ? new HVector(DSIOmegaFile) : 0;
+  SNEQD->DSIOmegaPoints          = DSIOmegaFile.empty() ? 0
+                                  : new HVector(DSIOmegaFile.c_str());
 
-  if (OmegaKBPoints && !G->LBasis)
+  if (OmegaKBPoints.get()!=0 && !G->LBasis)
    ErrExit("--OmegaKBPoints may only be used with extended geometries");
-  else if (G->LBasis && OmegaKBPoints==0)
+  else if (G->LBasis && OmegaKBPoints.get()==0)
    ErrExit("--OmegaKBPoints is required for extended geometries");
 
   SNEQD->SourceOnly=-1;
-  if (SourceObject)
-   { G->GetSurfaceByLabel(SourceObject, &(SNEQD->SourceOnly) );
+  if (!SourceObject.empty())
+   { G->GetSurfaceByLabel(SourceObject.c_str(), &(SNEQD->SourceOnly) );
      if (SNEQD->SourceOnly == -1)
-      ErrExit("geometry contains no object with label %s",SourceObject);
-     Log("Computing only quantities sourced by object %s.",SourceObject);
+      ErrExit("geometry contains no object with label %s",SourceObject.c_str());
+     Log("Computing only quantities sourced by object %s.",SourceObject.c_str());
    };
   SNEQD->DestOnly=-1;
-  if (DestObject)
-   { G->GetSurfaceByLabel(DestObject, &(SNEQD->DestOnly) );
+  if (!DestObject.empty())
+   { G->GetSurfaceByLabel(DestObject.c_str(), &(SNEQD->DestOnly) );
      if (SNEQD->DestOnly == -1)
-      ErrExit("geometry contains no object with label %s",DestObject);
-     Log("Computing only PFT quantities for object %s.",DestObject);
+      ErrExit("geometry contains no object with label %s",DestObject.c_str());
+     Log("Computing only PFT quantities for object %s.",DestObject.c_str());
    };
-         
+
   /*******************************************************************/
   /* preload the scuff cache with any cache preload files the user   */
   /* may have specified                                              */
   /*******************************************************************/
-  for (int nrc=0; nrc<nReadCache; nrc++)
-   PreloadCache( ReadCache[nrc] );
-  if (Cache)
-   PreloadCache( Cache );
+  for (size_t nrc=0; nrc<ReadCache.size(); nrc++)
+   PreloadCache( ReadCache[nrc].c_str() );
+  if (!Cache.empty())
+   PreloadCache( Cache.c_str() );
 
-  if (Cache) WriteCache=Cache;
-  SNEQD->WriteCache = WriteCache;
+  if (!Cache.empty()) WriteCache=Cache;
+  SNEQD->WriteCache = WriteCache.empty() ? 0 : WriteCache.c_str();
 
   /*******************************************************************/
   /* now switch off based on the requested frequency behavior to     */
   /* perform the actual calculations.                                */
   /*******************************************************************/
-  if (OmegaKBPoints)
+  if (OmegaKBPoints.get()!=0)
    { for (int nok=0; nok<OmegaKBPoints->NR; nok++)
-      {  
-        cdouble Omega; 
+      {
+        cdouble Omega;
         double kBloch[2];
         Omega     = OmegaKBPoints->GetEntryD(nok, 0);
         kBloch[0] = OmegaKBPoints->GetEntryD(nok, 1);

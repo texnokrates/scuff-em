@@ -79,7 +79,7 @@ typedef struct SNEQData
    RWGGeometry *G;
    GTCList GTCs;
    int NumTransformations;
-   char *WriteCache;
+   const char *WriteCache;
 
    /*--------------------------------------------------------------*/
    /*- information on the calculations requested by the user       */
@@ -124,9 +124,9 @@ typedef struct SNEQData
 /*--------------------------------------------------------------*/
 /*- in CreateSNEQData.cc ---------------------------------------*/
 /*--------------------------------------------------------------*/
-SNEQData *CreateSNEQData(char *GeoFile, char *TransFile,
+SNEQData *CreateSNEQData(const char *GeoFile, const char *TransFile,
                          int *PFTMethods, int NumPFTMethods,
-                         char *EPFile, char *pFileBase);
+                         const char *EPFile, const char *pFileBase);
 
 /*--------------------------------------------------------------*/
 /*- in GetFlux.cc ----------------------------------------------*/

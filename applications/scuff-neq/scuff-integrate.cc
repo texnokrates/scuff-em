@@ -40,9 +40,13 @@
 #include <config.h>
 #endif
 
+#include <memory>
+#include <string>
 #include <vector>
 
 #include <libhrutil.h>
+
+#include <ScuffCLI.h>
 #include <libSGJC.h>
 #include <libMDInterp.h>
 #include <libscuff.h>
@@ -174,20 +178,20 @@ int main(int argc, char *argv[])
   /* ONES-BASED, so leftmost column in a data file is column #1  */
   /* and there is no column 0.                                   */
   /***************************************************************/
-  char *DataFileName=0;
+  std::string DataFileName;
 //
-  int FreqColumn=1;                 int nFreqColumn=0;
+  int FreqColumn=1;
 //
-  int DataColumns[MAXDATA];         int NumData=0;
-  char *DataNames[MAXDATA];         int nDataNames=0;
+  std::vector<int> DataColumns;
+  std::vector<std::string> DataNames;
 //
-  int ParmColumns[MAXPARMS];        int NumParms=0;
-  char *ParmNames[MAXPARMS];        int nParmNames=0;
+  std::vector<int> ParmColumns;
+  std::vector<std::string> ParmNames;
 //
   int SDColumn=0;
 //
-  char *TemperatureFile=0;
-  char *TempStrings[2*MAXOBJ];      int nTempStrings;
+  std::string TemperatureFile;
+  std::vector<std::string> TempStrings;   // 2 values per occurrence
 //
   double PreFactor=0.0;
 //
@@ -197,121 +201,159 @@ int main(int argc, char *argv[])
   double DupRelTol=1.0e-6;
   double FreqRelTol=1.0e-6;
 //
-  char *IntegrandFileName=0;
-  char *OutFileName=0;
-  /* name        type    #args  max_instances  storage    count  description*/
-  OptStruct OSArray[]=
-   { {"DataFile",        PA_STRING,  1, 1,       (void *)&DataFileName,       0,   "data file"},
-//
-     {"FreqColumn",      PA_INT,     1, 1,       (void *)&FreqColumn,         &nFreqColumn,   "frequency column index in data file"},
-     {"xColumn",         PA_INT,     1, 1,       (void *)&FreqColumn,         0,   "(synonym for --FreqColumn)"},
-//
-     {"DataColumn",      PA_INT,     1, MAXDATA, (void *)DataColumns,   &NumData,        "data column index in data file"},
-     {"DataName",        PA_STRING,  1, MAXDATA, (void *)DataNames,     &nDataNames,     "name for data column"},
-//
-     {"ParmColumn",      PA_INT,     1, MAXPARMS,(void *)ParmColumns,   &NumParms,       "parameter column index in data file"},
-     {"ParmName"  ,      PA_STRING,  1, MAXPARMS,(void *)ParmNames,    &nParmNames,     "name of parameter"},
-//
-     {"SDColumn",        PA_INT,     1, 1,       (void *)&SDColumn,           0,   "(source object, dest object) column index in data file"},
-//
-     {"TemperatureFile", PA_STRING,  1, 1,       (void *)&TemperatureFile,    0,   "list of object temperatures"},
-     {"Temperature",     PA_STRING,  2, MAXOBJ,  (void *)TempStrings,         &nTempStrings,   "set object temperature"},
-//
-     {"PreFactor",       PA_DOUBLE,  1, 1,       (void *)&PreFactor,          0,   "overall multiplicative prefactor"},
-     {"IntegrandFile",   PA_STRING,  1, 1,       (void *)&IntegrandFileName,  0,   "name of file for integrand data"},
-     {"OutFile",         PA_STRING,  1, 1,       (void *)&OutFileName,        0,   "name of output file"},
-     {"DupRelTol",       PA_DOUBLE,  1, 1,       (void *)&DupRelTol,          0,   "relative tolerance for identifying equivalent data points"},
-     {"DupAbsTol",       PA_DOUBLE,  1, 1,       (void *)&DupAbsTol,          0,   "absolute tolerance for identifying equivalent data points"},
-     {"FreqRelTol",      PA_DOUBLE,  1, 1,       (void *)&FreqRelTol,         0,   "relative tolerance for identifying equivalent frequency points"},
-//
-     {0,0,0,0,0,0,0}
-   };
-  ProcessOptions(argc, argv, OSArray);
+  std::string IntegrandFileName;
+  std::string OutFileName;
 
-  if (DataFileName==0)
-   OSUsage(argv[0], VERSION,OSArray,"--DataFile option is mandatory");
+  CLI::App App{"integrate tabulated data over frequency"};
+  App.option_defaults()->ignore_case();
+
+  App.add_option("--DataFile", DataFileName, "data file")
+     ->required()
+     ->take_last();
+  App.add_option("--FreqColumn", FreqColumn,
+                 "frequency column index in data file")->take_last();
+  App.add_option("--xColumn", FreqColumn, "(synonym for --FreqColumn)")->take_last();
+  App.add_option("--DataColumn", DataColumns,
+                 "data column index in data file")->expected(1, MAXDATA);
+  App.add_option("--DataName", DataNames, "name for data column")
+     ->expected(1, MAXDATA);
+  App.add_option("--ParmColumn", ParmColumns,
+                 "parameter column index in data file")->expected(1, MAXPARMS);
+  App.add_option("--ParmName", ParmNames, "name of parameter")
+     ->expected(1, MAXPARMS);
+  App.add_option("--SDColumn", SDColumn,
+                 "(source object, dest object) column index in data file")->take_last();
+  App.add_option("--TemperatureFile", TemperatureFile,
+                 "list of object temperatures")->take_last();
+  App.add_option("--Temperature", TempStrings, "set object temperature")
+     ->type_size(2)
+     ->expected(1, MAXOBJ);
+  App.add_option("--PreFactor", PreFactor,
+                 "overall multiplicative prefactor")->take_last();
+  App.add_option("--IntegrandFile", IntegrandFileName,
+                 "name of file for integrand data")->take_last();
+  App.add_option("--OutFile", OutFileName, "name of output file")->take_last();
+  App.add_option("--DupRelTol", DupRelTol,
+                 "relative tolerance for identifying equivalent data points")->take_last();
+  App.add_option("--DupAbsTol", DupAbsTol,
+                 "absolute tolerance for identifying equivalent data points")->take_last();
+  App.add_option("--FreqRelTol", FreqRelTol,
+                 "relative tolerance for identifying equivalent frequency points")->take_last();
+
+  if (auto Status=scuff::cli::Parse(App,argc,argv))
+   return *Status;
+
+  if (DataFileName.empty())
+   { CLI::ValidationError Error("scuff-integrate","--DataFile option is mandatory");
+     App.exit(Error);
+     return 1;
+   };
 
   /***************************************************************/
   /* auto-detect special known file types and autoset values of  */
   /* input parameters                                            */
   /***************************************************************/
-  if( strcasestr(DataFileName,".SIFlux") )
-   { 
+  if( strcasestr(DataFileName.c_str(),".SIFlux") )
+   {
      Log("Autodetecting .SIFlux data file...");
+     DataColumns.clear();
+     DataNames.clear();
+     ParmColumns.clear();
+     ParmNames.clear();
 
-     ParmColumns[0] = 1;    ParmNames[0]=strdup("Geometrical transform");
+     ParmColumns.push_back(1); ParmNames.push_back("Geometrical transform");
      FreqColumn     = 2;
-     // FUTURE: handle kBloch 
+     // FUTURE: handle kBloch
      int nc = 3;
-     ParmColumns[1] = nc++; ParmNames[1]=strdup("(source, dest)");
-     SDColumn       = ParmColumns[1];
-     NumParms=nParmNames=2;
+     ParmColumns.push_back(nc); ParmNames.push_back("(source, dest)"); nc++;
+     SDColumn       = ParmColumns.back();
 
-     DataColumns[0] = nc++; DataNames[0]=strdup("PAbs");
-     DataColumns[1] = nc++; DataNames[1]=strdup("PRad");
-     DataColumns[2] = nc++; DataNames[2]=strdup("XForce");
-     DataColumns[3] = nc++; DataNames[3]=strdup("YForce");
-     DataColumns[4] = nc++; DataNames[4]=strdup("ZForce");
-     DataColumns[5] = nc++; DataNames[5]=strdup("XTorque");
-     DataColumns[6] = nc++; DataNames[6]=strdup("YTorque");
-     DataColumns[7] = nc++; DataNames[7]=strdup("ZTorque");
-     NumData=nDataNames=8;
+     DataColumns.push_back(nc); DataNames.push_back("PAbs"); nc++;
+     DataColumns.push_back(nc); DataNames.push_back("PRad"); nc++;
+     DataColumns.push_back(nc); DataNames.push_back("XForce"); nc++;
+     DataColumns.push_back(nc); DataNames.push_back("YForce"); nc++;
+     DataColumns.push_back(nc); DataNames.push_back("ZForce"); nc++;
+     DataColumns.push_back(nc); DataNames.push_back("XTorque"); nc++;
+     DataColumns.push_back(nc); DataNames.push_back("YTorque"); nc++;
+     DataColumns.push_back(nc); DataNames.push_back("ZTorque"); nc++;
    }
-  else if( strcasestr(DataFileName,".SRFlux") )
-   { 
+  else if( strcasestr(DataFileName.c_str(),".SRFlux") )
+   {
      Log("Autodetecting .SRFlux data file");
-     ParmColumns[0] = 1;    ParmNames[0]=strdup("Geometrical transform");
+     DataColumns.clear();
+     DataNames.clear();
+     ParmColumns.clear();
+     ParmNames.clear();
+
+     ParmColumns.push_back(1); ParmNames.push_back("Geometrical transform");
      FreqColumn     = 2;
-     // FUTURE: handle kBloch 
+     // FUTURE: handle kBloch
      int nc = 3;
-     ParmColumns[1] = nc++; ParmNames[1]=strdup("x");
-     ParmColumns[2] = nc++; ParmNames[2]=strdup("y");
-     ParmColumns[3] = nc++; ParmNames[3]=strdup("z");
-     ParmColumns[4] = nc++; ParmNames[4]=strdup("sourceSurface");
-     SDColumn       = ParmColumns[4];
-     NumParms=nParmNames=5;
-     
-     int ndc=0;
+     ParmColumns.push_back(nc); ParmNames.push_back("x"); nc++;
+     ParmColumns.push_back(nc); ParmNames.push_back("y"); nc++;
+     ParmColumns.push_back(nc); ParmNames.push_back("z"); nc++;
+     ParmColumns.push_back(nc); ParmNames.push_back("sourceSurface"); nc++;
+     SDColumn       = ParmColumns.back();
+
      char SC[3]="Sx", TC[4]="Txx";
      for(SC[1]='x'; SC[1]<='z'; SC[1]++)
-      { DataNames[ndc]     = strdup(SC);
-        DataColumns[ndc++] = nc++; 
+      { DataNames.push_back(SC);
+        DataColumns.push_back(nc); nc++;
       };
      for(TC[1]='x'; TC[1]<='z'; TC[1]++)
       for(TC[2]='x'; TC[2]<='z'; TC[2]++)
-       { DataNames[ndc] = strdup(TC);
-         DataColumns[ndc++]  = nc++; 
+       { DataNames.push_back(TC);
+         DataColumns.push_back(nc); nc++;
        };
-     NumData=nDataNames=nc;
    }
-  else if( strcasestr(DataFileName,".byXi") )
+  else if( strcasestr(DataFileName.c_str(),".byXi") )
    {
      Log("Autodetecting .byXi data file");
      ErrExit("--byXi mode not yet implemented");
    };
 
+  /* The autodetect blocks above discard any user-specified column
+     options when they fire, exactly as the legacy array-based code
+     overwrote them. */
+  int NumData    = (int)DataColumns.size();
+  int nDataNames = (int)DataNames.size();
+  int NumParms   = (int)ParmColumns.size();
+  int nParmNames = (int)ParmNames.size();
+
   /***************************************************************/
   /* sanity checks ***********************************************/
   /***************************************************************/
   if (NumData==0)
-   OSUsage(argv[0], VERSION, OSArray,"you must specify at least one --DataColumn");
+   { CLI::ValidationError Error("scuff-integrate",
+        "you must specify at least one --DataColumn");
+     App.exit(Error);
+     return 1;
+   };
   if (nDataNames!=0 && nDataNames!=NumData)
-   OSUsage(argv[0], VERSION, OSArray,"numbers of --DataNames and --DataColumns do not agree");
+   { CLI::ValidationError Error("scuff-integrate",
+        "numbers of --DataNames and --DataColumns do not agree");
+     App.exit(Error);
+     return 1;
+   };
   if (nParmNames!=0 && nParmNames!=NumParms)
-   OSUsage(argv[0], VERSION, OSArray,"numbers of --ParmNames and --ParmColumns do not agree");
+   { CLI::ValidationError Error("scuff-integrate",
+        "numbers of --ParmNames and --ParmColumns do not agree");
+     App.exit(Error);
+     return 1;
+   };
 
   if (nDataNames==0)
    for(int nd=0; nd<NumData; nd++)
-    DataNames[nd]=vstrdup("Integral of data #%i\n",nd);
+    DataNames.push_back(vstrdup("Integral of data #%i\n",nd));
   if (nParmNames==0)
    for(int np=0; np<NumParms; np++)
-    ParmNames[np]=vstrdup("Parameter #%i\n",np);
+    ParmNames.push_back(vstrdup("Parameter #%i\n",np));
   
 
   /***************************************************************/
   /* read in the data and sanity check column specifications     */
   /***************************************************************/
-  HMatrix *DataMatrix=new HMatrix(DataFileName);
+  std::unique_ptr<HMatrix> DataMatrix(new HMatrix(DataFileName.c_str()));
   int NR = DataMatrix->NR;
   if ( ! (1<=FreqColumn && FreqColumn<=NR) )
    ErrExit("--FreqColumn not in range [1,%i]",NR);
@@ -340,7 +382,7 @@ int main(int argc, char *argv[])
    for(int nr=0; nr<DataMatrix->NR; nr++)
     { int SD = (int)DataMatrix->GetEntryD(nr, SDColumn-1);
       if (SD<11 || SD>99)
-       ErrExit("%s:%i: invalid SDColumn %i",DataFileName,nr,SD);
+       ErrExit("%s:%i: invalid SDColumn %i",DataFileName.c_str(),nr,SD);
       int SourceIndex = SD/10, DestIndex=SD%10;
       if (NSource < SourceIndex) NSource=SourceIndex;
       if (NDest   < DestIndex  ) NDest=DestIndex;
@@ -353,28 +395,28 @@ int main(int argc, char *argv[])
   /* TemperatureMatrix column  0     = environment temperatures  */
   /* TemperatureMatrix columns 1..NO = object 1..NO temperatures */
   /***************************************************************/
-  HMatrix *TemperatureMatrix=0;
-  if ( TemperatureFile )
-   { if (nTempStrings>0)
+  std::unique_ptr<HMatrix> TemperatureMatrix;
+  if ( !TemperatureFile.empty() )
+   { if (TempStrings.size()>0)
       ErrExit("--Temperature is incompatible with --TemperatureFile");
-     TemperatureMatrix=new HMatrix(TemperatureFile);
+     TemperatureMatrix.reset(new HMatrix(TemperatureFile.c_str()));
      if ( TemperatureMatrix->NC != (NSource+1) )
       ErrExit("Data file %s describes %i objects, but temperature file %s describes environment plus %i objects",
-               DataFileName, NSource, DataFileName, TemperatureMatrix->NC-1);
+               DataFileName.c_str(), NSource, DataFileName.c_str(), TemperatureMatrix->NC-1);
    }
-  else if ( nTempStrings>0 )
+  else if ( TempStrings.size()>0 )
    {
-     TemperatureMatrix=new HMatrix(1,NSource+1);
+     TemperatureMatrix.reset(new HMatrix(1,NSource+1));
 
-     for(int nts=0; nts<nTempStrings; nts++)
+     for(size_t nts=0; nts<TempStrings.size()/2; nts++)
       { int Index; 
-        int Status=sscanf(TempStrings[2*nts+0],"%i",&Index);
+        int Status=sscanf(TempStrings[2*nts+0].c_str(),"%i",&Index);
         if (Status!=1 || Index<0 || Index>NSource)
-         ErrExit("invalid object index %s",TempStrings[2*nts+0]);
+         ErrExit("invalid object index %s",TempStrings[2*nts+0].c_str());
         double T;
-        Status=sscanf(TempStrings[2*nts+1],"%le",&T);
+        Status=sscanf(TempStrings[2*nts+1].c_str(),"%le",&T);
         if (Status!=1) 
-         ErrExit("invalid temperature %s",TempStrings[2*nts+1]);
+         ErrExit("invalid temperature %s",TempStrings[2*nts+1].c_str());
         TemperatureMatrix->SetEntry(0,Index,T);
       };
      printf("Temperatures: \n");
@@ -385,7 +427,7 @@ int main(int argc, char *argv[])
   int NumTemperatures = TemperatureMatrix ? TemperatureMatrix->NR : 1;
 
   if (PreFactor==0.0)
-   PreFactor = (TemperatureMatrix==0) ? 1.0 : HBAROMEGA02;
+   PreFactor = (TemperatureMatrix.get()==0) ? 1.0 : HBAROMEGA02;
 
   /***************************************************************/
   /* NumParmValues is the total number of distinct sets of       */
@@ -398,7 +440,7 @@ int main(int argc, char *argv[])
   RowStarts.push_back(0);
   if (NumParms)
    for(int nr=1; nr<DataMatrix->NR; nr++)
-    if ( !ParmsMatch(DataMatrix,nr,nr-1,ParmColumns,NumParms) )
+    if ( !ParmsMatch(DataMatrix.get(),nr,nr-1,ParmColumns.data(),NumParms) )
      RowStarts.push_back(nr);
   RowStarts.push_back(DataMatrix->NR);
   int NumParmValues=static_cast<int>(RowStarts.size()) - 1;
@@ -413,22 +455,23 @@ int main(int argc, char *argv[])
   /***************************************************************/
   /* create output file and write preamble ***********************/
   /***************************************************************/
-  if (!OutFileName)
-   OutFileName=vstrdup("%s.Integrated",GetFileBase(DataFileName));
-  FILE *OutFile=fopen(OutFileName,"a");
+  std::string OutFileNameStr=OutFileName.empty()
+   ? std::string(vstrdup("%s.Integrated",GetFileBase(DataFileName.c_str())))
+   : OutFileName;
+  FILE *OutFile=fopen(OutFileNameStr.c_str(),"a");
   if (!OutFile)
-   ErrExit("could not open output file %s",OutFileName);
+   ErrExit("could not open output file %s",OutFileNameStr.c_str());
   fprintf(OutFile,"# columns: \n");
   int ncol=1;
   for(int np=0; np<NumParms; np++)
-   fprintf(OutFile,"# %i   %s\n",ncol++,ParmNames[np]);
+   fprintf(OutFile,"# %i   %s\n",ncol++,ParmNames[np].c_str());
   if (TemperatureMatrix)
    { fprintf(OutFile,"# %i: environment temperature \n",ncol++);
      for(int ns=0; ns<NSource; ns++)
       fprintf(OutFile,"# %i: object %i temperature \n",ncol++,ns+1);
    };
   for(int nd=0; nd<NumData; nd++)
-   fprintf(OutFile,"# %i   integral of %s\n",ncol++,DataNames[nd]);
+   fprintf(OutFile,"# %i   integral of %s\n",ncol++,DataNames[nd].c_str());
 
   /***************************************************************/
   /* allocate storage buffers                                    */

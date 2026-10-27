@@ -71,9 +71,9 @@ void WriteSIFluxFilePreamble(SNEQData *SNEQD, char *FileName, bool ByRegion=fals
 /***************************************************************/
 /***************************************************************/
 /***************************************************************/
-SNEQData *CreateSNEQData(char *GeoFile, char *TransFile,
+SNEQData *CreateSNEQData(const char *GeoFile, const char *TransFile,
                          int *PFTMethods, int NumPFTMethods,
-                         char *EPFile, char *pFileBase)
+                         const char *EPFile, const char *pFileBase)
 {
 
   SNEQData *SNEQD=(SNEQData *)mallocEC(sizeof(*SNEQD));

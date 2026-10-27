@@ -258,7 +258,7 @@ HMatrix *GetSRFluxTrace(RWGGeometry *G, HMatrix *XMatrix, cdouble Omega,
 /* If GT1 and/or GT2 are non-null, then each cubature point    */
 /* normal vector is transformed by GT1 (first) and then GT2.   */
 /***************************************************************/
-HMatrix *GetSCRMatrix(char *DSIMesh, double DSIRadius, int DSIPoints,
+HMatrix *GetSCRMatrix(const char *DSIMesh, double DSIRadius, int DSIPoints,
                       GTransformation *GT1=0, GTransformation *GT2=0)
 {
   HMatrix *SCRMatrix;
@@ -448,8 +448,8 @@ double HVMVP(cdouble V1[3], double M[3][3], cdouble V2[3])
 /***************************************************************/
 void GetDSIPFT(RWGGeometry *G, cdouble Omega, double *kBloch,
                HVector *KN, IncField *IF, double PFT[NUMPFT],
-               char *DSIMesh, double DSIRadius, int DSIPoints,
-               bool FarField, char *PlotFileName, 
+               const char *DSIMesh, double DSIRadius, int DSIPoints,
+               bool FarField, const char *PlotFileName, 
                GTransformation *GT1, GTransformation *GT2)
 {
   (void) FarField;
@@ -596,8 +596,8 @@ void GetDSIPFT(RWGGeometry *G, cdouble Omega, double *kBloch,
 /***************************************************************/
 void GetDSIPFTTrace(RWGGeometry *G, cdouble Omega, HMatrix *DRMatrix,
                     double PFT[NUMPFT],
-                    char *DSIMesh, double DSIRadius, int DSIPoints,
-                    bool FarField, char *PlotFileName,
+                    const char *DSIMesh, double DSIRadius, int DSIPoints,
+                    bool FarField, const char *PlotFileName,
                     GTransformation *GT1, GTransformation *GT2,
                     HMatrix *RFMatrix, bool RFMatrixDirty)
 {
