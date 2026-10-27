@@ -16,6 +16,12 @@
 #include <libSGJC.h>
 #include "libBeyn.h"
 
+#include <memory>
+#include <string>
+#include <vector>
+
+#include <ScuffCLI.h>
+
 #define II cdouble(0.0,1.0)
 
 using namespace scuff;
@@ -27,20 +33,20 @@ using namespace scuff;
 /* prototypes for postprocessing routines in OutputModules.cc***/
 /***************************************************************/
 void ProcessEPFile(RWGGeometry *G, HVector *KN, cdouble Omega, double *kBloch,
-                   char *EPFileName, char *OutFileBase);
+                   const char *EPFileName, const char *OutFileBase);
 
 void VisualizeFields(RWGGeometry *G, HVector *KN, cdouble Omega, double *kBloch,
-                     char *OutFileBase, char *FVMesh, char *TransFile);
+                     const char *OutFileBase, const char *FVMesh, const char *TransFile);
 
 void VisualizeFields(RWGGeometry *G, HVector *KN, cdouble Omega, double *kBloch,
-                     char *OutFileBase, double *Screen);
+                     const char *OutFileBase, double *Screen);
 
 void VisualizeSurfaceFields(RWGGeometry *G, HVector *KN, cdouble Omega, double *kBloch,
-                            char *OutFileBase);
+                            const char *OutFileBase);
 
-void WriteCartesianMoments(RWGGeometry *G, HVector *KN, cdouble Omega, double *kBloch, char *CartesianMomentFile);
+void WriteCartesianMoments(RWGGeometry *G, HVector *KN, cdouble Omega, double *kBloch, const char *CartesianMomentFile);
 
-void WriteSphericalMoments(RWGGeometry *G, HVector *KN, cdouble Omega, int LMax, char *SphericalMomentFile);
+void WriteSphericalMoments(RWGGeometry *G, HVector *KN, cdouble Omega, int LMax, const char *SphericalMomentFile);
 
 /***************************************************************/
 /***************************************************************/
@@ -90,94 +96,100 @@ void BeynFunc(cdouble Omega, void *UserData, HMatrix *VHat, HMatrix *MVHat)
 /***************************************************************/
 /***************************************************************/
 /***************************************************************/
-int main(int argc, char *argv[]) 
-{ 
+int main(int argc, char *argv[])
+{
   InstallHRSignalHandler();
   InitializeLog(argv[0]);
 
   /***************************************************************/
   /* process command-line arguments ******************************/
   /***************************************************************/
-  char *GeoFile=0;
-//
+  std::string GeoFile;
   cdouble Omega0   = cdouble(1.0,-1.0);
   double Rx        = 0.1;
   double Ry        = 0.1;
   int    N         = 20;
   int    L         = 5;
-  double kx        = 0.0;  int nkx;
-  double ky        = 0.0;  int nky;
-  char *ContourFile=0;
-//
-  char *FileBase=0;
-//
+  double kx        = 0.0;
+  double ky        = 0.0;
+  std::string ContourFile;
+  std::string FileBase;
   bool PlotContours=false;
   bool PlotSurfaceCurrents=false;
   bool PlotSurfaceFields=false;
-  char *SphericalMomentFile=0;
+  std::string SphericalMomentFile;
   int LMax=3;
-  char *CartesianMomentFile=0;
-  char *EPFiles[MAXEPF];             int nEPFiles;
-  double FVScreens[11*MAXFVM];       int nFVScreens;
-  char *FVMeshes[MAXFVM];            int nFVMeshes;
-  char *FVMeshTransFiles[MAXFVM];    int nFVMeshTransFiles;
-  memset(FVMeshTransFiles, 0, MAXFVM*sizeof(char *));
-  /* name        type    #args  max_instances  storage    count  description*/
-  OptStruct OSArray[]=
-   { {"geometry",           PA_STRING,  1, 1, (void *)&GeoFile,            0,    ".scuffgeo file"},
-// 
-     {"Omega0",             PA_CDOUBLE, 1, 1, (void *)&Omega0,             0,    "center of contour"},
-     {"Rx",                 PA_DOUBLE,  1, 1, (void *)&Rx,                 0,    "horizonal radius"},
-     {"Ry",                 PA_DOUBLE,  1, 1, (void *)&Ry,                 0,    "vertical radius"},
-     {"N",                  PA_INT,     1, 1, (void *)&N,                  0,    "number of quadrature points"},
-     {"L",                  PA_INT,     1, 1, (void *)&L,                  0,    "upper bound on expected number of eigenvalues in contour "},
-//
-     {"kx",                 PA_INT,     1, 1, (void *)&kx,                 &nkx, "x component of bloch vector"},
-     {"ky",                 PA_INT,     1, 1, (void *)&ky,                 &nky, "y component of bloch vector"},
-//
-     {"ContourFile",        PA_STRING,  1, 1, (void *)&ContourFile,        0,   "list of contours"},
-//
-     {"PlotContours",       PA_BOOL,    0, 1, (void *)&PlotContours,       0,   "plot contours for visualization"},
-//
-     {"PlotSurfaceCurrents",PA_BOOL,    0, 1, (void *)&PlotSurfaceCurrents,0,   "generate visualization files for eigenmode currents"},
-     {"PlotSurfaceFields",  PA_BOOL,    0, 1, (void *)&PlotSurfaceFields,  0,   "generate visualization files for eigenmode surface fields"},
-//
-     {"SphericalMomentFile",PA_STRING,  1, 1, (void *)&SphericalMomentFile,0,   "name of output file for spherical multipole moments"},
-     {"LMax",               PA_INT,     1, 1, (void *)&LMax,               0,   "index of highest spherical multipole moment to retain"},
-//
-     {"CartesianMomentFile",PA_STRING,  1, 1, (void *)&CartesianMomentFile,0,   "name of output file for cartesian multipole moments"},
-//
-     {"EPFile",             PA_STRING,  1, MAXEPF, (void *)EPFiles,          &nEPFiles,           "list of evaluation points"},
-//
-     {"FVScreen",           PA_DOUBLE,  11, MAXFVM, (void *)FVScreens,       &nFVScreens,         "field visualization screen"},
-     {"FVMesh",             PA_STRING,  1, MAXFVM, (void *)FVMeshes,         &nFVMeshes,          "field visualization mesh"},
-     {"FVMeshTransFile",    PA_STRING,  1, MAXFVM, (void *)FVMeshTransFiles, &nFVMeshTransFiles,  "list of geometrical transformations applied to FVMesh"},
-//
-     {"FileBase",           PA_STRING,  1, 1, (void *)&FileBase,           0,   "base name for output files"},
-//
-     {0,0,0,0,0,0,0}
-   };
-  ProcessOptions(argc, argv, OSArray);
-  if (GeoFile==0)
-   OSUsage(argv[0], VERSION, OSArray,"--geometry option is mandatory");
-  if (FileBase==0)
-   FileBase=strdup(GetFileBase(GeoFile));
+  std::string CartesianMomentFile;
+  std::vector<std::string> EPFiles;
+  std::vector<double> FVScreens;      // 11 values per occurrence
+  std::vector<std::string> FVMeshes, FVMeshTransFiles;
+
+  CLI::App App{"compute eigenmodes (resonances) of a scatterer"};
+  App.option_defaults()->ignore_case();
+
+  App.add_option("--geometry", GeoFile, ".scuffgeo file")
+     ->required()
+     ->take_last();
+  scuff::cli::AddComplexOption(App, "--Omega0", Omega0, "center of contour");
+  App.add_option("--Rx", Rx, "horizonal radius")->take_last();
+  App.add_option("--Ry", Ry, "vertical radius")->take_last();
+  App.add_option("--N", N, "number of quadrature points")->take_last();
+  App.add_option("--L", L,
+                 "upper bound on expected number of eigenvalues in contour ")->take_last();
+  /* the legacy parser declared these PA_INT but stored them into
+     doubles through a mismatched pointer cast; they are now plain
+     double options */
+  App.add_option("--kx", kx, "x component of bloch vector")->take_last();
+  App.add_option("--ky", ky, "y component of bloch vector")->take_last();
+  App.add_option("--ContourFile", ContourFile, "list of contours")->take_last();
+  App.add_flag("--PlotContours", PlotContours, "plot contours for visualization");
+  App.add_flag("--PlotSurfaceCurrents", PlotSurfaceCurrents,
+               "generate visualization files for eigenmode currents");
+  App.add_flag("--PlotSurfaceFields", PlotSurfaceFields,
+               "generate visualization files for eigenmode surface fields");
+  App.add_option("--SphericalMomentFile", SphericalMomentFile,
+                 "name of output file for spherical multipole moments")->take_last();
+  App.add_option("--LMax", LMax,
+                 "index of highest spherical multipole moment to retain")->take_last();
+  App.add_option("--CartesianMomentFile", CartesianMomentFile,
+                 "name of output file for cartesian multipole moments")->take_last();
+  App.add_option("--EPFile", EPFiles, "list of evaluation points")
+     ->expected(1, MAXEPF);
+  App.add_option("--FVScreen", FVScreens, "field visualization screen")
+     ->type_size(11)
+     ->expected(1, MAXFVM);
+  App.add_option("--FVMesh", FVMeshes, "field visualization mesh")
+     ->expected(1, MAXFVM);
+  App.add_option("--FVMeshTransFile", FVMeshTransFiles,
+                 "list of geometrical transformations applied to FVMesh")
+     ->expected(1, MAXFVM);
+  App.add_option("--FileBase", FileBase, "base name for output files")->take_last();
+
+  if (auto Status=scuff::cli::Parse(App,argc,argv))
+   return *Status;
+  int nEPFiles          = (int)EPFiles.size();
+  int nFVScreens        = (int)FVScreens.size()/11;
+  int nFVMeshes         = (int)FVMeshes.size();
+  int nFVMeshTransFiles = (int)FVMeshTransFiles.size();
+
+  if (FileBase.empty())
+   FileBase=GetFileBase(GeoFile.c_str());
 
   /***************************************************************/
   /* initialize RWGGeometry, read list of contours               */
   /***************************************************************/
-  RWGGeometry *G         = new RWGGeometry(GeoFile);
-  HMatrix *M             = G->AllocateBEMMatrix();
+  std::unique_ptr<RWGGeometry> G(new RWGGeometry(GeoFile.c_str()));
+  std::unique_ptr<HMatrix> M(G->AllocateBEMMatrix());
   int D = G->TotalBFs;
 
   /***************************************************************/
   /* process contour specifications ******************************/
   /***************************************************************/
-  HMatrix *ContourMatrix;
-  if (ContourFile)
-   ContourMatrix = new HMatrix(ContourFile);
+  std::unique_ptr<HMatrix> ContourMatrix;
+  if (!ContourFile.empty())
+   ContourMatrix.reset(new HMatrix(ContourFile.c_str()));
   else
-   { ContourMatrix = new HMatrix(1, 5 + G->LDim, LHM_COMPLEX);
+   { ContourMatrix.reset(new HMatrix(1, 5 + G->LDim, LHM_COMPLEX));
      int nc=0;
      if (G->LDim>=1) ContourMatrix->SetEntry(0,nc++,kx);
      if (G->LDim==2) ContourMatrix->SetEntry(0,nc++,ky);
@@ -191,7 +203,7 @@ int main(int argc, char *argv[])
   /***************************************************************/
   /* open eigenfrequency output file and write file header       */
   /***************************************************************/
-  FILE *f=vfopen("%s.ModeFrequencies","a",FileBase);
+  FILE *f=vfopen("%s.ModeFrequencies","a",FileBase.c_str());
   fprintf(f,"#%s " VERSION " run on %s (%s)\n",argv[0], GetHostName(), GetTimeString());
   fclose(f);
 
@@ -204,7 +216,7 @@ int main(int argc, char *argv[])
      /***************************************************************/
      /* extract information on the contour **************************/
      /***************************************************************/
-     struct BFData MyBFData = {G, M, {0,0}, 0};
+     struct BFData MyBFData = {G.get(), M.get(), {0,0}, 0};
      double *kBloch = (G->LDim > 0) ? MyBFData.kBloch : 0;
      for(int d=0; d<G->LDim; d++) 
       MyBFData.kBloch[d] = ContourMatrix->GetEntryD(nr, d);
@@ -227,19 +239,20 @@ int main(int argc, char *argv[])
 
      // initialize visualization files showing the contour if that was requested
      if (PlotContours)
-      { MyBFData.LogFile = vfopen("%s.contours","a",FileBase);
+      { MyBFData.LogFile = vfopen("%s.contours","a",FileBase.c_str());
         fprintf(MyBFData.LogFile,"\n\n# (Omega0,Rx,Ry,N)=%s,%e,%e,%i\n",CD2S(Omega0),Rx,Ry,N);
       }
 
      /***************************************************************/
      /* run Beyn's algorithm for this contour                       */
      /***************************************************************/
-     BeynSolver *Solver    = CreateBeynSolver(D, L);
+     std::unique_ptr<BeynSolver, void (*)(BeynSolver *)> Solver(CreateBeynSolver(D, L),
+                                                                DestroyBeynSolver);
      HVector *Eigenvalues  = Solver->Eigenvalues;
      HVector *EVErrors     = Solver->EVErrors;
      HMatrix *Eigenvectors = Solver->Eigenvectors;
      HVector *Residuals    = Solver->Residuals;
-     int NumModes=BeynSolve(Solver, BeynFunc, (void *)&MyBFData, Omega0, Rx, Ry, N);
+     int NumModes=BeynSolve(Solver.get(), BeynFunc, (void *)&MyBFData, Omega0, Rx, Ry, N);
 
      if (PlotContours)
       fclose(MyBFData.LogFile);
@@ -247,7 +260,7 @@ int main(int argc, char *argv[])
      /***************************************************************/
      /* write eigenfrequency results to .ModeFrequencies file       */
      /***************************************************************/
-     f=vfopen("%s.ModeFrequencies","a",FileBase);
+     f=vfopen("%s.ModeFrequencies","a",FileBase.c_str());
      fprintf(f,"# For contour w0=%s, Rx=%e, Ry=%e, N=%i, L=%i",z2s(Omega0),Rx,Ry,N,L);
      if (kBloch)
       { fprintf(f,", kBloch=");
@@ -269,44 +282,44 @@ int main(int argc, char *argv[])
      /***************************************************************/
      for(int nm=0; nm<NumModes; nm++)
       { 
-        char OutFileBase[512];
-        snprintf(OutFileBase,sizeof(OutFileBase),"%s_%s_Mode%i",
-                 FileBase,ContourLabel,nm);
+        std::string OutFileBase=std::string(FileBase)+"_"+ContourLabel+"_Mode"
+                                + std::to_string(nm);
 
         cdouble Omega = Eigenvalues->GetEntry(nm);
         HVector KN(D, LHM_COMPLEX, (cdouble *)Eigenvectors->GetColumnPointer(nm));
 
         // write cartesian multiple moments
-        if (CartesianMomentFile)
-         WriteCartesianMoments(G, &KN, Omega, kBloch, CartesianMomentFile);
+        if (!CartesianMomentFile.empty())
+         WriteCartesianMoments(G.get(), &KN, Omega, kBloch, CartesianMomentFile.c_str());
 
         // write cartesian multiple moments
-        if (SphericalMomentFile)
-         WriteSphericalMoments(G, &KN, Omega, LMax, SphericalMomentFile);
+        if (!SphericalMomentFile.empty())
+         WriteSphericalMoments(G.get(), &KN, Omega, LMax, SphericalMomentFile.c_str());
 
         // write surface-current visualization files
         if (PlotSurfaceCurrents)
-         G->PlotSurfaceCurrents(&KN, Omega, kBloch, "%s.pp", OutFileBase);
+         G->PlotSurfaceCurrents(&KN, Omega, kBloch, "%s.pp", OutFileBase.c_str());
 
         if (PlotSurfaceFields)
-         VisualizeSurfaceFields(G, &KN, Omega, kBloch, OutFileBase);
+         VisualizeSurfaceFields(G.get(), &KN, Omega, kBloch, OutFileBase.c_str());
 
         // process user-specified lists of field-evaluation points
         for(int nepf=0; nepf<nEPFiles; nepf++)
-         ProcessEPFile(G, &KN, Omega, kBloch, EPFiles[nepf], OutFileBase);
+         ProcessEPFile(G.get(), &KN, Omega, kBloch, EPFiles[nepf].c_str(),
+                       OutFileBase.c_str());
 
         // process user-specified field-visualization meshes
         for(int nfm=0; nfm<nFVMeshes; nfm++)
-         VisualizeFields(G, &KN, Omega, kBloch, OutFileBase, FVMeshes[nfm], FVMeshTransFiles[nfm]);
+         VisualizeFields(G.get(), &KN, Omega, kBloch, OutFileBase.c_str(),
+                         FVMeshes[nfm].c_str(),
+                         FVMeshTransFiles.size() ? FVMeshTransFiles[nfm].c_str() : 0);
         for(int ns=0; ns<nFVScreens; ns++)
-         { char VFFileBase[1024];
-           snprintf(VFFileBase,sizeof(VFFileBase),"%s.Screen%i",
-                    OutFileBase,ns);
-           VisualizeFields(G, &KN, Omega, kBloch, VFFileBase, FVScreens + 11*ns);
+         { std::string VFFileBase=OutFileBase+".Screen"+std::to_string(ns);
+           VisualizeFields(G.get(), &KN, Omega, kBloch, VFFileBase.c_str(),
+                           FVScreens.data() + 11*ns);
          }
       }
 
-     DestroyBeynSolver(Solver);
 
    }
 

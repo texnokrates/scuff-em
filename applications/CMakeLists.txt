@@ -76,6 +76,8 @@ scuff_add_application(scuff-spectrum
   scuff-spectrum/OutputModules.cc
   scuff-spectrum/libBeyn.cc
 )
+# Eleventh typed CLI11 migration.
+target_link_libraries(scuff-spectrum PRIVATE scuff_cli11)
 
 scuff_add_application(scuff-static
   scuff-static/scuff-static.cc

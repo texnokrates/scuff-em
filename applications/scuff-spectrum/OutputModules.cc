@@ -47,7 +47,7 @@ HVector *GetSphericalMoments(RWGGeometry *G, cdouble Omega, int lMax,
 /* field components at user-specified list of evaluation points*/
 /***************************************************************/
 void ProcessEPFile(RWGGeometry *G, HVector *KN, cdouble Omega, double *kBloch,
-                   char *EPFileName, char *OutFileBase)
+                   const char *EPFileName, const char *OutFileBase)
 { 
   /*--------------------------------------------------------------*/
   /*- try to read eval points from file --------------------------*/
@@ -219,7 +219,7 @@ void WriteFVMesh(RWGGeometry *G, HVector *KN, cdouble Omega, double *kBloch,
 /* in GMSH.                                                    */
 /***************************************************************/
 void VisualizeFields(RWGGeometry *G, HVector *KN, cdouble Omega, double *kBloch,
-                     char *OutFileBase, char *FVMesh, char *TransFile)
+                     const char *OutFileBase, const char *FVMesh, const char *TransFile)
 { 
   GTCList GTCs=ReadTransFile(TransFile);
   int NT = GTCs.size();
@@ -229,8 +229,8 @@ void VisualizeFields(RWGGeometry *G, HVector *KN, cdouble Omega, double *kBloch,
   /*--------------------------------------------------------------*/
   RWGSurface *FluxMesh=new RWGSurface(FVMesh);
 
-  char *GeoFileBase=OutFileBase;
-  char *FVMFileBase=GetFileBase(FVMesh);
+  const char *GeoFileBase=OutFileBase;
+  const char *FVMFileBase=GetFileBase(FVMesh);
   for(int nt=0; nt<NT; nt++)
    {
      char *Tag = GTCs[nt]->Tag;
@@ -265,7 +265,7 @@ void VisualizeFields(RWGGeometry *G, HVector *KN, cdouble Omega, double *kBloch,
 /***************************************************************/
 /***************************************************************/
 void VisualizeFields(RWGGeometry *G, HVector *KN, cdouble Omega, double *kBloch,
-                     char *OutFileBase, double *Screen)
+                     const char *OutFileBase, double *Screen)
 { 
   dVec X0, L1, L2;
   int N1, N2;
@@ -291,7 +291,7 @@ void VisualizeFields(RWGGeometry *G, HVector *KN, cdouble Omega, double *kBloch,
 /***************************************************************/
 /***************************************************************/
 void VisualizeSurfaceFields(RWGGeometry *G, HVector *KN, cdouble Omega, double *kBloch,
-                            char *OutFileBase)
+                            const char *OutFileBase)
 {
   char PPFileName[100];
   snprintf(PPFileName, 100, "%s.SurfaceFields.pp", OutFileBase);
@@ -333,7 +333,7 @@ void VisualizeSurfaceFields(RWGGeometry *G, HVector *KN, cdouble Omega, double *
 /***************************************************************/
 void WriteCartesianMoments(RWGGeometry *G, HVector *KN,
                            cdouble Omega, double *kBloch,
-                           char *CartesianMomentFile)
+                           const char *CartesianMomentFile)
 {
   /***************************************************************/
   /* write file preamble on initial file creation ****************/
@@ -400,7 +400,7 @@ void WriteCartesianMoments(RWGGeometry *G, HVector *KN,
 /***************************************************************/
 void WriteSphericalMoments(RWGGeometry *G, HVector *KN,
                            cdouble Omega, int LMax,
-                           char *SphericalMomentFile)
+                           const char *SphericalMomentFile)
 {
   /***************************************************************/
   /* write file preamble if necessary ****************************/
