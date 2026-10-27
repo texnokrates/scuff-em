@@ -346,7 +346,7 @@ int main(int argc, char *argv[])
   /*******************************************************************/
   PFTOptions MyPFTOpts, *PFTOpts=&MyPFTOpts;
   InitPFTOptions(PFTOpts);
-  PFTOpts->DSIMesh       = DSIMesh.empty() ? 0 : const_cast<char *>(DSIMesh.c_str());
+  PFTOpts->DSIMesh       = DSIMesh.empty() ? 0 : DSIMesh.c_str();
   PFTOpts->DSIRadius     = DSIRadius;
   PFTOpts->DSIPoints     = DSIPoints;
   PFTOpts->DSIFarField   = DSIFarField;
