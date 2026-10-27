@@ -122,7 +122,7 @@ void GetFieldOfDrivenPorts(RWGPort **Ports, int NumPorts,
 /***************************************************************/
 void ProcessEPFile(RWGGeometry *G, HVector *KN, cdouble Omega,
                    RWGPort **Ports, int NumPorts, cdouble *PortCurrents,
-                   char *EPFile, char *FileBase)
+                   const char *EPFile, const char *FileBase)
 {
   /***************************************************************/
   /* read in the list of evaluation points  **********************/
@@ -264,8 +264,8 @@ const char *PPOptions=
  "View.Visible = 0;\n";
 
 void ProcessFVMesh(RWGGeometry *G, HVector *KN, cdouble Omega,
-                   RWGPort **Ports, int NumPorts, cdouble *PortCurrents, 
-                   char *FVMesh, char *FileBase)
+                   RWGPort **Ports, int NumPorts, cdouble *PortCurrents,
+                   const char *FVMesh, const char *FileBase)
 {
   RFMeshData MyData, *Data = &MyData;
   Data->G            = G;

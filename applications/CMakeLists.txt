@@ -65,6 +65,8 @@ scuff_add_application(scuff-rf
   scuff-rf/RWGPorts.cc
   scuff-rf/ZSConvert.cc
 )
+# Thirteenth typed CLI11 migration.
+target_link_libraries(scuff-rf PRIVATE scuff_cli11)
 
 scuff_add_application(scuff-scatter
   scuff-scatter/scuff-scatter.cc

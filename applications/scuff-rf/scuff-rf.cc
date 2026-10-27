@@ -35,6 +35,11 @@
 #include <libscuff.h>
 #include <libIncField.h>
 
+#include <memory>
+#include <string>
+#include <vector>
+
+#include <ScuffCLI.h>
 #include "RWGPorts.h"
 
 #define FREQ2OMEGA (2.0*M_PI/300.0)
@@ -55,13 +60,13 @@ using namespace scuff;
 /***************************************************************/
 /***************************************************************/
 /***************************************************************/
-void ProcessEPFile(RWGGeometry *G, HVector *KN, cdouble Omega, 
-                   RWGPort **Ports, int NumPorts, cdouble *PortCurrents, 
-                   char *EPFile, char *FileBase);
+void ProcessEPFile(RWGGeometry *G, HVector *KN, cdouble Omega,
+                   RWGPort **Ports, int NumPorts, cdouble *PortCurrents,
+                   const char *EPFile, const char *FileBase);
 
 void ProcessFVMesh(RWGGeometry *G, HVector *KN, cdouble Omega,
-                   RWGPort **Ports, int NumPorts, cdouble *PortCurrents, 
-                   char *FVMesh, char *FileBase);
+                   RWGPort **Ports, int NumPorts, cdouble *PortCurrents,
+                   const char *FVMesh, const char *FileBase);
 
 /***************************************************************/
 /***************************************************************/
@@ -85,95 +90,105 @@ int main(int argc, char *argv[])
   /***************************************************************/
   /** process command-line arguments *****************************/
   /***************************************************************/
-  char *GeoFile=0;
-  char *PortFile=0;
-  char *PCFile=0;
-  char *EPFiles[MAXEPF];                int nEPFiles;
-  char *FVMeshes[MAXFVM];               int nFVMeshes;
-  int PlotPorts=0;
-  int ZParameters=0; 
-  int SParameters=0;
-  int Moments=0;
-  double FrequencyValues[MAXFREQ];	int nFrequency;
-  double MinFreq;			int nMinFreq;
-  double MaxFreq;			int nMaxFreq;
-  int NumFreqs;				int nNumFreqs;
-  int LogFreq=0;
-  char *FreqFile=0;
-  char *Cache=0;
-  char *ReadCache[MAXCACHE];         int nReadCache;
-  char *WriteCache=0;
-  char *ContribOnly=0;
-  char *FileBase=0;
-  /* name               type    #args  max_instances  storage           count         description*/
-  OptStruct OSArray[]=
-   { {"geometry",       PA_STRING,  1, 1,       (void *)&GeoFile,    0,             "geometry file"},
-//
-     {"portfile",       PA_STRING,  1, 1,       (void *)&PortFile,   0,             "port file"},
-     {"PlotPorts",      PA_BOOL,    0, 1,       (void *)&PlotPorts,  0,             "generate port visualization file"},
-//
-     {"frequency",      PA_DOUBLE,  1, MAXFREQ, (void *)FrequencyValues,  &nFrequency,   "frequency (GHz)"},
-     {"minfreq",        PA_DOUBLE,  1, 1,       (void *)&MinFreq,    &nMinFreq,     "starting frequency"},
-     {"maxfreq",        PA_DOUBLE,  1, 1,       (void *)&MaxFreq,    &nMaxFreq,     "ending frequency"},
-     {"numfreqs",       PA_INT,     1, 1,       (void *)&NumFreqs,   &nNumFreqs,    "number of frequencies"},
-     {"logfreq",        PA_BOOL,    0, 1,       (void *)&LogFreq,    0,             "use logarithmic frequency steps"},
-     {"freqfile",       PA_STRING,  1, 1,       (void *)&FreqFile,   0,             "list of frequencies"},
-//
-     {"ZParameters",    PA_BOOL,    0, 1,       (void *)&ZParameters, 0,            "output z parameters"},
-     {"SParameters",    PA_BOOL,    0, 1,       (void *)&SParameters, 0,            "output s parameters"},
-     {"Moments",        PA_BOOL,    0, 1,       (void *)&Moments,     0,            "output dipole moments"},
-//
-     {"portcurrentfile", PA_STRING,  1, 1,      (void *)&PCFile,     0,             "port current file"},
-     {"EPFile",         PA_STRING,  1, MAXEPF,  (void *)EPFiles,     &nEPFiles,             "list of evaluation points"},
-//
-     {"FVMesh",         PA_STRING,  1, MAXFVM,  (void *)FVMeshes,    &nFVMeshes,    "field visualization mesh"},
-//
-     {"FileBase",       PA_STRING,  1, 1,       (void *)&FileBase,     0,           "base name for output files"},
-//
-     {"Cache",          PA_STRING,  1, 1,       (void *)&Cache,      0,             "read/write cache"},
-     {"ReadCache",      PA_STRING,  1, MAXCACHE,(void *)ReadCache,   &nReadCache,   "read cache"},
-     {"WriteCache",     PA_STRING,  1, 1,       (void *)&WriteCache, 0,             "write cache"},
-//
-     {"WriteLogFile",   PA_BOOL,    0, 1,       (void *)&WriteLogFile, 0,           "write new log file"},
-//
-//
-     {0,0,0,0,0,0,0}
-   };
-  ProcessOptions(argc, argv, OSArray);
-  if (GeoFile==0)
-   OSUsage(argv[0],VERSIONSTRING,OSArray,"--geometry option is mandatory");
-  if (!FileBase)
-   FileBase=strdup(GetFileBase(GeoFile));
+  std::string GeoFile;
+  std::string PortFile;
+  std::string PCFile;
+  std::vector<std::string> EPFiles;
+  std::vector<std::string> FVMeshes;
+  bool PlotPorts=false;
+  bool ZParameters=false;
+  bool SParameters=false;
+  bool Moments=false;
+  std::vector<double> FrequencyValues;
+  double MinFreq=0.0;
+  double MaxFreq=0.0;
+  int NumFreqsOpt=0;
+  bool LogFreq=false;
+  std::string FreqFile;
+  std::string Cache, WriteCache;
+  std::vector<std::string> ReadCache;
+  std::string FileBase;
+  bool WriteLogFileOpt=false;
 
-  if (ContribOnly) SetContribOnly(ContribOnly);
+  CLI::App App{"RF port analysis for scuff-EM geometries"};
+  App.option_defaults()->ignore_case();
+
+  App.add_option("--geometry", GeoFile, "geometry file")
+     ->required()
+     ->take_last();
+  App.add_option("--portfile", PortFile, "port file")->required()->take_last();
+  App.add_flag("--PlotPorts", PlotPorts, "generate port visualization file");
+  App.add_option("--frequency", FrequencyValues, "frequency (GHz)")
+     ->expected(1, MAXFREQ);
+  App.add_option("--minfreq", MinFreq, "starting frequency")->take_last();
+  App.add_option("--maxfreq", MaxFreq, "ending frequency")->take_last();
+  App.add_option("--numfreqs", NumFreqsOpt, "number of frequencies")->take_last();
+  App.add_flag("--logfreq", LogFreq, "use logarithmic frequency steps");
+  App.add_option("--freqfile", FreqFile, "list of frequencies")->take_last();
+  App.add_flag("--ZParameters", ZParameters, "output z parameters");
+  App.add_flag("--SParameters", SParameters, "output s parameters");
+  App.add_flag("--Moments", Moments, "output dipole moments");
+  App.add_option("--portcurrentfile", PCFile, "port current file")->take_last();
+  App.add_option("--EPFile", EPFiles, "list of evaluation points")
+     ->expected(1, MAXEPF);
+  App.add_option("--FVMesh", FVMeshes, "field visualization mesh")
+     ->expected(1, MAXFVM);
+  App.add_option("--FileBase", FileBase, "base name for output files")->take_last();
+  App.add_option("--cache", Cache, "read/write cache")->take_last();
+  App.add_option("--readcache", ReadCache, "read cache")->expected(1, MAXCACHE);
+  App.add_option("--writecache", WriteCache, "write cache")->take_last();
+  App.add_flag("--WriteLogFile", WriteLogFileOpt, "write new log file");
+
+  if (auto Status=scuff::cli::Parse(App,argc,argv))
+   return *Status;
+  int nEPFiles  = (int)EPFiles.size();
+  int nFVMeshes = (int)FVMeshes.size();
+
+  /* legacy: the --WriteLogFile flag poked libhrutil's log-file switch */
+  extern int WriteLogFile;
+  if (WriteLogFileOpt)
+   WriteLogFile=1;
+
+  if (FileBase.empty())
+   FileBase=GetFileBase(GeoFile.c_str());
 
   /***************************************************************/
   /* create the log file *****************************************/
   /***************************************************************/
   SetLogFileName("scuff-rf.log");
-  int narg;
   Log("%s " VERSIONSTRING " running on %s with arguments ",argv[0],getenv("HOST"));
   Log("%s ",argv[0]);
-  for(narg=1; narg<argc; narg++) 
+  for(int narg=1; narg<argc; narg++)
    LogC("%s ",argv[narg]);
 
   /***************************************************************/
   /* create the geometry                                         */
   /***************************************************************/
   RWGGeometry::UseHRWGFunctions=false;
-  RWGGeometry *G=new RWGGeometry(GeoFile);
- 
-  HMatrix *M=G->AllocateBEMMatrix();
-  HVector *KN=G->AllocateRHSVector();
+  std::unique_ptr<RWGGeometry> G(new RWGGeometry(GeoFile.c_str()));
 
-  /***************************************************************/ 
-  /* parse the port list *****************************************/ 
-  /***************************************************************/ 
-  if (PortFile==0)
-   OSUsage(argv[0],VERSIONSTRING,OSArray,"--PortFileName option is mandatory");
+  std::unique_ptr<HMatrix> M(G->AllocateBEMMatrix());
+  std::unique_ptr<HVector> KN(G->AllocateRHSVector());
 
   int NumPorts;
-  RWGPort **Ports=ParsePortFile(G, PortFile, &NumPorts);
+  RWGPort **Ports=ParsePortFile(G.get(), PortFile.c_str(), &NumPorts);
+
+  if (PlotPorts)
+   {
+     fprintf(stderr,"--PlotPorts option was specified; plotting ports ONLY.\n");
+     for(int np=0; np<NumPorts; np++)
+      { fprintf(stderr," Port %2i, positive edge: %i edges (perimeter %e)\n", np,
+                         Ports[np]->NumPEdges, Ports[np]->PPerimeter);
+        fprintf(stderr," Port %2i, negative edge: %i edges (perimeter %e)\n", np,
+                         Ports[np]->NumMEdges, Ports[np]->MPerimeter);
+      };
+
+     PlotPortsInGMSH(Ports, NumPorts, "%s.ports.pp", GetFileBase(G->GeoFileName));
+     fprintf(stderr,"RF ports plotted to file %s.ports.pp.\n",GetFileBase(G->GeoFileName));
+     fprintf(stderr,"Thank you for your support.\n");
+     return 0;   /* legacy exited with status 1 on this success path */
+   };
+
 
   if (PlotPorts)
    { 
@@ -194,17 +209,17 @@ int main(int argc, char *argv[])
   /***************************************************************/ 
   /* parse the port-current list if that was specified           */ 
   /***************************************************************/
-  HMatrix *PCList=0;
-  HVector *FreqList=0;
+  std::unique_ptr<HMatrix> PCList;
+  std::unique_ptr<HVector> FreqList;
   int nf;
-  if (PCFile)
-   { 
-     PCList=new HMatrix(PCFile,LHM_TEXT);
+  if (!PCFile.empty())
+   {
+     PCList.reset(new HMatrix(PCFile.c_str(),LHM_TEXT));
      if (PCList->ErrMsg)
-      ErrExit("%s: %s",PCFile,PCList->ErrMsg);
+      ErrExit("%s: %s",PCFile.c_str(),PCList->ErrMsg);
      if (PCList->NC != 2*NumPorts+1)
-      ErrExit("%s: expected %i columns (2*%i ports + 1)\n",PCFile,2*NumPorts+1,NumPorts);
-     FreqList=new HVector(PCList->NR);
+      ErrExit("%s: expected %i columns (2*%i ports + 1)\n",PCFile.c_str(),2*NumPorts+1,NumPorts);
+     FreqList.reset(new HVector(PCList->NR));
      for(nf=0; nf<FreqList->N; nf++)
       FreqList->SetEntry(nf,PCList->GetEntryD(nf,0));
    };
@@ -212,40 +227,45 @@ int main(int argc, char *argv[])
   /***************************************************************/
   /* parse frequency specifications to create the FreqList vector*/
   /***************************************************************/
-  HVector *FV1=0, *FV2=0, *FV3=0;
-  if (FreqFile)
-   { FV1=new HVector(FreqFile);
+  bool MinFreqSpecified = App.get_option("--minfreq")->count() > 0;
+  bool MaxFreqSpecified = App.get_option("--maxfreq")->count() > 0;
+  bool NumFreqsSpecified= App.get_option("--numfreqs")->count() > 0;
+  std::unique_ptr<HVector> FV1, FV2, FV3;
+  if (!FreqFile.empty())
+   { FV1.reset(new HVector(FreqFile.c_str()));
      if (FV1->ErrMsg)
-      ErrExit(FV1->ErrMsg);
+      ErrExit("%s",FV1->ErrMsg);
    };
-  if (nFrequency)
-   { FV2=new HVector(nFrequency);
-     memcpy(FV2->DV, FrequencyValues, nFrequency*sizeof(double));
+  if (FrequencyValues.size()>0)
+   { FV2.reset(new HVector((int)FrequencyValues.size()));
+     memcpy(FV2->DV, FrequencyValues.data(), FrequencyValues.size()*sizeof(double));
    };
-  if (nMinFreq || nMaxFreq || nNumFreqs)
-   { if ( !nMinFreq || !nMaxFreq || !nNumFreqs )
+  if (MinFreqSpecified || MaxFreqSpecified || NumFreqsSpecified)
+   { if ( !MinFreqSpecified || !MaxFreqSpecified || !NumFreqsSpecified )
       ErrExit("--MinFreq, --MaxFreq, --NumFreqs must be all present or all absent");
-     FV3 = LogFreq ? LogSpace(MinFreq, MaxFreq, NumFreqs) : LinSpace(MinFreq, MaxFreq, NumFreqs);
+     FV3.reset( LogFreq ? LogSpace(MinFreq, MaxFreq, NumFreqsOpt)
+                        : LinSpace(MinFreq, MaxFreq, NumFreqsOpt) );
    };
-  if ( (FV1 || FV2 || FV3) )
-   { if (PCFile!=0 )
-      ErrExit("--portcurrentfile may not be combined with a frequency specification"); 
-     FreqList = new HVector(0);
-     HVConcat(FreqList, FV1);
-     HVConcat(FreqList, FV2);
-     HVConcat(FreqList, FV3);
+  int NumFreqs=0;
+  if ( FV1.get() || FV2.get() || FV3.get() )
+   { if (!PCFile.empty() )
+      ErrExit("--portcurrentfile may not be combined with a frequency specification");
+     FreqList.reset(new HVector(0));
+     HVConcat(FreqList.get(), FV1.get());
+     HVConcat(FreqList.get(), FV2.get());
+     HVConcat(FreqList.get(), FV3.get());
      NumFreqs=FreqList->N;
    };
 
   /***************************************************************/
   /* sanity check input arguments ********************************/
   /***************************************************************/
-  if ( PCFile==0 && NumFreqs!=0 && (ZParameters==0 && SParameters==0) )
-   OSUsage(argv[0],VERSIONSTRING,OSArray,"--zparameters and/or --sparameters must be specified if a frequency specification is present");
-  if (PCFile!=0 && (ZParameters!=0 || SParameters!=0) )
-   OSUsage(argv[0],VERSIONSTRING,OSArray,"--zparameters and --sparameters may not be used with --portcurrentfile");
-  if (PCList!=0 && nEPFiles==0 && nFVMeshes==0)
-   OSUsage(argv[0],VERSIONSTRING,OSArray,"--EPFile or --FVMesh must be specified if --portcurrentfile is specified");
+  if ( PCFile.empty() && NumFreqs!=0 && (!ZParameters && !SParameters) )
+   ErrExit("--zparameters and/or --sparameters must be specified if a frequency specification is present");
+  if (!PCFile.empty() && (ZParameters || SParameters) )
+   ErrExit("--zparameters and --sparameters may not be used with --portcurrentfile");
+  if (PCList.get()!=0 && nEPFiles==0 && nFVMeshes==0)
+   ErrExit("--EPFile or --FVMesh must be specified if --portcurrentfile is specified");
 
   /***************************************************************/
   /* create output files *****************************************/
@@ -257,15 +277,15 @@ int main(int argc, char *argv[])
 
   FILE *ZParFile=0;
   char ZParFileName[1000];
-  HMatrix *ZMatrix=0;
+  std::unique_ptr<HMatrix> ZMatrix;
   if (ZParameters)
-   { 
+   {
      snprintf(ZParFileName,999,"%s.zparms",GetFileBase(G->GeoFileName));
      ZParFile=CreateUniqueFile(ZParFileName,1,ZParFileName);
      setbuf(ZParFile,0);
      fprintf(ZParFile,"# %s ran on %s (%s)\n",argv[0],getenv("HOST"),TimeString);
      fprintf(ZParFile,"# command-line arguments: \n#");
-     for(narg=0; narg<argc; narg++)
+     for(int narg=0; narg<argc; narg++)
       fprintf(ZParFile,"%s ",argv[narg]);
      fprintf(ZParFile,"\n#\n");
      fprintf(ZParFile,"# columns:\n");
@@ -279,12 +299,12 @@ int main(int argc, char *argv[])
                    NumPorts+1,NumPorts+1);
       };
 
-     ZMatrix=new HMatrix(NumPorts, NumPorts, LHM_COMPLEX);
+     ZMatrix.reset(new HMatrix(NumPorts, NumPorts, LHM_COMPLEX));
    };
 
   FILE *SParFile=0;
   char SParFileName[1000];
-  HMatrix *SMatrix=0;
+  std::unique_ptr<HMatrix> SMatrix;
   if (SParameters)
    { 
      snprintf(SParFileName,999,"%s.sparms",GetFileBase(G->GeoFileName));
@@ -292,7 +312,7 @@ int main(int argc, char *argv[])
      setbuf(SParFile,0);
      fprintf(SParFile,"# %s ran on %s (%s)\n",argv[0],getenv("HOST"),TimeString);
      fprintf(SParFile,"# command-line arguments: \n#");
-     for(narg=0; narg<argc; narg++)
+     for(int narg=0; narg<argc; narg++)
       fprintf(SParFile,"%s ",argv[narg]);
      fprintf(SParFile,"\n#\n"); 
      fprintf(SParFile,"# columns:\n");
@@ -306,35 +326,34 @@ int main(int argc, char *argv[])
                    NumPorts+1,NumPorts+1);
       };
 
-     SMatrix=new HMatrix(NumPorts, NumPorts, LHM_COMPLEX);
+     SMatrix.reset(new HMatrix(NumPorts, NumPorts, LHM_COMPLEX));
      if (ZMatrix==0) //ZMatrix is needed if s-parameters are computed
-      ZMatrix=new HMatrix(NumPorts, NumPorts, LHM_COMPLEX); 
+      ZMatrix.reset(new HMatrix(NumPorts, NumPorts, LHM_COMPLEX)); 
    };
 
   /*******************************************************************/
   /*******************************************************************/
   /*******************************************************************/
   FILE *MomentFile=0;
-  //char PSDFileName[1000];
-  HMatrix *PM=0, *PSD=0;
+  std::unique_ptr<HMatrix> PM, PSD;
   if (Moments)
-   { PM=new HMatrix(G->NumSurfaces, 6, LHM_COMPLEX);
+   { PM.reset(new HMatrix(G->NumSurfaces, 6, LHM_COMPLEX));
      MomentFile=vfopen("%s.moments","w",GetFileBase(G->GeoFileName));
-     PSD=new HMatrix(G->TotalPanels, 13, LHM_COMPLEX);
+     PSD.reset(new HMatrix(G->TotalPanels, 13, LHM_COMPLEX));
    }
 
   /*******************************************************************/
   /* preload the scuff cache with any cache preload files the user   */
   /* may have specified                                              */
   /*******************************************************************/
-  if ( Cache!=0 && WriteCache!=0 )
+  if ( !Cache.empty() && !WriteCache.empty() )
    ErrExit("--cache and --writecache options are mutually exclusive");
-  if (Cache) 
+  if (!Cache.empty())
    WriteCache=Cache;
-  for (int nrc=0; nrc<nReadCache; nrc++)
-   PreloadCache( ReadCache[nrc] );
-  if (Cache)
-   PreloadCache( Cache );
+  for (size_t nrc=0; nrc<ReadCache.size(); nrc++)
+   PreloadCache( ReadCache[nrc].c_str() );
+  if (!Cache.empty())
+   PreloadCache( Cache.c_str() );
 
   /***************************************************************/  
   /* sweep over frequencies                                      */
@@ -343,10 +362,10 @@ int main(int argc, char *argv[])
   /* c / (1 mm) = 3e11 rad/sec                                   */
   /***************************************************************/
   int np, npp;
-  double Freq; 
+  double Freq;
   cdouble Omega;
-  cdouble *PortCurrents=new cdouble[NumPorts]; 
-  cdouble *PortVoltages=new cdouble[NumPorts];
+  std::vector<cdouble> PortCurrents(NumPorts, cdouble(0.0,0.0));
+  std::vector<cdouble> PortVoltages(NumPorts, cdouble(0.0,0.0));
   for (nf=0, Freq=FreqList->GetEntryD(0); nf<FreqList->N; Freq=FreqList->GetEntryD(++nf) )
    { 
       /*--------------------------------------------------------------*/
@@ -354,16 +373,16 @@ int main(int argc, char *argv[])
       /*--------------------------------------------------------------*/
       Omega=FREQ2OMEGA * Freq;
       Log("Assembling BEM matrix at f=%g GHz...",Freq);
-      G->AssembleBEMMatrix(Omega, M);
+      G->AssembleBEMMatrix(Omega, M.get());
       Log("Factorizing...");
       M->LUFactorize();
 
       /*--------------------------------------------------------------*/
       /*--------------------------------------------------------------*/
       /*--------------------------------------------------------------*/
-      if (WriteCache)
-       { StoreCache( WriteCache );
-         WriteCache=0;       
+      if (!WriteCache.empty())
+       { StoreCache( WriteCache.c_str() );
+         WriteCache.clear();
        };
 
       /*--------------------------------------------------------------*/
@@ -376,16 +395,16 @@ int main(int argc, char *argv[])
             Log(" Computing row %i of the impedance matrix:",np+1);
 
             Log("  assembling RHS vector");
-            memset(PortCurrents, 0, NumPorts*sizeof(cdouble));
+            std::fill(PortCurrents.begin(), PortCurrents.end(), cdouble(0.0,0.0));
             PortCurrents[np]=1.0;
             KN->Zero();
-            AddPortContributionsToRHS(G, Ports, NumPorts, PortCurrents, Omega, KN);
+            AddPortContributionsToRHS(G.get(), Ports, NumPorts, PortCurrents.data(), Omega, KN.get());
 
             /*--------------------------------------------------------------*/
             /*--------------------------------------------------------------*/
             /*--------------------------------------------------------------*/
             if (Moments)
-             { G->GetDipoleMoments(Omega, KN, PM);
+             { G->GetDipoleMoments(Omega, KN.get(), PM.get());
                SetDefaultCD2SFormat("%+.6e %+.6e");
                for(int ns=0; ns<G->NumSurfaces; ns++)
                 fprintf(MomentFile,"%e %i BEFORE %s %s %s %s %s %s %s \n",
@@ -393,8 +412,8 @@ int main(int argc, char *argv[])
                                     CD2S(PM->GetEntry(ns,0)), CD2S(PM->GetEntry(ns,1)), CD2S(PM->GetEntry(ns,2)),
                                     CD2S(PM->GetEntry(ns,3)), CD2S(PM->GetEntry(ns,4)), CD2S(PM->GetEntry(ns,5)));
 
-               G->GetPanelSourceDensities(Omega, KN, PSD);
-               G->PlotSurfaceCurrents(PSD, Omega, "%s_Before(WO).pp",GetFileBase(G->GeoFileName));
+               G->GetPanelSourceDensities(Omega, KN.get(), PSD.get());
+               G->PlotSurfaceCurrents(PSD.get(), Omega, "%s_Before(WO).pp",GetFileBase(G->GeoFileName));
 
                SetDefaultCD2SFormat("{%+.2e,%+.2e}");
                cdouble Charge=0.0, DPM[3]={0.0, 0.0, 0.0};
@@ -407,8 +426,8 @@ int main(int argc, char *argv[])
                 }
                printf("{Q,P} before (WO) = %s %s %s %s\n",CD2S(Charge),CD2S(DPM[0]),CD2S(DPM[1]),CD2S(DPM[2]));
 
-               AddPortContributionsToPSD(G, Ports, NumPorts, PortCurrents, Omega, PSD);
-               G->PlotSurfaceCurrents(PSD, Omega, "%s_Before(W).pp",GetFileBase(G->GeoFileName));
+               AddPortContributionsToPSD(G.get(), Ports, NumPorts, PortCurrents.data(), Omega, PSD.get());
+               G->PlotSurfaceCurrents(PSD.get(), Omega, "%s_Before(W).pp",GetFileBase(G->GeoFileName));
 
                Charge=0.0; DPM[0]=DPM[1]=DPM[2]=0.0;
                for(np=0; np<PSD->NR; np++)
@@ -425,13 +444,13 @@ int main(int argc, char *argv[])
             /*--------------------------------------------------------------*/
             /*--------------------------------------------------------------*/
             Log("  solving the BEM system");
-            M->LUSolve(KN);
+            M->LUSolve(KN.get());
 
             /*--------------------------------------------------------------*/
             /*--------------------------------------------------------------*/
             /*--------------------------------------------------------------*/
             if (Moments)
-             { G->GetDipoleMoments(Omega, KN, PM);
+             { G->GetDipoleMoments(Omega, KN.get(), PM.get());
                SetDefaultCD2SFormat("%+.6e %+.6e");
                for(int ns=0; ns<G->NumSurfaces; ns++)
                 fprintf(MomentFile,"%e %i AFTER %s %s %s %s %s %s %s \n",
@@ -439,8 +458,8 @@ int main(int argc, char *argv[])
                                     CD2S(PM->GetEntry(ns,0)), CD2S(PM->GetEntry(ns,1)), CD2S(PM->GetEntry(ns,2)),
                                     CD2S(PM->GetEntry(ns,3)), CD2S(PM->GetEntry(ns,4)), CD2S(PM->GetEntry(ns,5)));
 
-               G->GetPanelSourceDensities(Omega, KN, PSD);
-               G->PlotSurfaceCurrents(PSD, Omega, "%s_AfterWO.pp",GetFileBase(G->GeoFileName));
+               G->GetPanelSourceDensities(Omega, KN.get(), PSD.get());
+               G->PlotSurfaceCurrents(PSD.get(), Omega, "%s_AfterWO.pp",GetFileBase(G->GeoFileName));
 
                SetDefaultCD2SFormat("{%+.2e,%+.2e}");
                cdouble Charge=0.0, DPM[3]={0.0, 0.0, 0.0};
@@ -453,8 +472,8 @@ int main(int argc, char *argv[])
                 }
                printf("{Q,P} after (WO) = %s %s %s %s\n",CD2S(Charge),CD2S(DPM[0]),CD2S(DPM[1]),CD2S(DPM[2]));
 
-               AddPortContributionsToPSD(G, Ports, NumPorts, PortCurrents, Omega, PSD);
-               G->PlotSurfaceCurrents(PSD, Omega, "%s_AfterW.pp",GetFileBase(G->GeoFileName));
+               AddPortContributionsToPSD(G.get(), Ports, NumPorts, PortCurrents.data(), Omega, PSD.get());
+               G->PlotSurfaceCurrents(PSD.get(), Omega, "%s_AfterW.pp",GetFileBase(G->GeoFileName));
 
                Charge=DPM[0]=DPM[1]=DPM[2]=0.0;
                for(np=0; np<PSD->NR; np++)
@@ -468,7 +487,7 @@ int main(int argc, char *argv[])
              };
 
             Log("  computing port voltages");
-            GetPortVoltages(G, KN, Ports, NumPorts, PortCurrents, Omega, PortVoltages);
+            GetPortVoltages(G.get(), KN.get(), Ports, NumPorts, PortCurrents.data(), Omega, PortVoltages.data());
 
             /* note: the entry in the Z-matrix is the complex conjugate */
             /* of the measured port voltage, because the Z-matrix is    */
@@ -495,7 +514,7 @@ int main(int argc, char *argv[])
          /*- write S parameters to output file if that was requested    -*/
          /*--------------------------------------------------------------*/
          if (SParameters)
-          { ZToS(ZMatrix, SMatrix);
+          { ZToS(ZMatrix.get(), SMatrix.get());
             fprintf(SParFile,"%e ",Freq);
             for(np=0; np<NumPorts; np++)
              for(npp=0; npp<NumPorts; npp++)
@@ -519,22 +538,24 @@ int main(int argc, char *argv[])
          /*--------------------------------------------------------------*/
          Log("  assembling RHS vector");
          for(np=0; np<NumPorts; np++)
-          PortCurrents[np]=cdouble( PCList->GetEntryD(nf, 2*np+1), 
+          PortCurrents[np]=cdouble( PCList->GetEntryD(nf, 2*np+1),
                                     PCList->GetEntryD(nf, 2*np+2));
          KN->Zero();
-         AddPortContributionsToRHS(G, Ports, NumPorts, PortCurrents, Omega, KN);
+         AddPortContributionsToRHS(G.get(), Ports, NumPorts, PortCurrents.data(), Omega, KN.get());
 
          /*--------------------------------------------------------------*/
          /*- solve the system and evaluate the radiated fields   --------*/
          /*--------------------------------------------------------------*/
          Log("  solving the BEM system");
-         M->LUSolve(KN);
+         M->LUSolve(KN.get());
          
          for(int n=0; n<nEPFiles; n++)
-          ProcessEPFile(G, KN, Omega, Ports, NumPorts, PortCurrents, EPFiles[n], FileBase);
+          ProcessEPFile(G.get(), KN.get(), Omega, Ports, NumPorts,
+                        PortCurrents.data(), EPFiles[n].c_str(), FileBase.c_str());
 
          for(int n=0; n<nFVMeshes; n++)
-          ProcessFVMesh(G, KN, Omega, Ports, NumPorts, PortCurrents, FVMeshes[n], FileBase);
+          ProcessFVMesh(G.get(), KN.get(), Omega, Ports, NumPorts,
+                        PortCurrents.data(), FVMeshes[n].c_str(), FileBase.c_str());
 
        };
 
