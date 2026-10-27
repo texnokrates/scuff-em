@@ -64,6 +64,18 @@ typedef struct
  { float Key[KEYLEN];
  } KeyStruct;
 
+// on-disk record for the FIPPI cache file format: differs from the
+// KeyValuePair structure above in that it contains the actual contents
+// of a QIFIPPIData structure, whereas KeyValuePair contains just a
+// pointer to such a structure.  (Defined here rather than with the
+// Store/PreLoad routines because the destructor needs FIPPICF_RECSIZE
+// to reason about the extent of the preloaded-records buffer.)
+typedef struct FIPPICF_Record
+ { KeyStruct K;
+   QIFIPPIData QIFDBuffer;
+ } FIPPICF_Record;
+#define FIPPICF_RECSIZE sizeof(FIPPICF_Record)
+
 typedef std::pair<KeyStruct, QIFIPPIData *> KeyValuePair;
 
 struct FIPPIKeyHash
@@ -103,6 +115,8 @@ FIPPICache::FIPPICache()
   opTable = (void *)KVM;
   PreloadFileName=0;
   RecordsPreloaded=0;
+  PreloadedRecords=0;
+  NumPreloadedRecords=0;
 }
 
 /*--------------------------------------------------------------*/
@@ -110,12 +124,23 @@ FIPPICache::FIPPICache()
 /*--------------------------------------------------------------*/
 FIPPICache::~FIPPICache()
 {
-  if (PreloadFileName) 
+  if (PreloadFileName)
    free(PreloadFileName);
 
+  /* entries created on the fly own their QIFIPPIData and are freed
+     individually; preloaded entries are interior pointers into
+     PreloadedRecords, which is freed in one piece. */
+  const char *PreloadBegin=(const char *)PreloadedRecords;
+  const char *PreloadEnd=PreloadBegin + NumPreloadedRecords*FIPPICF_RECSIZE;
   KeyValueMap *KVM=(KeyValueMap *)opTable;
+  for(KeyValueMap::iterator p=KVM->begin(); p!=KVM->end(); p++)
+   { const char *Value=(const char *)(p->second);
+     if ( !(Value >= PreloadBegin && Value < PreloadEnd) )
+      free(p->second);
+   };
   delete KVM;
-} 
+  free(PreloadedRecords);
+}
 
 static void inline VecSubFloat(double *V1, double *V2, float *V1mV2)
 { V1mV2[0] = ((float)V1[0]) - ((float)V2[0]);
@@ -174,13 +199,11 @@ QIFIPPIData *FIPPICache::GetQIFIPPIData(double **OVa, double **OVb, int ncv)
   /* structure, then add this structure to the cache             */
   /***************************************************************/
   Misses++;
-  KeyStruct *K2 = (KeyStruct *)mallocEC(sizeof(*K2));
-  memcpy(K2->Key, K.Key, KEYSIZE);
   QIFIPPIData *QIFD=(QIFIPPIData *)mallocEC(sizeof *QIFD);
   ComputeQIFIPPIData(OVa, OVb, ncv, QIFD);
-   
+
   FCLock.write_lock();
-  KVM->insert( KeyValuePair(*K2, QIFD) );
+  KVM->insert( KeyValuePair(K, QIFD) );
   FCLock.write_unlock();
 
   return QIFD;
@@ -208,16 +231,6 @@ QIFIPPIData *FIPPICache::GetQIFIPPIData(double **OVa, double **OVb, int ncv)
 /***************************************************************/
 const char FIPPICF_Signature[]="FIPPICACHE";
 #define FIPPICF_SIGSIZE sizeof(FIPPICF_Signature)
-
-// note that this structure differs from the KeyValuePair structure 
-// defined above in that it contains the actual contents of 
-// QIFIPPIData structure, whereas KeyValuePair contains just a 
-// pointer to such a structure.
-typedef struct FIPPICF_Record
- { KeyStruct K;
-   QIFIPPIData QIFDBuffer;
- } FIPPICF_Record;
-#define FIPPICF_RECSIZE sizeof(FIPPICF_Record)
 
 void FIPPICache::Store(const char *FileName)
 {
@@ -351,6 +364,15 @@ void FIPPICache::PreLoad(const char *FileName)
    { Records=(FIPPICF_Record *)mallocEC(NumRecords*FIPPICF_RECSIZE);
      if ( !Records)
       ErrMsg="insufficient memory to preload cache";
+   };
+
+  /* from this point on, cache entries inserted below point into the
+     Records buffer, so the destructor needs to know about it even if
+     the preload is aborted midway.  (PreLoad is called at most once
+     per cache instance.) */
+  if (ErrMsg==0)
+   { PreloadedRecords=Records;
+     NumPreloadedRecords=NumRecords;
    };
 
   /*--------------------------------------------------------------*/

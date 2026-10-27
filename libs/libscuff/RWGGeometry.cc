@@ -425,6 +425,7 @@ RWGGeometry::RWGGeometry(const char *pGeoFileName, int pLogLevel)
    Log("Found file %s in directory %s",GeoFileName,Dir);
   char *GeoFileDir=strdup(Dir);
   AppendEnv("SCUFF_MESH_PATH",":","%s/../mshFiles",GeoFileDir);
+  free(GeoFileDir);
 
   /***************************************************************/
   /* read and process lines from input file one at a time        */
@@ -829,14 +830,17 @@ RWGGeometry::~RWGGeometry()
   free(PanelIndexOffset);
   free(EpsTF);
   free(MuTF);
-  free(Mate);
   free(SurfaceMoved);
   free(GeoFileName);
 
+  /* The FIBBI caches of mated surfaces alias the caches of their mates,
+     so only the Mate[] array can say which caches to destroy.  This must
+     happen before Mate itself is freed. */
   for(int ns=0; ns<NumSurfaces; ns++)
    if (Mate[ns]==-1)
     DestroyFIBBICache(FIBBICaches[ns]);
   free(FIBBICaches);
+  free(Mate);
 
 }
 

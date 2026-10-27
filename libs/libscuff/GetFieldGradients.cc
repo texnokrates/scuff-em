@@ -454,7 +454,7 @@ HMatrix *RWGGeometry::GetFieldGradients(IncField *IF, HVector *KN, cdouble Omega
   for(nt=0; nt<NumThreads; nt++)
    { 
      TD=&(TDs[nt]);
-     memcpy(TD, &ReferenceTD, sizeof(ThreadData));
+     *TD = ReferenceTD;
      TD->nt=nt;
 
      if (nt+1 == NumThreads )
@@ -477,8 +477,7 @@ HMatrix *RWGGeometry::GetFieldGradients(IncField *IF, HVector *KN, cdouble Omega
 #endif
   for(nt=0; nt<ReferenceTD.NumTasks; nt++)
    { 
-     ThreadData TD1;
-     memcpy(&TD1, &ReferenceTD, sizeof(ThreadData));
+     ThreadData TD1 = ReferenceTD;
      TD1.nt=nt;
      GetFields_Thread((void *)&TD1);
    };

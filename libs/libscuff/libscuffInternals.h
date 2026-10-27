@@ -339,7 +339,7 @@ class FIPPICache
 
   private:
 
-    // any implementation of this class will have some kind of 
+    // any implementation of this class will have some kind of
     // storage table, but to allow maximal flexibility in implementation
     // i am just going to store an opaque pointer to this table
     // in the class body, with all the details left up to the 
@@ -350,6 +350,14 @@ class FIPPICache
 
     char *PreloadFileName;
     unsigned int RecordsPreloaded;
+
+    // buffer backing the values of cache entries created by PreLoad():
+    // those values are interior pointers into this allocation, unlike
+    // entries computed on the fly, which own their QIFIPPIData.  The
+    // destructor uses this range to decide how to free each entry.
+    // (Points to a FIPPICF_Record array defined in FIPPICache.cc.)
+    void *PreloadedRecords;
+    unsigned int NumPreloadedRecords;
 
  };
 

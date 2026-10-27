@@ -1,0 +1,14 @@
+# Two dielectric spheres sharing one mesh file.  Nothing is ever solved
+# with this geometry: it exists so the unit test can check that the
+# constructor recognizes the surfaces as mates (the second surface
+# aliases the first one's FIBBI cache) and that the destructor frees
+# shared state exactly once.
+OBJECT SphereA
+	MESHFILE Sphere_327.msh
+	MATERIAL CONST_EPS_10
+ENDOBJECT
+
+OBJECT SphereB
+	MESHFILE Sphere_327.msh
+	MATERIAL CONST_EPS_10
+ENDOBJECT

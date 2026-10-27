@@ -385,7 +385,7 @@ HVector *RWGGeometry::AssembleRHSVector(cdouble Omega, double *kBloch,
   for(nt=0; nt<NumThreads; nt++)
    { 
      TD=&(TDs[nt]);
-     memcpy(TD, &ReferenceTD, sizeof(ThreadData));
+     *TD = ReferenceTD;
      TD->nt=nt;
      TD->NumTasks=NumThreads;
 
@@ -410,8 +410,7 @@ HVector *RWGGeometry::AssembleRHSVector(cdouble Omega, double *kBloch,
 #endif
   for(nt=0; nt<NumTasks; nt++)
    { 
-     ThreadData TD1;
-     memcpy(&TD1, &ReferenceTD, sizeof(ThreadData));
+     ThreadData TD1 = ReferenceTD;
      TD1.nt=nt;
      TD1.NumTasks=NumTasks;
      AssembleRHS_Thread((void *)&TD1);

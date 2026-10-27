@@ -554,6 +554,7 @@ RWGSurface::~RWGSurface()
   if (WhichBC) free(WhichBC);
 
   if (MeshFileName) free(MeshFileName);
+  if (MeshFileDir) free(MeshFileDir);
   if (Label) free(Label);
   if (ErrMsg) free(ErrMsg);
   if (GT) delete GT;
