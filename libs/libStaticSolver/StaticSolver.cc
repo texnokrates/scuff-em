@@ -67,7 +67,7 @@ StaticSolver::StaticSolver(const char *GeoFileName, const char *SubstrateFile, i
      char *ErrMsg=0;
      Substrate=new LayeredSubstrate(SubstrateFile);
      if (Substrate->ErrMsg)
-      ErrExit(ErrMsg);
+      ErrExit("%s",Substrate->ErrMsg);
    };
 }
 
