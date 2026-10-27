@@ -1,6 +1,7 @@
 # C++ Core Guidelines survey and C / C++23 disposition — 2026-10-27
 
-Status: **survey note; findings and plan, no code changed yet.**  This note
+Status: **survey note; G0–G2 of the plan are now implemented** (results in
+§8).  This note
 maps violations of the ISO C++ Core Guidelines across the hand-written
 sources and decides, per module, whether to refactor as clean C++23
 following the guidelines (including pointer-ownership conventions) or to
@@ -362,3 +363,54 @@ master plan continues in parallel.
 4. Convert applications' cleanup with `unique_ptr` in the same commit as
    their CLI11 typed migration (recommend: yes — single reviewable
    behavioral unit per app).
+
+---
+
+## 8. Implementation results — G0, G1, G2 (2026-10-27)
+
+All of G0–G2 from §7 landed on 2026-10-27, one commit per module, with the
+regular and ASan+UBSan test suites green at each step.  The open decisions
+above were resolved per the recommendations (dead files deleted; G-22
+investigated with a reference test; `gsl::owner` alias; RAII piggybacked on
+app migrations in later steps).
+
+### G0 — conventions
+
+| Commit | Scope |
+| --- | --- |
+| `d5193415` | `libs/libhrutil/Owner.h`: `gsl::owner` alias + ownership-convention documentation, included and installed with `libhrutil.h`. |
+
+### G1 — defect fixes (§5)
+
+| Commit | Findings |
+| --- | --- |
+| `56ba38fd` | **libscuff:** G-01 (destructor read `Mate` after `free`), G-09 (ThreadData `memcpy` → copy assignment), G-10 (FIPPI cache: per-miss key leak, entries/preload buffer never freed — the class now owns `PreloadedRecords` and frees values by range test), plus two ASan-exposed pre-existing leaks (~RWGSurface `MeshFileDir`, geometry-constructor scratch string).  New `Geometry` unit test constructs/destroys single-surface and mate-pair geometries; added to the sanitizer CI job. |
+| `7d76b4cc` | **scuffSolver:** G-03 (`free` on `new`-allocated substrate), G-04 (incident-field cache type confusion → `dynamic_cast` + warning), G-05 (mate block-matrix double delete), G-26 (port-list leaks → `~RWGPortList`), plus `Solve(port,current)` leak + uninitialized ports. |
+| `e5ac9b3c` | **libIncField:** G-02 (`free` on `new`-allocated LBasis/RLBasis), G-15 (null deref on empty incident-field file). |
+| `ff9e62b1` | **libStaticSolver:** G-06 (struct-size allocation), G-14 (`ErrExit(NULL)`). |
+| `24f6d958` | **libMatProp:** G-08 (uninitialized ownership flags in short constructors). |
+| `8ed76ecd` | **libhrutil:** G-11 (signal handler closed stderr; now `dprintf` + closes only opened files), G-12 (PA_STRING repeat leak, freed exactly when a same-parse occurrence wrote the slot), G-13 (owning `CheckEnv(char**)` contract documented). |
+| `5ce3a31f` | **apps:** G-07 (inverted free guard in scuff-rf panel-charge cache), G-16 (debug block removed from scuff-rf), G-17 (`--XiQuadrature CLIFF` missing else), G-18 (`!OmegaKBPoints==0` precedence), G-19 (scuff-analyze double geometry, `EEPs[0]` tested twice, dangling `if`). |
+| `0773398f` | **mixed:** G-24 (12 unchecked LAPACK workspace `realloc` → `reallocEC`), G-25 (`vec2str` ring → `thread_local`), G-23 (`DestroyBZIArgs` added, called by scuff-cas3D/caspol/ldos), G-21 (wrong-variable loop increment), G-27 (corrupted license header). |
+| `7a395f86` | **numerics-gated:** G-20 (r==0 `memset` missing `sizeof(cdouble)`), G-22 (`m%1` → `m%2` in scalar `GetYlm`).  Validated by a new `Spherical` unit test comparing `GetYlm` against an independently coded textbook reference and against `GetYlmDerivArray`; full Mie/Fresnel golden suite unaffected.  (During validation the first version of the test's own reference was wrong by a factor of `2m+1` — `(2m+1)!!` instead of `(2m-1)!!` in `P_m^m` — which briefly made the *correct* code look broken; the committed test is the corrected one.) |
+
+### G2 — dead code and plain-C conversions
+
+| Commit | Scope |
+| --- | --- |
+| `8ea5ee4e` | Deleted 16 dead/unbuilt files: `StaticSubstrate.*`, `libSubstrate/{Interpolation,FullWave_PlaneWave,qIntegrate,MosigMichalski}.cc`, `libMDInterp/{WriteMatrix*,doom}.cc`, `libIncField/tPointSource.cc`, `scuff-rf/{PointInsideObject,GetMinDistanceToPanel}.cc`, `libhrutil/PASnippet.cc`; removed the two vestigial `StaticSubstrate.h` includes.  Each deletion verified against the CMake source lists and a symbol-reference sweep first. |
+| `db719209` | `libMDInterp`: `BinSearch.c`, `freadEC.c` converted to plain C (local `EqualFloat`/error stand-ins; exports `extern "C"` in `libMDInterp.h`). |
+| `9b0c80a4` | `libTriInt`: `TCR.c`, `libTriInt.c`, `CCCubature.c`, `IntegrateCliffFunction.c` converted to plain C.  New C-compatible `libTriIntC.h` declares all C-linkage exports (including `GetCCRule`, whose accessor in the generated `CCRules.cc` now inherits C linkage via that header); `libTriInt.h` includes it and keeps only the C++-specific surface (default args, `GetLatticeSum`, `GetLebedevRule`, DCUTRI stubs).  BZIntegration/LatticeSum remain C++ by design (HMatrix in signatures). |
+
+### Test status
+
+Regular build (RelWithDebInfo, C++23): full CTest 8/8 — `Mie` (~124 s),
+`Fresnel` (~33 s), `TMatrixCli`, `UnitTests`, `CliOptions`, `TypedCli`,
+`Geometry` (new), `Spherical` (new).  ASan+UBSan build: all five fast
+suites pass with leak detection enabled.
+
+### Remaining from §7
+
+G3 (ownership modernization: app RAII piggybacked on the Stage B CLI11
+migrations starting with scuff-scatter, then the leaf-first libscuff/libhmat
+sweeps) and G4 (clang-tidy ratchet) are open.
