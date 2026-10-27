@@ -323,7 +323,7 @@ void GetPortVoltages(RWGGeometry *G, HVector *KN,
 
   if (NumPanels!=G->TotalPanels)
    { NumPanels=G->TotalPanels;
-     if (PanelCharges==0) free(PanelCharges);
+     if (PanelCharges) free(PanelCharges);
      PanelCharges=(cdouble *)mallocEC(NumPanels * sizeof(cdouble));
    };
 

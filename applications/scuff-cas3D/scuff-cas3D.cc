@@ -212,7 +212,7 @@ int main(int argc, char *argv[])
       { XiQMethod = QMETHOD_CLIFF;
         Log("Using cliff integration method for Xi quadrature.");
       }
-     if ( !strcasecmp(XiQuadrature,"TRAPSIMP") )
+     else if ( !strcasecmp(XiQuadrature,"TRAPSIMP") )
       { XiQMethod = QMETHOD_TRAPSIMP;
         Log("Using trap/simp integration method (%i intervals) for Xi quadrature.",Intervals);
       }

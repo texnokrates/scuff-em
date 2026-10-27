@@ -586,11 +586,12 @@ int main(int argc, char *argv[])
   /***************************************************************/
   /***************************************************************/
   /***************************************************************/
-  if (EEPs[0]!=-1 && EEPs[0]!=-1)
+  if (EEPs[0]!=-1 && EEPs[1]!=-1)
    { char EEPFileName[100];
      if (MeshFile)
       { char GeoFileName[100];
         snprintf(GeoFileName,100,"MESH__%s",GetFileBase(MeshFile));
+        delete G;
         G=new RWGGeometry(GeoFileName);
         if (!G) ErrExit("Could not open %s",GeoFileName);
         snprintf(EEPFileName,100,"%s.%i.%i.EEPs",GetFileBase(MeshFile),EEPs[0],EEPs[1]);
@@ -615,11 +616,6 @@ int main(int argc, char *argv[])
      printf("Wrote equivalent-edge pair table to %s.\n",EEPFileName);
    }
 
-  if (MeshFile)
-
-  /***************************************************************/
-  /***************************************************************/
-  /***************************************************************/
   printf("Thank you for your support.\n");
 
 }

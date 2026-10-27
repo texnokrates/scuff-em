@@ -234,7 +234,7 @@ int main(int argc, char *argv[])
 
   if (OmegaKBPoints && !G->LBasis)
    ErrExit("--OmegaKBPoints may only be used with extended geometries");
-  else if (G->LBasis && !OmegaKBPoints==0)
+  else if (G->LBasis && OmegaKBPoints==0)
    ErrExit("--OmegaKBPoints is required for extended geometries");
 
   SNEQD->SourceOnly=-1;
