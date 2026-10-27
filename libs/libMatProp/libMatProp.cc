@@ -80,15 +80,29 @@ MatProp *FindMPInMatPropDataBase(const char *MaterialName)
 /* constructor entry points ************************************/
 /***************************************************************/
 MatProp::MatProp()
- { Type=MP_PEC; 
+ { Type=MP_PEC;
    Zeroed=0;
    Name=strdupEC("PEC");
+   Eps=1.0;
+   Mu=1.0;
+   InterpReal=InterpImag=NULL;
+   OwnsInterpolators=false;
+   EpsExpression=MuExpression=NULL;
+   OwnsExpressions=false;
+   ErrMsg=0;
  }
 
 MatProp::MatProp(int pType)
  { Type=pType;
    Zeroed=0;
    Name=strdupEC("VACUUM");
+   Eps=1.0;
+   Mu=1.0;
+   InterpReal=InterpImag=NULL;
+   OwnsInterpolators=false;
+   EpsExpression=MuExpression=NULL;
+   OwnsExpressions=false;
+   ErrMsg=0;
  }
  
 MatProp::MatProp(const char *MaterialName)
