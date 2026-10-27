@@ -117,10 +117,10 @@ class StaticSolver
                                  HMatrix *CMatrix=0);
 
    /* visualization */
-   void PlotChargeDensity(HVector *Sigma, char *FileName);
-   void VisualizeFields(HVector *Sigma,  char *FVMeshFile,
-                        char *OutFileBase=0, StaticExcitation *SE=0,
-                        char *TransFile=0);
+   void PlotChargeDensity(HVector *Sigma, const char *FileName);
+   void VisualizeFields(HVector *Sigma,  const char *FVMeshFile,
+                        const char *OutFileBase=0, StaticExcitation *SE=0,
+                        const char *TransFile=0);
 
    /*--------------------------------------------------------------------*/ 
    /*- class methods intended for internal use only, i.e. which          */ 
@@ -187,15 +187,15 @@ void DipoleStaticField(double *x, void *UserData, double PhiE[4]);
 
 void EvalStaticField(StaticExcitation *SE, double *x, double *PhiE);
 
-StaticExcitation **ReadExcitationFile(StaticSolver *SSS, char *FileName,
+StaticExcitation **ReadExcitationFile(StaticSolver *SSS, const char *FileName,
                                       int *pNumExcitations);
 
 StaticExcitation **CreateSimpleSEList(RWGGeometry *G,
-                                      char *PotFile,
-                                      char *ConstField,
+                                      const char *PotFile,
+                                      const char *ConstField,
                                       int nMonopoles, double *Monopoles,
                                       int nDipoles, double *Dipoles,
-                                      char *PhiExt);
+                                      const char *PhiExt);
 
 } // namespace scuff
 

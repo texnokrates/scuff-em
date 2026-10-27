@@ -74,6 +74,8 @@ scuff_add_application(scuff-static
   scuff-static/BMAccelerator.cc
   scuff-static/OutputModules.cc
 )
+# Sixth typed CLI11 migration.
+target_link_libraries(scuff-static PRIVATE scuff_cli11)
 
 scuff_add_application(scuff-tmatrix
   scuff-tmatrix/scuff-tmatrix.cc

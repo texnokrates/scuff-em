@@ -248,7 +248,7 @@ void EvalStaticField(StaticExcitation *SE, double *x, double *PhiE)
 #define MAXTOK 10
 StaticExcitation *ParseExcitationSection(StaticSolver *SSS,
                                          FILE *f, char *Label,
-                                         char *FileName, int *LineNum)
+                                         const char *FileName, int *LineNum)
 {
   RWGGeometry *G=SSS->G;
   int NS=G->NumSurfaces;
@@ -382,7 +382,7 @@ StaticExcitation *ParseExcitationSection(StaticSolver *SSS,
 /***************************************************************/
 #define MAXSTR 1000
 #define MAXTOK 10
-StaticExcitation **ReadExcitationFile(StaticSolver *SSS, char *FileName,
+StaticExcitation **ReadExcitationFile(StaticSolver *SSS, const char *FileName,
                                       int *pNumExcitations)
 {
   int NumExcitations=0;
@@ -438,7 +438,7 @@ StaticExcitation **ReadExcitationFile(StaticSolver *SSS, char *FileName,
 /* the potential in volts at which that object will be held    */
 /* in the scuff-static calculation.                            */
 /***************************************************************/
-void ParsePotentialFile(RWGGeometry *G, char *PotFile, double *Potentials)
+void ParsePotentialFile(RWGGeometry *G, const char *PotFile, double *Potentials)
 { 
   FILE *f=fopen(PotFile,"r");
   if (!f)
@@ -482,11 +482,11 @@ void ParsePotentialFile(RWGGeometry *G, char *PotFile, double *Potentials)
 /* for specifying potentials and external fields.              */
 /***************************************************************/
 StaticExcitation **CreateSimpleSEList(RWGGeometry *G,
-                                      char *PotFile,
-                                      char *ConstField,
+                                      const char *PotFile,
+                                      const char *ConstField,
                                       int nMonopoles, double *Monopoles,
                                       int nDipoles, double *Dipoles,
-                                      char *PhiExt)
+                                      const char *PhiExt)
 {
   int NS = G->NumSurfaces;
 
@@ -551,7 +551,8 @@ StaticExcitation **CreateSimpleSEList(RWGGeometry *G,
   if (PhiExt)
    { 
      UserSFData *Data = (UserSFData *)mallocEC(sizeof(*Data));
-     Data->PhiEvaluator=cevaluator_create(PhiExt);
+     /* cmatheval's C API takes char *, but only reads the string */
+     Data->PhiEvaluator=cevaluator_create(const_cast<char *>(PhiExt));
      AddStaticField(SE, UserStaticField, (void *)Data);
    };
  

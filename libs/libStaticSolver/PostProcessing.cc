@@ -138,10 +138,10 @@ const char *FieldTitles[]={"Phi","Ex","Ey","Ez"};
 /* visualization.                                              */
 /***************************************************************/
 void StaticSolver::VisualizeFields(HVector *Sigma,
-                               char *FVMeshFile,
-                               char *OutFileBase,
-                               StaticExcitation *SE,
-                               char *TransFile)
+                                   const char *FVMeshFile,
+                                   const char *OutFileBase,
+                                   StaticExcitation *SE,
+                                   const char *TransFile)
 { 
   /*--------------------------------------------------------------*/
   /*- try to open user's mesh file -------------------------------*/
@@ -280,7 +280,7 @@ HMatrix *StaticSolver::GetCapacitanceMatrix(HMatrix *M,
 /***********************************************************************/
 /***********************************************************************/
 /***********************************************************************/
-void StaticSolver::PlotChargeDensity(HVector *Sigma, char *BaseFileName)
+void StaticSolver::PlotChargeDensity(HVector *Sigma, const char *BaseFileName)
 {
   /*--------------------------------------------------------------*/
   /*--------------------------------------------------------------*/

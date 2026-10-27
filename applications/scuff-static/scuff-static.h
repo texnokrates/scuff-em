@@ -55,17 +55,17 @@ void ReassembleBEMMatrix(StaticSolver *SS, HMatrix **pM,
 /* routines in OutputModules.cc ********************************/
 /***************************************************************/
 void WritePolarizabilities(StaticSolver *SS, HMatrix *M,
-                           HVector *Sigma, char *FileName);
+                           HVector *Sigma, const char *FileName);
 
 void WriteCapacitanceMatrix(StaticSolver *SS, HMatrix *M,
-                            HVector *Sigma, char *CapFile);
+                            HVector *Sigma, const char *CapFile);
 
 void WriteCMatrix(StaticSolver *SS, HMatrix *M,
                   HVector *Sigma, int lMax,
-                  char *TextFileName, char *HDF5FileName);
+                  const char *TextFileName, const char *HDF5FileName);
 
 void WriteFields(StaticSolver *SS, HVector *Sigma,
                  StaticExcitation *SE,
-                 char **EPFiles, int nEPFiles, char *OutFileBase);
+                 const char **EPFiles, int nEPFiles, const char *OutFileBase);
 
 #endif
