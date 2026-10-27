@@ -297,6 +297,7 @@ install(TARGETS scuff
 
 set(SCUFF_PUBLIC_HEADERS
   libhrutil/libhrutil.h
+  libhrutil/Owner.h
   libhmat/libhmat.h
   libSGJC/libSGJC.h
   libMDInterp/libMDInterp.h

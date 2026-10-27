@@ -35,6 +35,8 @@
 #include <vector>
 using namespace std;
 
+#include <Owner.h>
+
 /* printf-style format checking for the varargs helpers below. */
 #if defined(__GNUC__) || defined(__clang__)
 #  define SCUFF_PRINTF_FORMAT(FormatIndex, FirstArg) \
