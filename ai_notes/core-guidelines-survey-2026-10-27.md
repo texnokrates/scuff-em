@@ -409,8 +409,15 @@ Regular build (RelWithDebInfo, C++23): full CTest 8/8 — `Mie` (~124 s),
 `Geometry` (new), `Spherical` (new).  ASan+UBSan build: all five fast
 suites pass with leak detection enabled.
 
-### Remaining from §7
+### G3 — ownership modernization (in progress)
 
-G3 (ownership modernization: app RAII piggybacked on the Stage B CLI11
-migrations starting with scuff-scatter, then the leaf-first libscuff/libhmat
-sweeps) and G4 (clang-tidy ratchet) are open.
+| Commit | Scope |
+| --- | --- |
+| `d7a8fde5` | `AddComplexVectorOption` in `ScuffCLI`: repeatable S2CD-parsed complex option with MaxInstances/NumArgs semantics.  Implementation note: a scalar-valued CLI11 callback option runs only once per parse regardless of the multi-occurrence policy, so the helper uses the vector-valued callback form; `expected()` bounds are in units of `type_size`. |
+| `7d3807a1` | **scuff-scatter migrated** (second Stage B application, first with full RAII): 38-entry OptStruct array → typed CLI11 declarations; fixed MAX* arrays → vectors with `expected()` caps; geometry/BEM matrix/RHS/KN/block matrices (owner vectors + mate-aliased views)/incident-field list freed via `unique_ptr` (exit leak ~74 MB/72k allocs → ~0.7 MB/2.5k, remainder is library-owned caches); `SSD->kBloch` initialized (latent garbage-pointer read by the EPFile/visualization modules, previously hidden by stack layout).  Supporting const-correctness: `GetOmegaList`, `ReadIncFieldList`, `AddIncFieldToList`, the output-module prototypes, and `SSData::FileBase` now take/hold `const char *`.  Verified: TypedCli scenarios, Args stdin run, mixed-case/negative/repeated-omega invocations, **byte-identical EPFile output against the pre-migration binary**, full CTest 8/8, ASan+UBSan runs of point-source and stdin plane-wave paths. |
+
+Next: the remaining applications (scuff-analyze, scuff-ldos, scuff-static,
+scuff-transmission, scuff-cas3D, scuff-rf, scuff-neq, scuff-spectrum,
+scuff-plotEpsMu, scuff-caspol) follow the same one-commit pattern
+(CLI11 + RAII + const-corrected seams); then the leaf-first library
+sweeps; then G4 (clang-tidy ratchet).
