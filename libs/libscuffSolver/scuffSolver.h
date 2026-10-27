@@ -90,6 +90,16 @@ typedef struct RWGPortList
  { vector<RWGPort *> Ports;
    RWGPortEdgeList   PortEdges;
    double            RMinMax[6]; // bounding box
+
+  /* PortList->PortEdges owns every RWGPortEdge.  The per-port lists
+     RWGPort::PortEdges hold non-owning copies of the same pointers, so
+     they must not be deleted here. */
+  ~RWGPortList()
+   { for(size_t np=0; np<Ports.size(); np++)
+      delete Ports[np];
+     for(size_t ne=0; ne<PortEdges.size(); ne++)
+      delete PortEdges[ne];
+   }
  } RWGPortList;
 
 /***************************************************************/

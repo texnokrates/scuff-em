@@ -94,12 +94,15 @@ void scuffSolver::InitSolver()
 /***************************************************************/
 scuffSolver::~scuffSolver()
 {
-  if (TBlocks)
+  /* mated surfaces share their block matrices, exactly as in the
+     geometry's FIBBI caches: only the Mate[ns]==-1 slots are owned */
+  if (TBlocks && G)
    { for(int ns=0; ns<G->NumSurfaces; ns++)
-      delete TBlocks[ns];
+      if (G->Mate[ns]==-1)
+       delete TBlocks[ns];
      delete TBlocks;
    }
-  if (UBlocks)
+  if (UBlocks && G)
    { int NS = G->NumSurfaces, NU=(NS-1)*NS/2;
      for(int nu=0; nu<NU; nu++)
       delete UBlocks[nu];
@@ -159,7 +162,7 @@ void scuffSolver::InitSubstrate()
   OmegaSIE=OmegaPBFI=CACHE_DIRTY;
 
   if (!G) ErrExit("%s:%i: internal error",__FILE__,__LINE__);
-  if (G->Substrate) free(G->Substrate);
+  if (G->Substrate) delete G->Substrate;
 
   if (SubstrateFile)
    { G->Substrate = new LayeredSubstrate(SubstrateFile);
@@ -685,11 +688,20 @@ void scuffSolver::DoSolve(IncField *IF, cdouble *PortCurrents)
    }
   else if (IF)
    { G->AssembleRHSVector(Omega, IF, KN);
+     /* cache a copy of the incident field for later post-processing.
+        Only the field types that can be copied losslessly are cached;
+        the unconditional casts used previously produced garbage for
+        any other type (and overwrote the first copy with a second,
+        wrong-typed one). */
      if (CachedIF) delete CachedIF;
-     PlaneWave *PW = (PlaneWave *) IF;
-     if (PW) CachedIF=new PlaneWave(*PW);
-     PointSource *PS = (PointSource *) IF;
-     if (PS) CachedIF=new PointSource(*PS);
+     CachedIF=0;
+     if ( PlaneWave *PW=dynamic_cast<PlaneWave *>(IF) )
+      CachedIF=new PlaneWave(*PW);
+     else if ( PointSource *PS=dynamic_cast<PointSource *>(IF) )
+      CachedIF=new PointSource(*PS);
+     else
+      Warn("scuffSolver: warning: incident fields of this type are not "
+           "cached (post-processing modules cannot retain them)");
    }
 
   // solve the system
@@ -705,9 +717,12 @@ void scuffSolver::Solve(cdouble *PortCurrents)
 
 void scuffSolver::Solve(int WhichPort, cdouble PortCurrent)
 { if (NumPorts==0) ErrExit("no ports defined");
-  cdouble *PortCurrents = new cdouble[NumPorts];
+  /* value-initialize (all ports but one must read as zero) and free:
+     DoSolve copies but does not take ownership of PortCurrents */
+  cdouble *PortCurrents = new cdouble[NumPorts]();
   PortCurrents[WhichPort]=PortCurrent;
   DoSolve(0,PortCurrents);
+  delete[] PortCurrents;
 }
 
 /***************************************************************/
