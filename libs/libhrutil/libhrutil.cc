@@ -957,11 +957,22 @@ void SetCodeMarker(const char *Marker)
 
 static void SignalHandler(int WhichSignal)
 {
+  /* The handler reports to the log file if one is in use, otherwise to
+     stderr.  Only close the file we opened ourselves: closing stderr
+     would break all subsequent output of the process.  (fopen/fprintf
+     are not async-signal-safe; the report is a best-effort diagnostic
+     on the way to exit.) */
+  bool OpenedHere=false;
   FILE *f = (LogFileName ? fopen(LogFileName,"a") : stderr );
-  fprintf(f,"\n\n**<><> received signal %i ",WhichSignal);
+  if (f==0)
+   f=stderr;
+  else
+   OpenedHere=true;
+
+  dprintf(fileno(f),"\n\n**<><> received signal %i ",WhichSignal);
   if (CodeMarker[0]!=0)
-   fprintf(f,"while %s",CodeMarker);
-  fprintf(f,"\n\n");
+   dprintf(fileno(f),"while %s",CodeMarker);
+  dprintf(fileno(f),"\n\n");
 
 #ifdef HAVE_BACKTRACE
   void *buffer[20];
@@ -969,7 +980,8 @@ static void SignalHandler(int WhichSignal)
   backtrace_symbols_fd(buffer, nptrs, fileno(f));
 #endif
 
-  fclose(f);
+  if (OpenedHere)
+   fclose(f);
   exit(1);
 }
 #endif // !defined(_WIN32)

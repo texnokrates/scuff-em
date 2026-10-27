@@ -300,6 +300,9 @@ void KeyPause();
 bool CheckEnv(const char *Name, const char *fmt, void *Destination, bool LogSuccess=true);
 bool CheckEnv(const char *Name, double *Destination, bool LogSuccess=true);
 bool CheckEnv(const char *Name, int *Destination, bool LogSuccess=true);
+/* The char** overload stores a malloc'd copy of the variable's value
+   into *Destination (which must be free()d by the caller); it leaves
+   *Destination untouched when the variable is unset. */
 bool CheckEnv(const char *Name, char **Destination, bool LogSuccess=true);
 bool CheckEnv(const char *Name, bool LogSuccess=true);
 void AppendEnv(const char *Name, const char *Separator, const char *format, ...)

@@ -437,15 +437,27 @@ bool ParseDouble(const std::string &Arg, double *Value)
 }
 
 bool StoreValue(const OptStruct &OS, int Instance, int ArgNumber,
-                const std::string &Arg)
+                const std::string &Arg, int NumPreviouslyStored)
 {
   size_t Index=static_cast<size_t>(Instance)*OS.NumArgs + ArgNumber;
 
   switch(OS.Type)
    {
      case PA_STRING:
-       static_cast<char **>(OS.Storage)[Index]=strdupEC(Arg.c_str());
-       return true;
+      { char *Slot=static_cast<char **>(OS.Storage)[Index];
+        /* A repeated occurrence reuses the same storage slot (legacy
+           last-wins semantics), overwriting the pointer stored by the
+           previous occurrence.  That previous value is a heap copy made
+           during this parse, so it must be freed here to avoid leaking
+           per repeat.  Anything present before the parse is the
+           caller's (slots are expected to be zero-initialized), so the
+           free happens only when an earlier occurrence in this parse
+           already stored into this slot. */
+        if ( NumPreviouslyStored>0 )
+         free(Slot);
+        static_cast<char **>(OS.Storage)[Index]=strdupEC(Arg.c_str());
+        return true;
+      }
 
      case PA_INT:
        return ParseInt(Arg, static_cast<int *>(OS.Storage) + Index);
@@ -531,6 +543,7 @@ void StoreOptions(char *argv[], OptStruct *OSArray,
 
      /* The occurrence count, not the flat value count, determines how
         many times an option was supplied. */
+     int NumStored=0;
      for(size_t k=0; k<OccurrenceIndices.size(); k++)
       { const OptionOccurrence &Occurrence=Input.Occurrences[OccurrenceIndices[k]];
         int Instance=GetInstanceIndex(OS,Occurrence,ProgName,OSArray);
@@ -538,7 +551,7 @@ void StoreOptions(char *argv[], OptStruct *OSArray,
 
         for(int na=0; na<OS.NumArgs; na++)
          { const std::string &Arg=Occurrence.Args[na];
-           if ( !StoreValue(OS,Instance,na,Arg) )
+           if ( !StoreValue(OS,Instance,na,Arg,NumStored) )
             { std::string Message=PrefixedMessage(Occurrence.Source,
                 "invalid argument (" + Arg + ") passed to option --" + OS.Name);
               if (AbortOnUnknown)
@@ -547,6 +560,9 @@ void StoreOptions(char *argv[], OptStruct *OSArray,
               break;
             };
          };
+
+        if (Stored)
+         NumStored++;
 
         if (Stored && ZeroArgs && Occurrence.ArgvStart>=0)
          for(int n=Occurrence.ArgvStart; n<Occurrence.ArgvEnd; n++)
