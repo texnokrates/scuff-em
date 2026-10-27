@@ -63,10 +63,12 @@ IncField::~IncField()
 {
   if (RegionLabel)
    free(RegionLabel);
+  /* LBasis and RLBasis are new-allocated HMatrix objects (see
+     SetLattice / GetRLBasis), so they must be deleted, not freed. */
   if (LBasis)
-   free(LBasis);
+   delete LBasis;
   if (RLBasis)
-   free(RLBasis);
+   delete RLBasis;
 }
 
 /***************************************************************/

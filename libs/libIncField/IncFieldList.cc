@@ -247,7 +247,10 @@ IncFieldList *ReadIncFieldList(char *FileName)
  
   if (CompoundIFLabel)
    ErrExit("%s:%i: expected END",FileName,LineNum);
- 
+
+  if ( IFList==0 )
+   ErrExit("file %s contains no valid incident-field descriptions",FileName);
+
   Log("Read %i incident-field descriptions from file %s.",IFList->NumIFs,FileName);
   return IFList;
  
