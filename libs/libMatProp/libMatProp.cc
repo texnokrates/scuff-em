@@ -131,8 +131,8 @@ MatProp::MatProp(const MatProp &MP)
    if (MP.InterpReal || MP.InterpImag)
     ErrExit("%s:%i: MatProp copy constructor not implemented for interpolated materials",__FILE__,__LINE__);
 #endif
-   InterpReal = MP.InterpReal ? new Interp1D(MP.InterpReal) : 0;
-   InterpImag = MP.InterpImag ? new Interp1D(MP.InterpImag) : 0;
+   InterpReal = MP.InterpReal ? new Interp1D(*MP.InterpReal) : 0;
+   InterpImag = MP.InterpImag ? new Interp1D(*MP.InterpImag) : 0;
    OwnsInterpolators = true;
 
    EpsExpression=MuExpression = 0;

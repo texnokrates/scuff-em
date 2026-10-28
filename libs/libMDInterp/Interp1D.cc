@@ -561,25 +561,25 @@ Interp1D::Interp1D(const char *FileName)
 /****************************************************************/
 /* copy constructor                                             */
 /****************************************************************/
-Interp1D::Interp1D(Interp1D *Original)
+Interp1D::Interp1D(const Interp1D &Original)
 {
-  XMin = Original->XMin;
-  DX   = Original->DX;
-  N    = Original->N;
-  nFun = Original->nFun;
-  Type = Original->Type;
-  LogLevel = Original->LogLevel;
+  XMin     = Original.XMin;
+  DX       = Original.DX;
+  N        = Original.N;
+  nFun     = Original.nFun;
+  Type     = Original.Type;
+  LogLevel = Original.LogLevel;
 
-  if (Original->XPoints)
+  if (Original.XPoints)
    { XPoints=(double *)mallocEC(N*sizeof(double));
-     memcpy(XPoints, Original->XPoints, N*sizeof(double));
+     memcpy(XPoints, Original.XPoints, N*sizeof(double));
    }
   else
    XPoints=0;
-     
+
   int CTableSize = (N-1)*nFun*NCOEFF*sizeof(double);
   CTable=(double *)mallocEC(CTableSize);
-  memcpy(CTable, Original->CTable, CTableSize);
+  memcpy(CTable, Original.CTable, CTableSize);
 
 }
 
