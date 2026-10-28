@@ -668,8 +668,6 @@ void BZIUsage(const char *format, ...)
 /***************************************************************/
 GetBZIArgStruct *InitBZIArgs(int argc, char **argv)
 {
-  AppendOSUsageMessage(BZIOptionsString);
-
   /***************************************************************/
   /* allocate structure and fill in default values ***************/
   /***************************************************************/

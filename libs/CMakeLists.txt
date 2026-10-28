@@ -6,8 +6,6 @@
 
 scuff_add_module(scuff_hrutil
   libhrutil/libhrutil.cc
-  libhrutil/ProcessArguments.cc
-  libhrutil/ProcessOptions.cc
   libhrutil/ScuffCLI.cc
   libhrutil/Vector.cc
 )

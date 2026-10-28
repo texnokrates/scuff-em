@@ -32,51 +32,47 @@ int main(int argc, char *argv[])
   /*--------------------------------------------------------------*/
   /*- process command-line options -------------------------------*/
   /*--------------------------------------------------------------*/
-  char *GeoFileName=0;  // .scuffgeo file
-  int lMax=5;           // maximum L-value of spherical wave computed
-  cdouble Omega=0;      // angular frequency at which to run the computation
-  char *OmegaFile=0;    // list of angular frequencies
-  char *Cache=0;        // scuff cache file 
+  std::string GeoFileName;  // .scuffgeo file
+  int lMax=5;               // maximum L-value of spherical wave computed
+  cdouble Omega=0;          // angular frequency at which to run the computation
+  std::string OmegaFile;    // list of angular frequencies
+  std::string Cache;        // scuff cache file
   CLI::App App{"compute the T-matrix of an arbitrary scatterer"};
   App.option_defaults()->ignore_case();
   App.add_option("--geometry", GeoFileName, ".scuffgeo file")->required()->take_last();
-  scuff::cli::AddComplexOption(App, "--Omega", Omega, "angular frequency");
   App.add_option("--LMax", LMax, "maximum l-value")->take_last();
+  scuff::cli::AddComplexOption(App, "--Omega", Omega, "angular frequency");
+  App.add_option("--OmegaFile", OmegaFile, "list of angular frequencies")->take_last();
   App.add_option("--Cache", Cache, "scuff cache file")->take_last();
-  App.add_option("--FileBase", FileBase, "base filename for output files")->take_last();
-  App.add_flag("--WriteHDF5Files", WriteHDF5Files, "write T-matrix data to HDF5 files");
 
   if (auto Status=scuff::cli::Parse(App,argc,argv))
    return *Status;
-  if (GeoFileName.empty())
-   { CLI::ValidationError Error("GetTMatrix","--geometry option is mandatory");
-     App.exit(Error);
-     return 1;
-   }
-  if (GeoFileName==0)
-   OSUsage(argv[0],OSArray,"--geometry option is mandatory");
 
   /*--------------------------------------------------------------*/
   /*- process frequency options ----------------------------------*/
   /*--------------------------------------------------------------*/
   HVector *OmegaVector=0;
-  if (OmegaFile)
-   OmegaVector=new HVector(OmegaFile);
+  if (!OmegaFile.empty())
+   OmegaVector=new HVector(OmegaFile.c_str());
   else if ( Omega!=0.0 )
    { OmegaVector=new HVector(1, LHM_COMPLEX);
      OmegaVector->SetEntry(0,Omega);
    }
   else
-   OSUsage(argv[0],OSArray,"either --omega or --omegafile must be specified");
+   { CLI::ValidationError Error("GetTMatrix",
+        "either --omega or --omegafile must be specified");
+     App.exit(Error);
+     return 1;
+   }
 
   /*--------------------------------------------------------------*/
   /* create the RWGGeometry from the .scuffgeo file               */
   /*--------------------------------------------------------------*/
-  SetLogFileName("%s.log",GetFileBase(GeoFileName));
-  RWGGeometry *G=new RWGGeometry(GeoFileName);
+  SetLogFileName("%s.log",GetFileBase(GeoFileName.c_str()));
+  RWGGeometry *G=new RWGGeometry(GeoFileName.c_str());
   G->SetLogLevel(SCUFF_VERBOSELOGGING);
-  if (Cache)
-   PreloadCache(Cache);
+  if (!Cache.empty())
+   PreloadCache(Cache.c_str());
 
   /*--------------------------------------------------------------*/
   /* preallocate BEM matrix and RHS vector                        */
@@ -101,7 +97,7 @@ int main(int argc, char *argv[])
   /*- outer loop over frequencies --------------------------------*/
   /*--------------------------------------------------------------*/
   const char *TypeChar="ME";
-  FILE *TextOutputFile=vfopen("%s.TMatrix","w",GetFileBase(GeoFileName));
+  FILE *TextOutputFile=vfopen("%s.TMatrix","w",GetFileBase(GeoFileName.c_str()));
   for(int nOmega=0; nOmega<OmegaVector->N; nOmega++)
    {
      Log("Computing T matrix at frequency %s...",z2s(Omega));
@@ -170,8 +166,8 @@ int main(int argc, char *argv[])
   /*--------------------------------------------------------------*/
   /*--------------------------------------------------------------*/
   /*--------------------------------------------------------------*/
-  if (Cache)
-   StoreCache(Cache);
+  if (!Cache.empty())
+   StoreCache(Cache.c_str());
   printf("Thank you for your support.\n");
   
 }

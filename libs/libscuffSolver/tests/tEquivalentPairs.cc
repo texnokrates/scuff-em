@@ -48,10 +48,10 @@ int main(int argc, char *argv[])
   /***************************************************************/
   /** process command-line arguments *****************************/
   /***************************************************************/
-  char *GeoFile=0;
+  std::string GeoFile;
 //
-  char *SubstrateFile=0;
-  char *EpsStr = const_cast<char *>("1.0");
+  std::string SubstrateFile;
+  std::string EpsStr = "1.0";
   double h     = 0.0;
 //
   cdouble Omega=1.0;
@@ -75,19 +75,16 @@ int main(int argc, char *argv[])
      App.exit(Error);
      return 1;
    }
-  if (GeoFile==0)
-   OSUsage(argv[0],OSArray,"--geometry option is mandatory");
-
   /***************************************************************/
   /* create the geometry                                         */
   /***************************************************************/
-  RWGGeometry *G=new RWGGeometry(GeoFile);
+  RWGGeometry *G=new RWGGeometry(GeoFile.c_str());
 
   char SubstrateDefinition[100];
   if (h==0.0)
-   snprintf(SubstrateDefinition,100,"0.0 CONST_EPS_%s\n",EpsStr);
+   snprintf(SubstrateDefinition,100,"0.0 CONST_EPS_%s\n",EpsStr.c_str());
   else
-   snprintf(SubstrateDefinition,100,"0.0 CONST_EPS_%s\n%e GROUNDPLANE\n",EpsStr,-h);
+   snprintf(SubstrateDefinition,100,"0.0 CONST_EPS_%s\n%e GROUNDPLANE\n",EpsStr.c_str(),-h);
   G->Substrate = CreateLayeredSubstrate(SubstrateDefinition);
 
   int NEA = G->Surfaces[nsa]->NumEdges, NEB=G->Surfaces[nsb]->NumEdges;

@@ -1,5 +1,7 @@
 # Command-line applications that are part of the maintained build.
-# Dormant scuff-cas2D and scuff-microstrip are intentionally not ported.
+# Dormant scuff-cas2D is intentionally not ported; scuff-microstrip was
+# deleted in the 2026-10-27 Stage C commit (dormant, and rotted against
+# the current libscuffSolver API; recoverable from git history).
 
 scuff_add_application(scuff-analyze
   scuff-analyze/scuff-analyze.cc
@@ -114,10 +116,6 @@ if(SCUFF_BUILD_DEV_PROGRAMS)
     add_executable(${name} ${ARGN})
     target_link_libraries(${name} PRIVATE scuff scuff_common)
   endfunction()
-
-  scuff_add_dev_program(tProcessOptions
-    ../libs/libhrutil/tProcessOptions.cc
-  )
 
   foreach(_prog
       tLUSolve tMultiply tReadFromFile tTextIO tlibhmat2

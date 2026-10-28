@@ -70,7 +70,7 @@ jobs:
       - name: Build tests and smoke target
         run: |
           cmake --build build -j "$(nproc)" \
-            --target scuff-unit-tests scuff-cli-tests scuff-typed-cli-tests \
+            --target scuff-unit-tests scuff-typed-cli-tests \
                      scuff-geometry-tests scuff-scatter scuff-tmatrix
 
       - name: Unit tests
@@ -79,7 +79,7 @@ jobs:
           UBSAN_OPTIONS: halt_on_error=1:print_stacktrace=1
         run: |
           ctest --test-dir build --output-on-failure \
-            -R '^(UnitTests|CliOptions|TypedCli|Geometry)$'
+            -R '^(UnitTests|TypedCli|Geometry)$'
 
       - name: Smoke tests
         env:

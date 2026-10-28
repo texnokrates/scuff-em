@@ -359,6 +359,45 @@ buildable; recommend confirming deletions before doing them):
 `tProcessArguments` — all converted from legacy `ProcessOptions`/`ProcessArguments`
 to typed CLI11 with `gsl::owner`-aware RAII where applicable.
 
+**Stage C — legacy parser removal (executed 2026-10-27, commit follows):**
+
+- Deleted `libs/libhrutil/ProcessOptions.cc` (the Stage A CLI11-backed
+  adapter) and `ProcessArguments.cc`; removed from `scuff_hrutil`.
+- Deleted the legacy-parser demo programs `tProcessOptions.cc` /
+  `tProcessArguments.cc` and the dev-program registration.
+- Deleted `tests/unit/CliOptionsTest.cc` (72 checks exercising the
+  adapter's legacy `OptStruct` contract — the adapter is gone; the typed
+  interface remains covered by `ScuffCLITest.cc`) and its CTest/CI
+  registration.
+- Removed from `libhrutil.h`: `OptStruct`, `ArgStruct`, the `PA_*` type
+  macros, `ProcessOptions` (both overloads), `ProcessArguments`, `OSUsage`
+  (both overloads), `ASUsage`, and `AppendOSUsageMessage`.  The installed
+  public header now carries no CLI-parsing API; CLI11 remains a private
+  link dependency.
+- `libTriInt/BZIntegration.cc`: dropped the dead
+  `AppendOSUsageMessage(BZIOptionsString)` priming call (BZIUsage already
+  prints the option text directly on errors).
+- Fixed latent breakage the bulk migrations had left in *unbuilt* files
+  (invisible because nothing compiled them): `t1BFMOIFields.cc`,
+  `tEquivalentPairs.cc` (CLI11 bound to `char*`, stale `OSUsage`/`OSArray`
+  blocks), `GetTMatrix.cc` (phantom `--FileBase`/`--WriteHDF5Files` options
+  and missing `--OmegaFile`), `tSphericalMoments.cc`.  Also deleted
+  `tests/RunSCUFFTests.cc` (unbuilt 2016-era driver superseded by the CTest
+  shell scripts + scuff-analyze + CheckSCUFFData) and the dormant
+  `applications/scuff-microstrip/` tree (2 files; used a two-argument
+  `scuffSolver` constructor that no longer exists and passed `HMatrix**`
+  into `GetZMatrix(HMatrix*, bool)` — rotted against the current
+  libscuffSolver API independent of CLI work; recoverable from git
+  history).
+- `scuff-cas2D` remains in the tree untouched: it does not reference the
+  removed APIs.
+
+Post-Stage-C verification: regular build + full CTest 7/7 (CliOptions test
+retired), dev-programs build clean, ASan+UBSan fast suites 4/4 with leak
+detection.  grep confirms zero code references to the removed symbols
+(comment mentions only).  Stage C complete: the only CLI parser in the
+tree is the typed CLI11 layer.
+
 **G4 — ratchet:** clang-tidy subset (§3) in CI non-blocking; flip to
 blocking-for-changed-files once quiet; warning-budget enforcement from the
 master plan continues in parallel.

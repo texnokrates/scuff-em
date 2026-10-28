@@ -18,13 +18,12 @@ int main(int argc, char *argv[])
   /*--------------------------------------------------------------*/
   /*- process command-line options -------------------------------*/
   /*--------------------------------------------------------------*/
-  char *GeoFileName=0;  // .scuffgeo file
-  int lMax=5;           // maximum L-value of spherical wave computed
-  cdouble Omega=0;      // angular frequency at which to run the computation
-  char *Cache=0;        // scuff cache file 
+  std::string GeoFileName;  // .scuffgeo file
+  int lMax=5;               // maximum L-value of spherical wave computed
+  cdouble Omega=0;          // angular frequency at which to run the computation
+  std::string Cache;        // scuff cache file
   int l=1, m=0;
   int Type=0;
-  /* name        type    #args  max_instances  storage    count  description*/
   CLI::App App{"compute spherical moments"};
   App.option_defaults()->ignore_case();
   App.add_option("--geometry", GeoFileName, ".scuffgeo file")->take_last();
@@ -42,14 +41,11 @@ int main(int argc, char *argv[])
      App.exit(Error);
      return 1;
    }
-  if (GeoFileName==0)
-   OSUsage(argv[0],OSArray,"--geometry option is mandatory");
-
   /*--------------------------------------------------------------*/
   /*--------------------------------------------------------------*/
   /*--------------------------------------------------------------*/
-  SetLogFileName("%s.log",GetFileBase(GeoFileName));
-  RWGGeometry *G=new RWGGeometry(GeoFileName);
+  SetLogFileName("%s.log",GetFileBase(GeoFileName.c_str()));
+  RWGGeometry *G=new RWGGeometry(GeoFileName.c_str());
   HVector *KN = G->AllocateRHSVector();
 
   SphericalWave SW(l, m, Type);
@@ -65,8 +61,8 @@ int main(int argc, char *argv[])
   /*--------------------------------------------------------------*/
   SetDefaultCD2SFormat("%+15.8e %+15.8e");
   char FileName[100];
-  sprintf(FileName,"%s.%i.%i.SphericalMoments",GetFileBase(GeoFileName),l,m);
-  FILE *f=vfopen("%s.%i.%i.SphericalMoments","w",GetFileBase(GeoFileName),l,m);
+  sprintf(FileName,"%s.%i.%i.SphericalMoments",GetFileBase(GeoFileName.c_str()),l,m);
+  FILE *f=vfopen("%s.%i.%i.SphericalMoments","w",GetFileBase(GeoFileName.c_str()),l,m);
   const char *TypeChar="ME";
   for(nm=l=0; l<=lMax; l++)
    for(m=-l; m<=l; m++)

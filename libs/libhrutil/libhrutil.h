@@ -317,65 +317,10 @@ void InstallHRSignalHandler();
 
 
 /***************************************************************/
-/* command-line argument processing ****************************/
-/***************************************************************/
-
-/*--------------------------------------------------------------*/
-/* values for the TYPE field in the ArgStruct structure        -*/
-/*--------------------------------------------------------------*/
-#define PA_DOUBLE  0
-#define PA_INT     1
-#define PA_STRING  2
-#define PA_BOOL    3
-#define PA_CDOUBLE 4
-
-/*--------------------------------------------------------------*/
-/* user creates an array of structures like this for passage   */
-/* to ProcessArguments().                                      */
-/*--------------------------------------------------------------*/
-typedef struct ArgStruct
- { const char *Name;
-   int Type;
-   void *Storage;
-   const char *Default;
-   const char *Description;
- } ArgStruct;
-
-void ASUsage(char *ProgName, ArgStruct *ASArray, const char *format, ...)
-  SCUFF_PRINTF_FORMAT(3,4);
-void ProcessArguments(int argc, char *argv[], ArgStruct *ASArray);
-
-/***************************************************************/
-/* 20120123: i am expanding 'argument' processing into 'option'*/
-/*           processing, which is different in several ways:   */
-/*                                                             */
-/*            (1) in addition to command-line arguments,       */
-/*                options and their arguments can be specified */
-/*                in a little text file piped into stdin       */
-/*                                                             */
-/*            (2) options may take more than one argument.     */
-/*                                                             */
-/*            (3) options can be specified more than once with */
-/*                different arguments                          */
-/***************************************************************/
-typedef struct OptStruct
- { const char *Name;
-   int Type;
-   int NumArgs;
-   int MaxInstances;
-   void *Storage;
-   int *NumInstances;
-   const char *Description;
- } OptStruct;
-
-void AppendOSUsageMessage(const char *Message);
-void OSUsage(const char *ProgName, OptStruct *OSArray, const char *format, ...)
-  SCUFF_PRINTF_FORMAT(3,4);
-void OSUsage(const char *ProgName, const char *version, OptStruct *OSArray,
-             const char *format, ...)
-  SCUFF_PRINTF_FORMAT(4,5);
-void ProcessOptions(int argc, char *argv[], OptStruct *OSArray,
-                    bool AbortOnUnknown=true, bool ZeroArgs=false);
-void ProcessOptions(const char *ArgString, OptStruct *OSArray);
+/* Command-line processing lives in the typed CLI11 layer
+   (libs/libhrutil/ScuffCLI.h, an internal non-installed header).
+   The legacy OptStruct/ProcessOptions and ArgStruct/ProcessArguments
+   parsers were removed in 2026-10-27 Stage C; see
+   ai_notes/c++23-migration-plan-2026-10-26.md Section 4.5. */
 
 #endif // LIBHRUTIL_H

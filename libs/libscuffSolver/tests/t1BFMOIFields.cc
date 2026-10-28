@@ -50,11 +50,11 @@ int main(int argc, char *argv[])
   /***************************************************************/
   /** process command-line arguments *****************************/
   /***************************************************************/
-  char *GeoFile=0;
-  char *PortFile=0;
+  std::string GeoFile;
+  std::string PortFile;
 //
-  char *SubstrateFile=0;
-  char *EpsStr = 0;
+  std::string SubstrateFile;
+  std::string EpsStr;
   double h     = 0.0;
 //
   double Freq=1.0;
@@ -90,29 +90,24 @@ int main(int argc, char *argv[])
      App.exit(Error);
      return 1;
    }
-  if (GeoFile==0)
-   OSUsage(argv[0],OSArray,"--geometry option is mandatory");
-  if (PortFile==0)
-   OSUsage(argv[0],OSArray,"--PortFileName option is mandatory");
-
   /***************************************************************/
   /* create the geometry                                         */
   /***************************************************************/
   RWGGeometry::UseHRWGFunctions=false;
-  RWGGeometry *G=new RWGGeometry(GeoFile);
+  RWGGeometry *G=new RWGGeometry(GeoFile.c_str());
 
   /***************************************************************/
   /* process substrate-related options                           */
   /***************************************************************/
-  if (SubstrateFile)
-   G->Substrate = new LayeredSubstrate(SubstrateFile);
-  else if (EpsStr!=0)
+  if (!SubstrateFile.empty())
+   G->Substrate = new LayeredSubstrate(SubstrateFile.c_str());
+  else if (!EpsStr.empty())
    { 
      char SubstrateDefinition[1000];
      if (h==0.0) // no ground plane
-      snprintf(SubstrateDefinition,1000,"0.0 CONST_EPS_%s\n",EpsStr);
+      snprintf(SubstrateDefinition,1000,"0.0 CONST_EPS_%s\n",EpsStr.c_str());
      else
-      snprintf(SubstrateDefinition,1000,"0.0 CONST_EPS_%s\n%e GROUNDPLANE\n",EpsStr,-h);
+      snprintf(SubstrateDefinition,1000,"0.0 CONST_EPS_%s\n%e GROUNDPLANE\n",EpsStr.c_str(),-h);
      G->Substrate=CreateLayeredSubstrate(SubstrateDefinition);
    }
 
