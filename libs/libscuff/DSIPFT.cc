@@ -123,15 +123,11 @@ HMatrix *GetSRFluxTrace(RWGGeometry *G, HMatrix *XMatrix, cdouble Omega,
 #ifdef USE_OPENMP
   NumThreads=GetNumThreads();
 #endif
-  size_t DeltaSRFluxSize = NumThreads*NX*NUMSRFLUX*sizeof(cdouble);
-  static size_t DeltaSRFluxSizeSave=0;
-  static cdouble *DeltaSRFlux = 0;
-  if (DeltaSRFluxSizeSave<DeltaSRFluxSize)
-   { 
-     DeltaSRFluxSizeSave=DeltaSRFluxSize;
-     DeltaSRFlux=(cdouble *)reallocEC(DeltaSRFlux,DeltaSRFluxSize);
-   }
-  memset(DeltaSRFlux, 0, DeltaSRFluxSize);
+  size_t DeltaSRFluxNE = size_t(NumThreads)*NX*NUMSRFLUX;
+  static std::vector<cdouble> DeltaSRFlux;
+  if (DeltaSRFlux.size()<DeltaSRFluxNE)
+   DeltaSRFlux.resize(DeltaSRFluxNE);
+  std::fill(DeltaSRFlux.begin(), DeltaSRFlux.end(), cdouble(0.0,0.0));
 
   /***************************************************************/
   /***************************************************************/

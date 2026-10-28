@@ -33,6 +33,8 @@
 
 #include <libhrutil.h>
 
+#include <memory>
+
 #include "libscuff.h"
 #include "libscuffInternals.h"
 
@@ -212,31 +214,22 @@ HMatrix *GetMomentPFTMatrix(RWGGeometry *G, cdouble Omega, IncField *IF,
   /*                    scattered PFT                            */
   /***************************************************************/
   static int NSSave=0;
-  static HMatrix **ScatteredPFT=0, *ExtinctionPFT=0;
-  static HMatrix *PM;
+  static std::vector<std::unique_ptr<HMatrix>> ScatteredPFT;
+  static std::unique_ptr<HMatrix> ExtinctionPFT, PM;
   if (NSSave!=NS)
-   { if (ScatteredPFT)
-      { for(int ns=0; ns<NSSave; ns++)
-         if (ScatteredPFT[ns]) 
-          delete ScatteredPFT[ns];
-        free(ScatteredPFT);
-       if (ExtinctionPFT)
-        delete ExtinctionPFT;
-       if (PM)
-        delete PM;
-      };
-     NSSave=NS;
-     ScatteredPFT=(HMatrix **)mallocEC(NS*sizeof(HMatrix));
-     for(int ns=0; ns<NS; ns++)
-      ScatteredPFT[ns]=new HMatrix(NS, NUMPFT);
-     ExtinctionPFT=new HMatrix(NS, NUMPFT);
-     PM=new HMatrix(NS, 6, LHM_COMPLEX);
+   { NSSave=NS;
+     ScatteredPFT.clear();
+     ScatteredPFT.resize(NS);
+     for(auto &PFT : ScatteredPFT)
+      PFT=std::make_unique<HMatrix>(NS, NUMPFT);
+     ExtinctionPFT=std::make_unique<HMatrix>(NS, NUMPFT);
+     PM=std::make_unique<HMatrix>(NS, 6, LHM_COMPLEX);
    };
 
   /*--------------------------------------------------------------*/
   /*--------------------------------------------------------------*/
   /*--------------------------------------------------------------*/
-  G->GetDipoleMoments(Omega, KNVector, PM);
+  G->GetDipoleMoments(Omega, KNVector, PM.get());
 
   /*--------------------------------------------------------------*/
   /*- loop over all surfaces to moment PFT on that surface        */
@@ -253,9 +246,9 @@ HMatrix *GetMomentPFTMatrix(RWGGeometry *G, cdouble Omega, IncField *IF,
       double PFT[NUMPFT];
 
       if (nsa==nsb)
-       GetMomentPFTSelfTerm(nsa, Omega, PM, PFT);
+       GetMomentPFTSelfTerm(nsa, Omega, PM.get(), PFT);
       else
-       GetInterbodyMomentPFT(G, nsa, nsb, Omega, PM, PFT);
+       GetInterbodyMomentPFT(G, nsa, nsb, Omega, PM.get(), PFT);
 
       for(int nq=0; nq<NUMPFT; nq++)
        ScatteredPFT[nsb]->AddEntry(nsa, nq, PFT[nq]);
@@ -269,7 +262,7 @@ HMatrix *GetMomentPFTMatrix(RWGGeometry *G, cdouble Omega, IncField *IF,
    { G->UpdateIncFields(IF, Omega);
      for(int ns=0; ns<NS; ns++)
       { double PFT[NUMPFT];
-        GetExtinctionMomentPFT(G, ns, IF, Omega, PM, PFT);
+        GetExtinctionMomentPFT(G, ns, IF, Omega, PM.get(), PFT);
         ExtinctionPFT->SetEntriesD(ns,":",PFT);
       };
    };

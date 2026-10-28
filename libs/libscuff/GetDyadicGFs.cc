@@ -34,6 +34,8 @@
 
 #include <libhrutil.h>
 
+#include <memory>
+
 #include "libscuff.h"
 #include "libscuffInternals.h"
 #include "PanelCubature.h"
@@ -71,13 +73,11 @@ HMatrix *RWGGeometry::GetDyadicGFs(cdouble Omega, double *kBloch,
   /* number of evaluation points, for example in Brillouin-zone   */
   /* integrations                                                 */
   /*--------------------------------------------------------------*/
-  static HMatrix *RFSource=0, *RFDest=0;
+  static std::unique_ptr<HMatrix> RFSource, RFDest;
   if ( RFSource==0 || RFSource->NR!=NBF || RFSource->NC!=(6*NX) )
    { 
-     if (RFSource) delete RFSource;
-     if (RFDest)   delete RFDest;
-     RFSource=new HMatrix(NBF, 6*NX, LHM_COMPLEX);
-     RFDest=new HMatrix(NBF, 6*NX, LHM_COMPLEX);
+     RFSource = std::make_unique<HMatrix>(NBF, 6*NX, LHM_COMPLEX);
+     RFDest   = std::make_unique<HMatrix>(NBF, 6*NX, LHM_COMPLEX);
    };
 
   /*--------------------------------------------------------------*/
@@ -108,17 +108,17 @@ HMatrix *RWGGeometry::GetDyadicGFs(cdouble Omega, double *kBloch,
    for(int d=0; d<LDim; d++)
     if (kBloch[d]!=0.0) HavekBloch=true;  
 
-  GetRFMatrix(Omega, kBloch, XMatrix, RFDest, true);
+  GetRFMatrix(Omega, kBloch, XMatrix, RFDest.get(), true);
   if ( TwoPointDGF || HavekBloch )
-   GetRFMatrix(Omega, kBloch, XMatrix, RFSource, false, TwoPointDGF ? 3 : 0);
+   GetRFMatrix(Omega, kBloch, XMatrix, RFSource.get(), false, TwoPointDGF ? 3 : 0);
   else
-   RFSource->Copy(RFDest);
+   RFSource->Copy(RFDest.get());
 
   /*--------------------------------------------------------------*/
   /*--------------------------------------------------------------*/
   /*--------------------------------------------------------------*/
   Log(" LUSolving...");
-  M->LUSolve(RFSource);
+  M->LUSolve(RFSource.get());
 
   /*--------------------------------------------------------------*/
   /*--------------------------------------------------------------*/

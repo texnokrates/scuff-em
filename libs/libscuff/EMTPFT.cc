@@ -34,6 +34,8 @@
 
 #include <libhrutil.h>
 
+#include <memory>
+
 #include "libscuff.h"
 #include "libscuffInternals.h"
 #include "PanelCubature.h"
@@ -480,13 +482,10 @@ void GetExtinctionPFTT(RWGGeometry *G, HVector *KN,
   int NQ=NUMPFTT;
   int NTNSNQ=NT*NS*NQ;
 
-  static int DeltaPFTTSize=0;
-  static double *DeltaPFTT=0;
-  if (DeltaPFTTSize < NTNSNQ)
-   { DeltaPFTTSize=NTNSNQ;
-     DeltaPFTT=(double *)reallocEC(DeltaPFTT, DeltaPFTTSize*sizeof(double));
-   };
-  memset(DeltaPFTT, 0, NTNSNQ*sizeof(double));
+  static std::vector<double> DeltaPFTT;
+  if (DeltaPFTT.size() < size_t(NTNSNQ))
+   DeltaPFTT.resize(NTNSNQ);
+  std::fill(DeltaPFTT.begin(), DeltaPFTT.end(), 0.0);
 
 #ifdef USE_OPENMP
 #pragma omp parallel for schedule(dynamic,1), num_threads(NT)
@@ -515,7 +514,7 @@ void GetExtinctionPFTT(RWGGeometry *G, HVector *KN,
 #ifdef USE_OPENMP
      nt = omp_get_thread_num();
 #endif
-     double *dPFTT = DeltaPFTT + (nt*NS + ns)*NUMPFTT;
+     double *dPFTT = DeltaPFTT.data() + (nt*NS + ns)*NUMPFTT;
      dPFTT[PFT_PABS] += real(KStar*QK[PFT_PABS] + NStar*QN[PFT_PABS]);
      for(int nq=PFT_XFORCE; nq<NUMPFTT; nq++)
       dPFTT[nq] += imag( KStar*QK[nq] + NStar*QN[nq] );
@@ -530,7 +529,7 @@ void GetExtinctionPFTT(RWGGeometry *G, HVector *KN,
    for(int nt=0; nt<NT; nt++)
     for(int ns=0; ns<NS; ns++)
      { 
-       double *dPFTT = DeltaPFTT + (nt*NS + ns)*NUMPFTT;
+       double *dPFTT = DeltaPFTT.data() + (nt*NS + ns)*NUMPFTT;
        PFTTMatrix->AddEntry(ns, PFT_PABS, PFactor*dPFTT[PFT_PABS]);
        for(int nq=PFT_XFORCE; nq<NUMPFTT; nq++)
         PFTTMatrix->AddEntry(ns, nq, FTFactor*dPFTT[nq]);
@@ -569,21 +568,15 @@ HMatrix *GetEMTPFTMatrix(RWGGeometry *G, cdouble Omega, IncField *IF,
   /*                     scattered PFTT                          */
   /***************************************************************/
   static int NSSave=0;
-  static HMatrix **ScatteredPFTT=0, *ExtinctionPFTT=0;
+  static std::vector<std::unique_ptr<HMatrix>> ScatteredPFTT;
+  static std::unique_ptr<HMatrix> ExtinctionPFTT;
   if (NSSave!=NS)
-   { if (ScatteredPFTT)
-      { for(int ns=0; ns<NSSave; ns++)
-         if (ScatteredPFTT[ns]) 
-          delete ScatteredPFTT[ns];
-        free(ScatteredPFTT);
-       if (ExtinctionPFTT)
-        delete ExtinctionPFTT;
-      };
-     NSSave=NS;
-     ScatteredPFTT=(HMatrix **)mallocEC(NS*sizeof(HMatrix));
-     for(int ns=0; ns<NS; ns++)
-      ScatteredPFTT[ns]=new HMatrix(NS, NUMPFTT);
-     ExtinctionPFTT=new HMatrix(NS, NUMPFTT);
+   { NSSave=NS;
+     ScatteredPFTT.clear();
+     ScatteredPFTT.resize(NS);
+     for(auto &PFT : ScatteredPFTT)
+      PFT=std::make_unique<HMatrix>(NS, NUMPFTT);
+     ExtinctionPFTT=std::make_unique<HMatrix>(NS, NUMPFTT);
    };
 
   /***************************************************************/
@@ -609,15 +602,12 @@ HMatrix *GetEMTPFTMatrix(RWGGeometry *G, cdouble Omega, IncField *IF,
   int NQ      = NUMPFTT;
   int NS2NQ   = NS*NS*NQ;
   int NTNS2NQ = NT*NS*NS*NQ; 
-  static int DeltaPFTTSize=0;
-  static double *DeltaPFTT=0;
-  if ( DeltaPFTTSize < NTNS2NQ )
-   { Log("(re)allocating DeltaPFTT (%i,%i)",DeltaPFTTSize,NTNS2NQ);
-     DeltaPFTTSize=NTNS2NQ;
-     if (DeltaPFTT) free(DeltaPFTT);
-     DeltaPFTT = (double *)mallocEC(DeltaPFTTSize*sizeof(double));
+  static std::vector<double> DeltaPFTT;
+  if ( DeltaPFTT.size() < size_t(NTNS2NQ) )
+   { Log("(re)allocating DeltaPFTT (%zu,%i)",DeltaPFTT.size(),NTNS2NQ);
+     DeltaPFTT.resize(NTNS2NQ);
    };
-  memset(DeltaPFTT, 0, NTNS2NQ*sizeof(double));
+  std::fill(DeltaPFTT.begin(), DeltaPFTT.end(), 0.0);
 
   /*--------------------------------------------------------------*/
   /*- multithreaded loop over all basis functions on all surfaces-*/
@@ -722,7 +712,7 @@ HMatrix *GetEMTPFTMatrix(RWGGeometry *G, cdouble Omega, IncField *IF,
       nt=omp_get_thread_num();
 #endif
       int Offset = nt*NS2NQ + nsa*NS*NQ + nsb*NQ;
-      VecPlusEquals(DeltaPFTT + Offset, 0.5*Sign, dPFTT, NUMPFTT);
+      VecPlusEquals(DeltaPFTT.data() + Offset, 0.5*Sign, dPFTT, NUMPFTT);
 
       if (!UseSymmetry || neaTot==nebTot)
        continue;
@@ -773,7 +763,7 @@ HMatrix *GetEMTPFTMatrix(RWGGeometry *G, cdouble Omega, IncField *IF,
        };
 
       Offset = nt*NS2NQ + nsb*NS*NQ + nsa*NQ;
-      VecPlusEquals(DeltaPFTT + Offset, 0.5*Sign, dPFTT, NUMPFTT);
+      VecPlusEquals(DeltaPFTT.data() + Offset, 0.5*Sign, dPFTT, NUMPFTT);
  
     }; // end of multithreaded loop
   
@@ -792,7 +782,7 @@ HMatrix *GetEMTPFTMatrix(RWGGeometry *G, cdouble Omega, IncField *IF,
   /* get incident-field contributions ****************************/
   /***************************************************************/
   if (IF)
-   GetExtinctionPFTT(G, KNVector, IF, Omega, ExtinctionPFTT, Interior);
+   GetExtinctionPFTT(G, KNVector, IF, Omega, ExtinctionPFTT.get(), Interior);
   else
    ExtinctionPFTT->Zero();
    
