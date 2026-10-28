@@ -121,7 +121,7 @@ void IncField::SetLattice(HMatrix *NewLBasis, bool Traverse)
 {
   if (LBasis==0 || LBasis->NR!=3 || LBasis->NC != NewLBasis->NC)
    { if (LBasis) delete LBasis;
-     LBasis = new HMatrix(NewLBasis);
+     LBasis = new HMatrix(*NewLBasis);
    };
   
   LBasis->Copy(NewLBasis);

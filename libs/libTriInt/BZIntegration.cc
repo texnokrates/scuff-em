@@ -619,7 +619,7 @@ double SetRLBasis(HMatrix *LBasis, HMatrix *RLBasis,
 HMatrix *GetRLBasis(HMatrix *LBasis,
                     double *pLVolume, double *pRLVolume)
 {
-  HMatrix *RLBasis = new HMatrix(LBasis);
+  HMatrix *RLBasis = new HMatrix(*LBasis);
   SetRLBasis(LBasis, RLBasis, pLVolume, pRLVolume);
   return RLBasis;
 }

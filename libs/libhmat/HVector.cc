@@ -56,13 +56,13 @@ HVector::HVector(int pN, cdouble *data)
 { InitHVector(pN, LHM_COMPLEX, (void *)data); }
 
 /* copy constructor  */
-HVector::HVector(HVector *V)
- { 
-   InitHVector(V->N, V->RealComplex);
+HVector::HVector(const HVector &V)
+ {
+   InitHVector(V.N, V.RealComplex);
    if (RealComplex==LHM_REAL)
-    memcpy(DV,V->DV,N*sizeof(double));
+    memcpy(DV,V.DV,N*sizeof(double));
    else
-    memcpy(ZV,V->ZV,N*sizeof(cdouble));
+    memcpy(ZV,V.ZV,N*sizeof(cdouble));
  }
 
 void HVector::InitHVector(int pN, int pRealComplex, void *data)
@@ -280,10 +280,10 @@ HVector *Concat(HVector *V1, HVector *V2)
    return 0;
   
   if ( V1==0 && V2!=0 )
-   return new HVector(V2); // invoke copy constructor
+   return new HVector(*V2); // invoke copy constructor
 
   if ( V1!=0 && V2==0 )
-   return new HVector(V1); // invoke copy constructor
+   return new HVector(*V1); // invoke copy constructor
 
   int RealComplex = (V1->RealComplex==LHM_REAL && V2->RealComplex==LHM_REAL ) ? LHM_REAL : LHM_COMPLEX;
   

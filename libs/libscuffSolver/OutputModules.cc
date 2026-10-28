@@ -458,7 +458,7 @@ HMatrix *scuffSolver::GetZMatrix(HMatrix *ZMatrix, bool AllTerms)
   AssemblePortBFInteractionMatrix(G->StoredOmega);
 
   // Term1 = -(R^T * W * R) where R = port/BF interaction matrix
-  HMatrix *RMatrix=PBFIMatrix, *WRMatrix = new HMatrix(RMatrix);
+  HMatrix *RMatrix=PBFIMatrix, *WRMatrix = new HMatrix(*RMatrix);
   M->LUSolve(WRMatrix);
   RMatrix->Multiply(WRMatrix, ZTerms[0], "--transA T");
   ZTerms[0]->Scale(-1.0*ZVAC);
@@ -548,9 +548,9 @@ HMatrix *scuffSolver::GetFullZMatrix()
 /***************************************************************/
 HMatrix *scuffSolver::Z2S(HMatrix *Z, HMatrix *S, double ZCharacteristic)
 { 
-  HMatrix *ZpZC = new HMatrix(Z);
+  HMatrix *ZpZC = new HMatrix(*Z);
   if (S==0) 
-   S = new HMatrix(Z);
+   S = new HMatrix(*Z);
   else if (S!=Z)
    S->InsertBlock(Z,0,0);
   for(int nr=0; nr<ZpZC->NR; nr++)
@@ -566,8 +566,8 @@ HMatrix *scuffSolver::Z2S(HMatrix *Z, HMatrix *S, double ZCharacteristic)
 HMatrix *scuffSolver::S2Z(HMatrix *S, HMatrix *Z, double ZCharacteristic)
 {
   // 'OmS = 'one minus S'
-  HMatrix *OmS=new HMatrix(S);
-  HMatrix *OpS=new HMatrix(S);
+  HMatrix *OmS=new HMatrix(*S);
+  HMatrix *OpS=new HMatrix(*S);
   OmS->Scale(-1.0);
   for(int nr=0; nr<S->NR; nr++)
    { 
@@ -576,7 +576,7 @@ HMatrix *scuffSolver::S2Z(HMatrix *S, HMatrix *Z, double ZCharacteristic)
    }
   OmS->LUFactorize();
   OmS->LUInvert();
-  if (Z==0) Z=new HMatrix(S);
+  if (Z==0) Z=new HMatrix(*S);
   OmS->Multiply(OpS, Z);
   Z->Scale(ZCharacteristic);
 

@@ -62,15 +62,9 @@ HMatrix::HMatrix(int NRows, int NCols, int pRealComplex, int pStorageType,
 		 void *data)
  { InitHMatrix(NRows, NCols, pRealComplex, pStorageType, data); }
 
-HMatrix::HMatrix(HMatrix *M, bool takedatandownership) {
-  if (takedatandownership) {
-    InitHMatrix(M->NR, M->NC, M->RealComplex, M->StorageType, M->RealComplex==LHM_COMPLEX ? (void*)M->ZM : (void*)M->DM);
-    ownsM = true;
-    M->ownsM = false;
-  } else {
-    InitHMatrix(M->NR, M->NC, M->RealComplex, M->StorageType);
-    Copy(M);
-  }
+HMatrix::HMatrix(const HMatrix &M) {
+  InitHMatrix(M.NR, M.NC, M.RealComplex, M.StorageType);
+  Copy(&M);
 }
 
 /***************************************************************/
@@ -297,7 +291,7 @@ void HMatrix::ZeroBlock(int RowOffset, int NumRows, int ColOffset, int NumCols)
 /* storage type of the destination matrix if that differs from */
 /* the source matrix.                                          */
 /***************************************************************/
-void HMatrix::Copy(HMatrix *M)
+void HMatrix::Copy(const HMatrix *M)
 {
   if ( M->NR != NR || M->NC != NC || M->RealComplex!=RealComplex )
    { Warn("%s:%i: matrix properties mismatch (copy failed)",__FILE__,__LINE__);
@@ -322,7 +316,7 @@ void HMatrix::Copy(HMatrix *M)
 /***************************************************************/
 /* get the value of a matrix entry  ****************************/
 /***************************************************************/
-cdouble HMatrix::GetEntry(size_t nr, size_t nc)
+cdouble HMatrix::GetEntry(size_t nr, size_t nc) const
 {
   size_t Index, Flipped;
 

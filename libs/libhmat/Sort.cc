@@ -106,7 +106,7 @@ HMatrix *SortHMatrix(HMatrix *M, ivec SortColumns, cvec SortType)
   RowSorter MyRowSorter(M, SortColumns, SortType);
   std::sort (RowIndices.begin(), RowIndices.end(), MyRowSorter);
 
-  HMatrix *NewM = new HMatrix(M);
+  HMatrix *NewM = new HMatrix(*M);
   for(int nr=0; nr<NR; nr++)
    for(int nc=0; nc<NC; nc++)
     NewM->SetEntry(nr, nc, M->GetEntry(RowIndices[nr], nc));

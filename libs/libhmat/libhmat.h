@@ -97,7 +97,9 @@ class HVector
    void ExportToText(const char *FileName, const char *Options = "");
 
    /* copy constructor */
-   HVector(HVector *V);
+   /* deep copy; copy assignment deleted (C.21) */
+   HVector(const HVector &V);
+   HVector &operator=(const HVector &) = delete;
 
    /* destructor */
    ~HVector();
@@ -108,7 +110,7 @@ class HVector
 
    /* copying another HVector of the same size */
    void Copy(HVector *V);
-   HVector *Copy() { return new HVector(this); }
+   HVector *Copy() { return new HVector(*this); }
 
    /* set the value of an entry */
    void SetEntry(int n, double Entry);
@@ -174,7 +176,13 @@ class HMatrix
    HMatrix(int NRows, int NCols, int pRealComplex, void *data);
    HMatrix(int NRows, int NCols, cdouble *data);
    HMatrix(int NRows, int NCols, double *data);
-   HMatrix(HMatrix *M, bool takedatandownership=false); // copy constructor
+   /* deep copy; the new matrix owns freshly allocated storage.
+      (The former HMatrix(HMatrix *, bool takedatandownership) steal
+      path was removed in 2026-10-27 -- it had no in-tree users; a
+      non-owning wrapper around an existing buffer is available via
+      the void *data constructor entry points above.) */
+   HMatrix(const HMatrix &M);
+   HMatrix &operator=(const HMatrix &) = delete;
    void InitHMatrix(int NRows, int NCols, int RealComplex = LHM_REAL,
 		    int StorageType = LHM_NORMAL, void *data = NULL);
 
@@ -200,7 +208,7 @@ class HMatrix
    /* destructor */
    ~HMatrix(); 
    /* get the value of an entry */
-   cdouble GetEntry(size_t nr, size_t nc);
+   cdouble GetEntry(size_t nr, size_t nc) const;
    double GetEntryD(size_t nr, size_t nc);
 
    /* routines for setting, augmenting, scaling matrix entries */
@@ -245,8 +253,8 @@ class HMatrix
                      HMatrix *B, cdouble Entry=0.0);
 
    /* routine for copying another HMatrix of the same size*/
-   void Copy(HMatrix *M);
-   HMatrix *Copy() { return new HMatrix(this); }
+   void Copy(const HMatrix *M);
+   HMatrix *Copy() { return new HMatrix(*this); }
 
    /* get the trace */
    cdouble GetTrace();
