@@ -7,6 +7,7 @@
 #include <stdlib.h>
 
 #include <libhrutil.h>
+#include "ScuffCLI.h"
 #include <libhmat.h>
 #include "libMDInterp.h"
 
@@ -39,20 +40,18 @@ int main(int argc, char *argv[])
   /*--------------------------------------------------------------*/
   int nThread;
   double XMin, XMax;
-  int N;
-  char *DataFile;
-  int xCol, yCol;
-  ArgStruct ASArray[]=
-   { {"XMin",     PA_DOUBLE, (void *)&XMin,     "-5.0", "XMin"},
-     {"XMax",     PA_DOUBLE, (void *)&XMax,     "+5.0", "XMax"},
-     {"N",        PA_INT,    (void *)&N,         "100", "N"},
-     {"DataFile", PA_STRING, (void *)&DataFile,      0, "Data file "},
-     {"xCol",     PA_INT,    (void *)&xCol,        "1", "x column index (one-based)"},
-     {"yCol",     PA_INT,    (void *)&yCol,        "2", "y column index (one-based)"},
-     {"nThread",  PA_INT,    (void *)&nThread,    "-1", "number of threads"},
-     {0,0,0,0,0}
-   };
-  ProcessArguments(argc, argv, ASArray);
+  CLI::App App{"test Interp1D"};
+  App.option_defaults()->ignore_case();
+  App.add_option("--XMin", XMin, "XMin")->take_last();
+  App.add_option("--XMax", XMax, "XMax")->take_last();
+  App.add_option("--N", N, "N")->take_last();
+  App.add_option("--DataFile", DataFile, "Data file")->take_last();
+  App.add_option("--xCol", xCol, "x column index (one-based)")->take_last();
+  App.add_option("--yCol", yCol, "y column index (one-based)")->take_last();
+  App.add_option("--nThread", nThread, "number of threads")->take_last();
+
+  if (auto Status=scuff::cli::Parse(App,argc,argv))
+   return *Status;
   if (nThread==-1)
    nThread=GetNumThreads();
 

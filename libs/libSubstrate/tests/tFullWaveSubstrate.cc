@@ -29,6 +29,7 @@
 
 #include "libhrutil.h"
 #include "libSubstrate.h"
+#include "ScuffCLI.h"
 #include "libscuff.h"
 
 #define NUMTESTS 5
@@ -128,24 +129,24 @@ int main(int argc, char *argv[])
   /*- process command-line arguments -----------------------------*/
   /*--------------------------------------------------------------*/
   int NumTest=-1;
-  char *SubstrateFile=0;
+  std::string SubstrateFile;
   cdouble Omega=1.0;
   double XDS[6]={1.0, 0.9, 0.8, 0.7, 0.8, 0.4};
-  char *XDSFile=0;
+  std::string XDSFile;
   bool Full=false;
   bool OmitFreeSpace=false;
-  /* name, type, #args, max_instances, storage, count, description*/
-  OptStruct OSArray[]=
-   { {"NumTest",       PA_INT,     1, 1, (void *)&NumTest,   0, "run a single unit test"},
-     {"SubstrateFile", PA_STRING,  1, 1, (void *)&SubstrateFile, 0, ".substrate file"},
-     {"Omega",         PA_CDOUBLE, 1, 1, (void *)&Omega,      0, "angular frequency"},
-     {"XDS",           PA_DOUBLE,  6, 1, (void *)XDS,         0, ""},
-     {"XDSFile",       PA_STRING,  1, 1, (void *)&XDSFile,    0, ""},
-     {"Full",          PA_BOOL,    0, 1, (void *)&Full,       0, ""},
-     {"OmitFreeSpace", PA_BOOL,    0, 1, (void *)&OmitFreeSpace, 0, ""},
-     {0,0,0,0,0,0,0}
-   };
-  ProcessOptions(argc, argv, OSArray);
+  CLI::App App{"test full wave substrate"};
+  App.option_defaults()->ignore_case();
+  App.add_option("--NumTest", NumTest, "run a single unit test")->take_last();
+  App.add_option("--SubstrateFile", SubstrateFile, ".substrate file")->take_last();
+  scuff::cli::AddComplexOption(App, "--Omega", Omega, "angular frequency");
+  App.add_option("--XDS", XDS, "XDS file")->type_name("COMPLEX")->expected(6)->take_last();
+  App.add_option("--XDSFile", XDSFile, "XDS file")->take_last();
+  App.add_flag("--Full", Full, "");
+  App.add_flag("--OmitFreeSpace", OmitFreeSpace, "");
+
+  if (auto Status=scuff::cli::Parse(App,argc,argv))
+   return *Status;
 
   //if (NumTest==-1 && SubstrateFile==0
   // RunUnitTest(0, Omega, XDS);

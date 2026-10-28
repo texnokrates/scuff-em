@@ -58,19 +58,23 @@ int main(int argc, char *argv[])
   int nsa=0;
   int nsb=0;
 
-  /* name               type    #args  max_instances  storage           count         description*/
-  OptStruct OSArray[]=
-   { {"geometry",       PA_STRING,  1, 1,       (void *)&GeoFile,    0,             "geometry file"},
-     {"Omega",          PA_CDOUBLE, 1, 1,       (void *)&Omega,      0,             ""},
-     {"nsa",            PA_INT,     1, 1,       (void *)&nsa,        0,             ""},
-     {"nsb",            PA_INT,     1, 1,       (void *)&nsb,        0,             ""},
-//
-     {"SubstrateFile",  PA_STRING,  1, 1,       (void *)&SubstrateFile,   0,        "substrate definition file"},
-     {"Eps",            PA_STRING,  1, 1,       (void *)&EpsStr,     0,             "substrate permittivity"},
-     {"h",              PA_DOUBLE,  1, 1,       (void *)&h,          0,             "substrate thickness"},
-     {0,0,0,0,0,0,0}
-   };
-  ProcessOptions(argc, argv, OSArray);
+  CLI::App App{"test equivalent pairs"};
+  App.option_defaults()->ignore_case();
+  App.add_option("--geometry", GeoFile, "geometry file")->take_last();
+  scuff::cli::AddComplexOption(App, "--Omega", Omega, "angular frequency");
+  App.add_option("--nsa", nsa, "")->take_last();
+  App.add_option("--nsb", nsb, "")->take_last();
+  App.add_option("--SubstrateFile", SubstrateFile, "substrate definition file")->take_last();
+  App.add_option("--Eps", EpsStr, "substrate permittivity")->take_last();
+  App.add_option("--h", h, "substrate thickness")->take_last();
+
+  if (auto Status=scuff::cli::Parse(App,argc,argv))
+   return *Status;
+  if (GeoFile.empty())
+   { CLI::ValidationError Error("tEquivalentPairs","--geometry option is mandatory");
+     App.exit(Error);
+     return 1;
+   }
   if (GeoFile==0)
    OSUsage(argv[0],OSArray,"--geometry option is mandatory");
 

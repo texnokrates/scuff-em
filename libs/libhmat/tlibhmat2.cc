@@ -25,6 +25,7 @@
 
 #include "libhrutil.h"
 #include "libhmat.h"
+#include "ScuffCLI.h"
 
 #if defined(_WIN32)
 #  define srand48 srand
@@ -43,13 +44,17 @@ int main(int argc, char *argv[])
   /*--------------------------------------------------------------*/
   /*- process command-line arguments -----------------------------*/
   /*--------------------------------------------------------------*/
-  ArgStruct ASArray[]=
-   { {"N",         PA_INT,    (void *)&N,            "0",  "dimension"},
-     {0,0,0,0,0}
-   };
-  ProcessArguments(argc, argv, ASArray);
+  CLI::App App{"test the libhmat matrix inversion routines"};
+  App.option_defaults()->ignore_case();
+  App.add_option("--N", N, "dimension")->take_last();
+
+  if (auto Status=scuff::cli::Parse(App,argc,argv))
+   return *Status;
   if (N==0)
-   ASUsage(argv[0],ASArray,"--N option is mandatory");
+   { CLI::ValidationError Error("tlibhmat2","--N option is mandatory");
+     App.exit(Error);
+     return 1;
+   }
 
   /*--------------------------------------------------------------*/
   /*- allocate matrices ------------------------------------------*/

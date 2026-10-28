@@ -36,17 +36,24 @@ int main(int argc, char *argv[])
   /*--------------------------------------------------------------*/
   /*- process command-line arguments -----------------------------*/
   /*--------------------------------------------------------------*/
-  ArgStruct ASArray[]=
-   { {"DeltaList",  PA_STRING, (void *)&DeltaList,     0, "list of Delta points"},
-     {"LambdaList", PA_STRING, (void *)&LambdaList,    0, "list of Lambda points"},
-     {"nThread",    PA_INT,    (void *)&nThread,    "-1", "number of threads"},
-     {0,0,0,0,0}
-   };
-  ProcessArguments(argc, argv, ASArray);
-  if (DeltaList==0)
-   ASUsage(argv[0],ASArray,"--DeltaList option is mandatory");
-  if (LambdaList==0)
-   ASUsage(argv[0],ASArray,"--LambdaList option is mandatory");
+  CLI::App App{"test Interp2D"};
+  App.option_defaults()->ignore_case();
+  App.add_option("--DeltaList", DeltaList, "list of Delta points")->take_last();
+  App.add_option("--LambdaList", LambdaList, "list of Lambda points")->take_last();
+  App.add_option("--nThread", nThread, "number of threads")->take_last();
+
+  if (auto Status=scuff::cli::Parse(App,argc,argv))
+   return *Status;
+  if (DeltaList.empty())
+   { CLI::ValidationError Error("tInterp2D","--DeltaList option is mandatory");
+     App.exit(Error);
+     return 1;
+   }
+  if (LambdaList.empty())
+   { CLI::ValidationError Error("tInterp2D","--LambdaList option is mandatory");
+     App.exit(Error);
+     return 1;
+   }
   if (nThread==-1)
    nThread=GetNumThreads();
 

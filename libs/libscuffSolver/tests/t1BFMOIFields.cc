@@ -65,27 +65,31 @@ int main(int argc, char *argv[])
   double X[3]; int nX=0;
   bool Subtract = true;
   
-  /* name               type    #args  max_instances  storage           count         description*/
-  OptStruct OSArray[]=
-   { {"geometry",       PA_STRING,  1, 1,       (void *)&GeoFile,    0,             "geometry file"},
-//
-     {"portfile",       PA_STRING,  1, 1,       (void *)&PortFile,   0,             "port file"},
-//
-     {"SubstrateFile",  PA_STRING,  1, 1,       (void *)&SubstrateFile,   0,        "substrate definition file"},
-     {"Eps",            PA_STRING,  1, 1,       (void *)&EpsStr,     0,             "substrate permittivity"},
-     {"h",              PA_DOUBLE,  1, 1,       (void *)&h,          0,             "substrate thickness"},
-//
-     {"Freq",           PA_DOUBLE,  1, 1,       (void *)&Freq,       0,             "frequency in GHz"},
-//
-     {"ns",             PA_INT,     1, 1,       (void *)&ns,         0,             ""},
-     {"ne",             PA_INT,     1, 1,       (void *)&ne,         0,             ""},
-     {"X",              PA_DOUBLE,  3, 1,       (void *)X,          &nX,            ""},
-//
-     {"Subtract",       PA_BOOL,    0, 1,       (void *)&Subtract,   0,             ""},
-//
-     {0,0,0,0,0,0,0}
-   };
-  ProcessOptions(argc, argv, OSArray);
+  CLI::App App{"test one-BF MOI fields"};
+  App.option_defaults()->ignore_case();
+  App.add_option("--geometry", GeoFile, "geometry file")->take_last();
+  App.add_option("--portfile", PortFile, "port file")->take_last();
+  App.add_option("--SubstrateFile", SubstrateFile, "substrate definition file")->take_last();
+  App.add_option("--Eps", EpsStr, "substrate permittivity")->take_last();
+  App.add_option("--h", h, "substrate thickness")->take_last();
+  App.add_option("--Freq", Freq, "frequency in GHz")->take_last();
+  App.add_option("--ns", ns, "")->take_last();
+  App.add_option("--ne", ne, "")->take_last();
+  App.add_option("--X", X, "")->type_name("COMPLEX")->expected(3)->take_last();
+  App.add_flag("--Subtract", Subtract, "");
+
+  if (auto Status=scuff::cli::Parse(App,argc,argv))
+   return *Status;
+  if (GeoFile.empty())
+   { CLI::ValidationError Error("t1BFMOIFields","--geometry option is mandatory");
+     App.exit(Error);
+     return 1;
+   }
+  if (PortFile.empty())
+   { CLI::ValidationError Error("t1BFMOIFields","--PortFileName option is mandatory");
+     App.exit(Error);
+     return 1;
+   }
   if (GeoFile==0)
    OSUsage(argv[0],OSArray,"--geometry option is mandatory");
   if (PortFile==0)

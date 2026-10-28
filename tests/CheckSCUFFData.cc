@@ -29,6 +29,8 @@
 #include <fenv.h>
 
 #include "libhrutil.h"
+#include "ScuffCLI.h"
+#include "ScuffCLI.h"
 
 #define MAXSTR 1000
 #define MAXTOK 50
@@ -73,7 +75,7 @@ typedef struct DataSet
 /*******************************************************************/
 /*******************************************************************/
 /*******************************************************************/
-Checklist *ReadChecklist(char *FileName, int LogLevel)
+Checklist *ReadChecklist(const char *FileName, int LogLevel)
 {
   /***************************************************************/
   /***************************************************************/
@@ -190,7 +192,7 @@ DataRecord *CreateDataRecord(Checklist *CL, int FileLine )
 /***************************************************************/
 /***************************************************************/
 /***************************************************************/
-DataSet *ReadDataSet(char *FileName, Checklist *CL)
+DataSet *ReadDataSet(const char *FileName, Checklist *CL)
 {
   int NumKeys      = CL->NumKeys;
   int *KeyColumns  = CL->KeyColumns;
@@ -380,33 +382,46 @@ int main(int argc, char *argv[])
   InstallHRSignalHandler();
   SetLogFileName("CheckSCUFFData.log");
 //
-  char *DataFile=0;
-  char *RefFile=0;
-  char *CLFile=0;
-  char *ErrorFileName=0;
+  std::string DataFile;
+  std::string RefFile;
+  std::string CLFile;
+  std::string ErrorFileName;
   bool Silent=false;
   bool Verbose=false;
 //
-  /* name               type    #args  max_instances  storage           count         description*/
-  OptStruct OSArray[]=
-   { 
-     {"Data",           PA_STRING,  1, 1,       (void *)&DataFile,   0,             "data file"},
-     {"Reference",      PA_STRING,  1, 1,       (void *)&RefFile,    0,             "reference file"},
-     {"Checklist",      PA_STRING,  1, 1,       (void *)&CLFile,     0,             "checklist file"},
-     {"ErrorFile",      PA_STRING,  1, 1,       (void *)&ErrorFileName, 0,         "name of error output file"},
-     {"silent",         PA_BOOL,    0, 1,       (void *)&Silent,     0,             "print no output"},
-     {"verbose",        PA_BOOL,    0, 1,       (void *)&Verbose,    0,             "print copious output"},
-/**/
-     {0,0,0,0,0,0,0}
-   };
-  ProcessOptions(argc, argv, OSArray);
+  CLI::App App{"check SCUFF data against reference"};
+  App.option_defaults()->ignore_case();
+  App.add_option("--Data", DataFile, "data file")
+     ->required()
+     ->take_last();
+  App.add_option("--Reference", RefFile, "reference file")
+     ->required()
+     ->take_last();
+  App.add_option("--Checklist", CLFile, "checklist file")
+     ->required()
+     ->take_last();
+  App.add_option("--ErrorFile", ErrorFileName, "name of error output file")
+     ->take_last();
+  App.add_flag("--silent", Silent, "print no output");
+  App.add_flag("--verbose", Verbose, "print copious output");
 
-  if (DataFile==0)
-   OSUsage(argv[0], OSArray, "--data option is mandatory");
-  if (RefFile==0)
-   OSUsage(argv[0], OSArray, "--reference option is mandatory");
-  if (CLFile==0)
-   OSUsage(argv[0], OSArray, "--Checklist option is mandatory");
+  if (auto Status=scuff::cli::Parse(App,argc,argv))
+   return *Status;
+  if (DataFile.empty())
+   { CLI::ValidationError Error("CheckSCUFFData","--data option is mandatory");
+     App.exit(Error);
+     return 1;
+   }
+  if (RefFile.empty())
+   { CLI::ValidationError Error("CheckSCUFFData","--reference option is mandatory");
+     App.exit(Error);
+     return 1;
+   }
+  if (CLFile.empty())
+   { CLI::ValidationError Error("CheckSCUFFData","--Checklist option is mandatory");
+     App.exit(Error);
+     return 1;
+   }
 
   int LogLevel = LOGLEVEL_DEFAULT;
   if (Silent)
@@ -414,19 +429,19 @@ int main(int argc, char *argv[])
   if (Verbose)
    LogLevel = LOGLEVEL_VERBOSE;
   
-  Checklist *CL   = ReadChecklist(CLFile, LogLevel);
-  DataSet *TestDS = ReadDataSet(DataFile, CL);
-  DataSet *RefDS  = ReadDataSet(RefFile, CL);
+  Checklist *CL   = ReadChecklist(CLFile.c_str(), LogLevel);
+  DataSet *TestDS = ReadDataSet(DataFile.c_str(), CL);
+  DataSet *RefDS  = ReadDataSet(RefFile.c_str(), CL);
  
-  if (ErrorFileName==0)
-   ErrorFileName=vstrdup("%s.errors",GetFileBase(DataFile));
+  if (ErrorFileName.empty())
+   ErrorFileName = std::string(GetFileBase(DataFile.c_str())) + ".errors";
   FILE *ErrorFile = 0;
-  if (ErrorFileName)
-   { ErrorFile=fopen(ErrorFileName,"w");
+  if (!ErrorFileName.empty())
+   { ErrorFile=fopen(ErrorFileName.c_str(),"w");
      fprintf(ErrorFile,"CheckSCUFFData running on %s (%s)\n",GetHostName(),GetTimeString());
      fprintf(ErrorFile,"Checklist:      %s \n",CLFile);
-     fprintf(ErrorFile,"Data      file: %s \n",DataFile);
-     fprintf(ErrorFile,"Reference file: %s \n",RefFile);
+     fprintf(ErrorFile,"Data      file: %s \n",DataFile.c_str());
+     fprintf(ErrorFile,"Reference file: %s \n",RefFile.c_str());
    };
 
   int DataMatches = CompareDataSets(TestDS, RefDS, CL, ErrorFile);

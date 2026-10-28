@@ -37,16 +37,22 @@ int main(int argc, char *argv[])
   cdouble Omega=0;      // angular frequency at which to run the computation
   char *OmegaFile=0;    // list of angular frequencies
   char *Cache=0;        // scuff cache file 
-  /* name        type    #args  max_instances  storage    count  description*/
-  OptStruct OSArray[]=
-   { {"geometry",  PA_STRING,  1, 1, (void *)&GeoFileName,  0,  ".scuffgeo file"},
-     {"lMax",      PA_INT,     1, 1, (void *)&lMax,         0,  "maximum l-value"},
-     {"Omega",     PA_CDOUBLE, 1, 1, (void *)&Omega,        0,  "angular frequency"},
-     {"OmegaFile", PA_STRING,  1, 1, (void *)&OmegaFile,    0,  "list of angular frequencies"},
-     {"Cache",     PA_STRING,  1, 1, (void *)&Cache,        0,  "scuff cache file"},
-     {0,0,0,0,0,0,0}
-   };
-  ProcessOptions(argc, argv, OSArray);
+  CLI::App App{"compute the T-matrix of an arbitrary scatterer"};
+  App.option_defaults()->ignore_case();
+  App.add_option("--geometry", GeoFileName, ".scuffgeo file")->required()->take_last();
+  scuff::cli::AddComplexOption(App, "--Omega", Omega, "angular frequency");
+  App.add_option("--LMax", LMax, "maximum l-value")->take_last();
+  App.add_option("--Cache", Cache, "scuff cache file")->take_last();
+  App.add_option("--FileBase", FileBase, "base filename for output files")->take_last();
+  App.add_flag("--WriteHDF5Files", WriteHDF5Files, "write T-matrix data to HDF5 files");
+
+  if (auto Status=scuff::cli::Parse(App,argc,argv))
+   return *Status;
+  if (GeoFileName.empty())
+   { CLI::ValidationError Error("GetTMatrix","--geometry option is mandatory");
+     App.exit(Error);
+     return 1;
+   }
   if (GeoFileName==0)
    OSUsage(argv[0],OSArray,"--geometry option is mandatory");
 

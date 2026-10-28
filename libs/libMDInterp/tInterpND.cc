@@ -10,6 +10,7 @@
 #include <libhmat.h>
 
 #include "libMDInterp.h"
+#include "ScuffCLI.h"
 
 #include <readline/readline.h>
 #include <readline/history.h>
@@ -125,17 +126,17 @@ int main(int argc, char *argv[])
   dVec X0(3);    X0[0]=X0[1]=X0[2]=HUGE_VAL;
   double RelTol=1.0e-4;
   bool Verbose=false;
-  /* name               type    #args  max_instances  storage           count         description*/
-  OptStruct OSArray[]=
-   { {"XMin",           PA_DOUBLE,  3, 1,       (void *)&(XMin[0]),  0,             ""},
-     {"XMax",           PA_DOUBLE,  3, 1,       (void *)&(XMax[0]),  0,             ""},
-     {"X0",             PA_DOUBLE,  3, 1,       (void *)&(X0[0]),    0,             ""},
-     {"RelTol",         PA_DOUBLE,  1, 1,       (void *)&RelTol,     0,             ""},
-     {"Verbose",        PA_BOOL,    0, 1,       (void *)&Verbose,    0,             ""},
-     {"D",              PA_INT,     1, 1,       (void *)&D,          0,             ""},
-     {0,0,0,0,0,0,0}
-   };
-  ProcessOptions(argc, argv, OSArray);
+  CLI::App App{"test multidimensional interpolation"};
+  App.option_defaults()->ignore_case();
+  App.add_option("--XMin", XMin, "XMin")->type_size(3)->take_last();
+  App.add_option("--XMax", XMax, "XMax")->type_size(3)->take_last();
+  App.add_option("--X0", X0, "X0")->type_size(3)->take_last();
+  App.add_option("--RelTol", RelTol, "RelTol")->take_last();
+  App.add_flag("--Verbose", Verbose, "Verbose");
+  App.add_option("--D", D, "D")->take_last();
+
+  if (auto Status=scuff::cli::Parse(App,argc,argv))
+   return *Status;
 
   InterpND *Interp=0;
   if (D==1)

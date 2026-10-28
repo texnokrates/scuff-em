@@ -29,6 +29,7 @@
 
 #include "libhrutil.h"
 #include "libSubstrate.h"
+#include "ScuffCLI.h"
 #include "libscuff.h"
 
 #define NUMTESTS 3
@@ -281,19 +282,19 @@ int main(int argc, char *argv[])
   char *XDSFile=0;
   cdouble Omega=0.7;
   cdouble q2D[2]={0.1, 0.2};
-  /* name, type, #args, max_instances, storage, count, description*/
-  OptStruct OSArray[]=
-   { {"Test",          PA_INT,     1, 1, (void *)&WhichTest,     0, "index of unit test"},
-     {"SubstrateFile", PA_STRING,  1, 1, (void *)&SubstrateFile, 0, ".substrate file"},
-     {"XDSFile",       PA_STRING,  1, 1, (void *)&XDSFile,       0, "XDS file"},
-     {"Omega",         PA_CDOUBLE, 1, 1, (void *)&Omega,         0, "angular frequency"},
-     {"q2D",           PA_CDOUBLE, 2, 1, (void *)q2D,            0, "qx qy"},
-     {"Eta",           PA_DOUBLE,  1, 1, (void *)&Eta,           0, ""},
-     {"Threshold",     PA_DOUBLE,  1, 1, (void *)&Threshold,     0, ""},
-     {"PrintSuccesses",PA_BOOL,    0, 1, (void *)&PrintSuccesses, 0, ""},
-     {0,0,0,0,0,0,0}
-   };
-  ProcessOptions(argc, argv, OSArray);
+  CLI::App App{"test Green's twiddle"};
+  App.option_defaults()->ignore_case();
+  App.add_option("--Test", WhichTest, "index of unit test")->take_last();
+  App.add_option("--SubstrateFile", SubstrateFile, ".substrate file")->take_last();
+  App.add_option("--XDSFile", XDSFile, "XDS file")->take_last();
+  scuff::cli::AddComplexOption(App, "--Omega", Omega, "angular frequency");
+  App.add_option("--q2D", q2D, "qx qy")->type_name("COMPLEX")->expected(2)->take_last();
+  App.add_option("--Eta", Eta, "")->take_last();
+  App.add_option("--Threshold", Threshold, "")->take_last();
+  App.add_flag("--PrintSuccesses", PrintSuccesses, "");
+
+  if (auto Status=scuff::cli::Parse(App,argc,argv))
+   return *Status;
 
   /*--------------------------------------------------------------*/
   // if no specific test or substrate file was specified, run all unit tests

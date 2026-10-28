@@ -96,11 +96,17 @@ int main(int argc, char *argv[])
   /*--------------------------------------------------------------*/
   /*- process command-line arguments -----------------------------*/
   /*--------------------------------------------------------------*/
-  ArgStruct ASArray[]=
-   { {"Kappa",     PA_DOUBLE, (void *)&Kappa,     "1.0",  "Kappa"},
-     {0,0,0,0,0}
-   };
-  ProcessArguments(argc, argv, ASArray);
+  CLI::App App{"test triangle integration"};
+  App.option_defaults()->ignore_case();
+  App.add_option("--Kappa", Kappa, "Kappa")->take_last();
+
+  if (auto Status=scuff::cli::Parse(App,argc,argv))
+   return *Status;
+  if (N==0)
+   { CLI::ValidationError Error("tlibTriInt2","--N option is mandatory");
+     App.exit(Error);
+     return 1;
+   }
 
   /*--------------------------------------------------------------*/
   /*- generate a random triangle ---------------------------------*/

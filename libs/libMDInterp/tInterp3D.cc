@@ -69,15 +69,16 @@ int main(int argc, char *argv[])
   /*--------------------------------------------------------------*/
   /*- process command-line arguments -----------------------------*/
   /*--------------------------------------------------------------*/
-  ArgStruct ASArray[]=
-   { {"X1Points",   PA_STRING, (void *)&X1File,       0,  "list of X1Points"},
-     {"X2Points",   PA_STRING, (void *)&X2File,       0,  "list of X2Points"},
-     {"X3Points",   PA_STRING, (void *)&X3File,       0,  "list of X3Points"},
-     {"DataFile",   PA_STRING, (void *)&DataFile,     0,  "binary data file"},
-     {"nThread",    PA_INT,    (void *)&nThread,    "-1", "number of threads"},
-     {0,0,0,0,0}
-   };
-  ProcessArguments(argc, argv, ASArray);
+  CLI::App App{"test Interp3D"};
+  App.option_defaults()->ignore_case();
+  App.add_option("--X1Points", X1File, "list of X1Points")->take_last();
+  App.add_option("--X2Points", X2File, "list of X2Points")->take_last();
+  App.add_option("--X3Points", X3File, "list of X3Points")->take_last();
+  App.add_option("--DataFile", DataFile, "binary data file")->take_last();
+  App.add_option("--nThread", nThread, "number of threads")->take_last();
+
+  if (auto Status=scuff::cli::Parse(App,argc,argv))
+   return *Status;
   if (nThread==-1)
    nThread=GetNumThreads();
 

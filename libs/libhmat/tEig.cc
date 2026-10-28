@@ -27,6 +27,7 @@
 
 #include <libhrutil.h>
 #include "libhmat.h"
+#include "ScuffCLI.h"
 
 #if defined(_WIN32)
 #  define srand48 srand
@@ -47,14 +48,14 @@ int main(int argc, char *argv[])
   int N=1000;
   bool Complex=false;
   bool NS=false;
-  /* name               type    #args  max_instances  storage           count         description*/
-  OptStruct OSArray[]=
-   { {"N",       PA_INT,     1, 1, (void *)&N,       0, "dimension "},
-     {"Complex", PA_BOOL,    0, 1, (void *)&Complex, 0, "complex-valued matrix"},
-     {"NS",      PA_BOOL,    0, 1, (void *)&NS,      0, "non-symmetric matrix"},
-     {0,0,0,0,0,0,0}
-   };
-  ProcessOptions(argc, argv, OSArray);
+  CLI::App App{"test the libhmat eigensolvers"};
+  App.option_defaults()->ignore_case();
+  App.add_option("--N", N, "dimension")->take_last();
+  App.add_flag("--Complex", Complex, "complex-valued matrix");
+  App.add_flag("--NS", NS, "non-symmetric matrix");
+
+  if (auto Status=scuff::cli::Parse(App,argc,argv))
+   return *Status;
 
   /*--------------------------------------------------------------*/
   /*--------------------------------------------------------------*/

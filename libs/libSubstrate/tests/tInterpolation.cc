@@ -29,6 +29,7 @@
 #include "libhrutil.h"
 #include "libSubstrate.h"
 #include "libscuff.h"
+#include "ScuffCLI.h"
 
 const char *GroundedSiSlab=
  "0.0 CONST_EPS_11.7\n"
@@ -54,36 +55,32 @@ int main(int argc, char *argv[])
   char *SubstrateFile=0;
   cdouble Eps=12.0;
   double h=1.0;
-//
+  //
   cdouble Omega=0.7;
-//
+  //
   double RhoMin=0.0, RhoMax=2.0;
   int RhoPoints=100;
-//
+  //
   bool PPIsOnly=false;
   bool Subtract=true;
   bool CorrectionOnly=false;
   bool OmitSingularTerms=true;
-//
-  /* name, type, #args, max_instances, storage, count, description*/
-  OptStruct OSArray[]=
-   { {"SubstrateFile",  PA_STRING,  1, 1, (void *)&SubstrateFile,  0, ".substrate file"},
-     {"Eps",            PA_CDOUBLE, 1, 1, (void *)&Eps,            0, "substrate permittivity"},
-     {"h",              PA_DOUBLE,  1, 1, (void *)&h,              0, "substrate thickness"},
-//
-     {"Omega",          PA_CDOUBLE, 1, 1, (void *)&Omega,          0, "angular frequency"},
-//
-     {"RhoMin",         PA_DOUBLE,  1, 1, (void *)&RhoMin,         0, "XDS file"},
-     {"RhoMax",         PA_DOUBLE,  1, 1, (void *)&RhoMax,         0, "XDS file"},
-     {"RhoPoints",      PA_INT,     1, 1, (void *)&RhoPoints,        0, ""},
-//
-     {"PPIsOnly",       PA_BOOL,    0, 1, (void *)&PPIsOnly,       0, ""},
-     {"Subtract",       PA_BOOL,    0, 1, (void *)&Subtract,       0, ""},
-     {"CorrectionOnly", PA_BOOL,    0, 1, (void *)&CorrectionOnly, 0, "retain only correction"},
-     {"OmitSingularTerms", PA_BOOL, 0, 1, (void *)&OmitSingularTerms, 0, "omit singular contributions"},
-     {0,0,0,0,0,0,0}
-   };
-  ProcessOptions(argc, argv, OSArray);
+  CLI::App App{"test interpolation table for scalar GFs"};
+  App.option_defaults()->ignore_case();
+  App.add_option("--SubstrateFile", SubstrateFile, ".substrate file")->take_last();
+  scuff::cli::AddComplexOption(App, "--Eps", Eps, "substrate permittivity");
+  App.add_option("--h", h, "substrate thickness")->take_last();
+  App.add_option("--Omega", Omega, "angular frequency")->type_name("COMPLEX")->expected(1)->take_last();
+  App.add_option("--RhoMin", RhoMin, "XDS file")->take_last();
+  App.add_option("--RhoMax", RhoMax, "XDS file")->take_last();
+  App.add_option("--RhoPoints", RhoPoints, "")->take_last();
+  App.add_flag("--PPIsOnly", PPIsOnly, "");
+  App.add_flag("--Subtract", Subtract, "");
+  App.add_flag("--CorrectionOnly", CorrectionOnly, "");
+  App.add_flag("--OmitSingularTerms", OmitSingularTerms, "");
+
+  if (auto Status=scuff::cli::Parse(App,argc,argv))
+   return *Status;
 
   /***************************************************************/
   /***************************************************************/

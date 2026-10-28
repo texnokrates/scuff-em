@@ -18,6 +18,7 @@
  */
 
 #include "libhrutil.h"
+#include "ScuffCLI.h"
 #include "libhmat.h"
 #include "scuff-caspol.h"
 
@@ -39,13 +40,12 @@ int main(int argc, char *argv[])
   /* process options *********************************************/
   /***************************************************************/
   char *Atoms[MAXATOM];    int NumAtoms;
-  /* name           type  #args  max_instances  storage    count  description*/
-  OptStruct OSArray[]=
-   { 
-     {"Atom",        PA_STRING,  1, 10,      (void *)Atoms,        &NumAtoms,   "type of atom"},
-     {0,0,0,0,0,0,0}
-   };
-  ProcessOptions(argc, argv, OSArray);
+  CLI::App App{"test polarization model"};
+  App.option_defaults()->ignore_case();
+  App.add_option("--Atom", Atoms, "type of atom")->expected(1, MAXATOM);
+
+  if (auto Status=scuff::cli::Parse(App,argc,argv))
+   return *Status;
 
   /*******************************************************************/
   /*******************************************************************/

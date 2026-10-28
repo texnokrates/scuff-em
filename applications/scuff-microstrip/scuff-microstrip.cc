@@ -37,6 +37,7 @@
 #include <libhrutil.h>
 #include <libhmat.h>
 #include <libscuff.h>
+#include "ScuffCLI.h"
 #include <libIncField.h>
 #include <libSubstrate.h>
 #include <scuffSolver.h>
@@ -131,44 +132,42 @@ int main(int argc, char *argv[])
 //
   char *FileBase=0;
   char *ContribOnly=0;
-  /* name               type    #args  max_instances  storage           count         description*/
-  OptStruct OSArray[]=
-   { {"geometry",       PA_STRING,  1, 1,       (void *)&GeoFile,    0,             "geometry file"},
-//
-     {"portfile",       PA_STRING,  1, 1,       (void *)&PortFile,   0,             "port file"},
-     {"PlotGeometry",   PA_BOOL,    0, 1,       (void *)&PlotGeometry, 0,           "generate geometry/port visualization file"},
-//
-     {"SubstrateFile",  PA_STRING,  1, 1,       (void *)&SubstrateFile,   0,        "substrate definition file"},
-     {"Eps",            PA_CDOUBLE, 1, 1,       (void *)&Eps,        0,             "substrate permittivity"},
-     {"h",              PA_DOUBLE,  1, 1,       (void *)&h,          0,             "substrate thickness"},
-//
-     {"TransFile",      PA_STRING,  1, 1,       (void *)&TransFile,   0,            "list of geometry transforms"},
-//
-     {"freqfile",       PA_STRING,  1, 1,       (void *)&FreqFile,   0,             "list of frequencies"},
-     {"frequency",      PA_DOUBLE,  1, MAXFREQ, (void *)Freqs,       &nFreqs,       "frequency (GHz)"},
-     {"minfreq",        PA_DOUBLE,  1, 1,       (void *)&MinFreq,    &nMinFreq,     "starting frequency"},
-     {"maxfreq",        PA_DOUBLE,  1, 1,       (void *)&MaxFreq,    &nMaxFreq,     "ending frequency"},
-     {"numfreqs",       PA_INT,     1, 1,       (void *)&NumFreqs,   &nNumFreqs,    "number of frequencies"},
-     {"logfreq",        PA_BOOL,    0, 1,       (void *)&LogFreq,    0,             "use logarithmic frequency steps"},
-//
-     {"portcurrentfile", PA_STRING,  1, 1,      (void *)&PCFile,     0,             "port current file"},
-//
-     {"ZParameters",    PA_BOOL,    0, 1,       (void *)&ZParms,     0,             "output Z parameters"},
-     {"SParameters",    PA_BOOL,    0, 1,       (void *)&SParms,     0,             "output S parameters"},
-     {"Z0",             PA_DOUBLE,  1, 1,       (void *)&ZCharacteristic,0,         "characteristic impedance (in ohms) for Z-to-S conversion"},
-//
-     {"EPFile",          PA_STRING,  1, MAXEPF,  (void *)EPFiles,     &nEPFiles,     "list of evaluation points"},
-     {"FVMesh",          PA_STRING,  1, MAXFVM,  (void *)FVMeshes,    &nFVMeshes,    "field visualization mesh"},
-     {"FVMeshTransFile", PA_STRING,  1, MAXFVM,  (void *)FVMeshTransFiles, &nFVMeshTransFiles, ""},
-//
-     {"FileBase",       PA_STRING,  1, 1,       (void *)&FileBase,   0,             "base name for output files"},
-//
-     {"ContribOnly",    PA_STRING,  1, 1,       (void *)&ContribOnly,0,             "select port voltage contributors"},
-//
-//
-     {0,0,0,0,0,0,0}
-   };
-  ProcessOptions(argc, argv, OSArray);
+  CLI::App App{"scuff-microstrip"};
+  App.option_defaults()->ignore_case();
+  App.add_option("--geometry", GeoFile, "geometry file")
+     ->required()
+     ->take_last();
+  App.add_option("--portfile", PortFile, "port file")->take_last();
+  App.add_flag("--PlotGeometry", PlotGeometry, "generate geometry/port visualization file");
+  App.add_option("--SubstrateFile", SubstrateFile, "substrate definition file")->take_last();
+  scuff::cli::AddComplexOption(App, "--Eps", Eps, "substrate permittivity");
+  App.add_option("--h", h, "substrate thickness")->take_last();
+  App.add_option("--TransFile", TransFile, "list of geometry transforms")->take_last();
+  App.add_option("--freqfile", FreqFile, "list of frequencies")->take_last();
+  App.add_option("--frequency", Freqs, "frequency (GHz)")->type_name("DOUBLE")->expected(1, MAXFREQ);
+  App.add_option("--minfreq", MinFreq, "starting frequency")->take_last();
+  App.add_option("--maxfreq", MaxFreq, "ending frequency")->take_last();
+  App.add_option("--numfreqs", NumFreqs, "number of frequencies")->take_last();
+  App.add_flag("--logfreq", LogFreq, "use logarithmic frequency steps");
+  App.add_option("--portcurrentfile", PCFile, "port current file")->take_last();
+  App.add_option("--EPFile", EPFiles, "list of evaluation points")->expected(1, MAXEPF);
+  App.add_option("--FVMesh", FVMeshes, "field visualization mesh")->expected(1, MAXFVM);
+  App.add_option("--FVMeshTransFile", FVMeshTransFiles, "")->expected(1, MAXFVM);
+  App.add_option("--FileBase", FileBase, "base name for output files")->take_last();
+  App.add_option("--ContribOnly", ContribOnly, "select port voltage contributors")->take_last();
+
+  if (auto Status=scuff::cli::Parse(App,argc,argv))
+   return *Status;
+  if (GeoFile.empty())
+   { CLI::ValidationError Error("scuff-microstrip","--geometry option is mandatory");
+     App.exit(Error);
+     return 1;
+   }
+  if (PortFile.empty())
+   { CLI::ValidationError Error("scuff-microstrip","--portfile option is mandatory");
+     App.exit(Error);
+     return 1;
+   }
   if (GeoFile==0)
    OSUsage(argv[0], VERSION, OSArray,"--geometry option is mandatory");
   if (PortFile==0)

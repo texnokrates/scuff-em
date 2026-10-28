@@ -13,6 +13,10 @@ target_include_directories(scuff_common INTERFACE
   ${SCUFF_INTERNAL_INCLUDE_DIRS}
 )
 
+if(TARGET scuff_cli11)
+  target_link_libraries(scuff_common INTERFACE scuff_cli11)
+endif()
+
 if(SCUFF_WARNINGS AND CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
   target_compile_options(scuff_common INTERFACE
     -Wall

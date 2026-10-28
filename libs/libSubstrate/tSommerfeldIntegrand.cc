@@ -127,17 +127,17 @@ int main(int argc, char *argv[])
   double zDest = 1.0;
   double zSource = 0.6;
   char *qFile=0;
-  /* name, type, #args, max_instances, storage, count, description*/
-  OptStruct OSArray[]=
-   { {"Omega",         PA_CDOUBLE, 1, 1, (void *)&Omega,      0, ""},
-     {"q",             PA_CDOUBLE, 1, 1, (void *)&q,          0, ""},
-     {"Rho",           PA_DOUBLE,  1, 1, (void *)&Rho,        0, ""},
-     {"zDest",         PA_DOUBLE,  1, 1, (void *)&zDest,      0, ""},
-     {"zSource",       PA_DOUBLE,  1, 1, (void *)&zSource,    0, ""},
-     {"qFile",         PA_STRING,  1, 1, (void *)&qFile,      0, ""},
-     {0,0,0,0,0,0,0}
-   };
-  ProcessOptions(argc, argv, OSArray);
+  CLI::App App{"test Sommerfeld integrand"};
+  App.option_defaults()->ignore_case();
+  scuff::cli::AddComplexOption(App, "--Omega", Omega, "angular frequency");
+  scuff::cli::AddComplexOption(App, "--q", q, "q value");
+  App.add_option("--Rho", Rho, "Rho value")->take_last();
+  App.add_option("--zDest", zDest, "z destination")->take_last();
+  App.add_option("--zSource", zSource, "z source")->take_last();
+  App.add_option("--qFile", qFile, "q file")->take_last();
+
+  if (auto Status=scuff::cli::Parse(App,argc,argv))
+   return *Status;
 
   if (qFile)
    { HVector *qList = new HVector(qFile);

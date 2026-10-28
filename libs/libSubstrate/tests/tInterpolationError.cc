@@ -28,6 +28,7 @@
 
 #include "libhrutil.h"
 #include "libSubstrate.h"
+#include "ScuffCLI.h"
 #include "libscuff.h"
 
 const char *GroundedSiSlab=
@@ -77,27 +78,27 @@ int main(int argc, char *argv[])
   bool NoSubtract=false;
 //
   /* name, type, #args, max_instances, storage, count, description*/
-  OptStruct OSArray[]=
-   { {"SubstrateFile",  PA_STRING,  1, 1, (void *)&SubstrateFile,  0, ".substrate file"},
-     {"Eps",            PA_CDOUBLE, 1, 1, (void *)&Eps,            0, "substrate permittivity"},
-     {"h",              PA_DOUBLE,  1, 1, (void *)&h,              0, "substrate thickness"},
-//
-     {"Omega",          PA_CDOUBLE, 1, 1, (void *)&Omega,          0, "angular frequency"},
-     {"Freq",           PA_DOUBLE,  1, 1, (void *)&Freq,           0, "frequency in GHz"},
-//
-     {"RhoMin",         PA_DOUBLE,  1, 1, (void *)&RhoMin,         0, ""},
-     {"RhoMax",         PA_DOUBLE,  1, 1, (void *)&RhoMax,         0, ""},
-     {"ZMin",           PA_DOUBLE,  1, 1, (void *)&ZMin,           0, ""},
-     {"ZMax",           PA_DOUBLE,  1, 1, (void *)&ZMax,           0, ""},
-//
-     {"RelTol",         PA_DOUBLE,  1, 1, (void *)&RelTol,         0, ""},
-//
-     {"PPIsOnly",       PA_BOOL,    0, 1, (void *)&PPIsOnly,       0, ""},
-     {"NoSubtract",     PA_BOOL,    0, 1, (void *)&NoSubtract,       0, ""},
-     {0,0,0,0,0,0,0}
-   };
+  double AbsTol=1.0e-12;
+  CLI::App App{"test interpolation error"};
+  App.option_defaults()->ignore_case();
+  App.add_option("--SubstrateFile", SubstrateFile, ".substrate file")->take_last();
+  scuff::cli::AddComplexOption(App, "--Eps", Eps, "substrate permittivity");
+  App.add_option("--h", h, "substrate thickness")->take_last();
+  App.add_option("--Omega", Omega, "angular frequency")->type_name("COMPLEX")->expected(1)->take_last();
+  App.add_option("--Freq", Freq, "frequency in GHz")->take_last();
+  App.add_option("--RhoMin", RhoMin, "")->take_last();
+  App.add_option("--RhoMax", RhoMax, "")->take_last();
+  App.add_option("--ZMin", ZMin, "")->take_last();
+  App.add_option("--ZMax", ZMax, "")->take_last();
+  App.add_option("--RelTol", RelTol, "")->take_last();
+  App.add_flag("--PPIsOnly", PPIsOnly, "");
+  App.add_flag("--NoSubtract", NoSubtract, "");
+
+  if (auto Status=scuff::cli::Parse(App,argc,argv))
+   return *Status;
   bool Subtract = !NoSubtract;
-  ProcessOptions(argc, argv, OSArray);
+  if (Freq!=0.0)
+   Omega = Freq * (2.0*M_PI/300.0);
   if (Freq!=0.0)
    Omega = Freq * (2.0*M_PI/300.0);
 

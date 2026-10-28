@@ -14,6 +14,7 @@
 
 #include "libhrutil.h"
 #include "libhmat.h"
+#include "ScuffCLI.h"
 
 #if defined(_WIN32)
 #  define srand48 srand
@@ -30,12 +31,13 @@ int main(int argc, char *argv[])
   /*--------------------------------------------------------------*/
   int Dim=10;
   int Symmetric=0;
-  ArgStruct ASArray[]=
-   { {"Dim",       PA_INT,  (void *)&Dim,       "10", "dimension"},
-     {"Symmetric", PA_BOOL, (void *)&Symmetric,    0, "do symmetric cases too"},
-     {0,0,0,0,0}
-   };
-  ProcessArguments(argc, argv, ASArray);
+  CLI::App App{"test the libhmat matrix inversion routines"};
+  App.option_defaults()->ignore_case();
+  App.add_option("--Dim", Dim, "dimension")->take_last();
+  App.add_flag("--Symmetric", Symmetric, "do symmetric cases too");
+
+  if (auto Status=scuff::cli::Parse(App,argc,argv))
+   return *Status;
 
   /*--------------------------------------------------------------*/
   /*--------------------------------------------------------------*/

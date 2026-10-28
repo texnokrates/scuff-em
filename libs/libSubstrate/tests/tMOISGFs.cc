@@ -111,29 +111,25 @@ int main(int argc, char *argv[])
   int MaxTerms=1000;
   double RelTol=1.0e-6;
   double AbsTol=1.0e-12;
-  /* name, type, #args, max_instances, storage, count, description*/
-  OptStruct OSArray[]=
-   { {"SubstrateFile",  PA_STRING,  1, 1, (void *)&SubstrateFile,  0, ".substrate file"},
-     {"Eps",            PA_CDOUBLE, 1, 1, (void *)&Eps,            0, "substrate permittivity"},
-     {"h",              PA_DOUBLE,  1, 1, (void *)&h,              0, "substrate thickness"},
-//
-     {"Omega",          PA_CDOUBLE, 1, 1, (void *)&Omega,          0, "angular frequency"},
-//
-     {"XDS",            PA_DOUBLE,  6, 1, (void *)XDS,             0, "XDS file"},
-     {"XDSFile",        PA_STRING,  1, 1, (void *)&XDSFile,        0, "XDS file"},
-//
-     {"PPIsOnly",       PA_BOOL,    0, 1, (void *)&PPIsOnly,       0, ""},
-     {"CorrectionOnly", PA_BOOL,    0, 1, (void *)&CorrectionOnly, 0, "retain only correction"},
-     {"OmitSingularTerms", PA_BOOL, 0, 1, (void *)&OmitSingularTerms, 0, "omit singular contributions"},
-     {"Derivatives",    PA_BOOL,    0, 1, (void *)&Derivatives,  0, ""},
-//
-     {"MaxTerms",       PA_INT,     1, 1, (void *)&MaxTerms,       0, ""},
-     {"RelTol",         PA_DOUBLE,  1, 1, (void *)&RelTol,         0, ""},
-     {"AbsTol",         PA_DOUBLE,  1, 1, (void *)&AbsTol,         0, ""},
-     {"EtaFD",          PA_DOUBLE,  1, 1, (void *)&EtaFD,          0, ""},
-     {0,0,0,0,0,0,0}
-   };
-  ProcessOptions(argc, argv, OSArray);
+  CLI::App App{"test MOI scalar GFs"};
+  App.option_defaults()->ignore_case();
+  App.add_option("--SubstrateFile", SubstrateFile, ".substrate file")->take_last();
+  scuff::cli::AddComplexOption(App, "--Eps", Eps, "substrate permittivity");
+  App.add_option("--h", h, "substrate thickness")->take_last();
+  scuff::cli::AddComplexOption(App, "--Omega", Omega, "angular frequency");
+  App.add_option("--XDS", XDS, "XDS file")->type_name("DOUBLE")->expected(6)->take_last();
+  App.add_option("--XDSFile", XDSFile, "XDS file")->take_last();
+  App.add_flag("--PPIsOnly", PPIsOnly, "");
+  App.add_flag("--CorrectionOnly", CorrectionOnly, "retain only correction");
+  App.add_flag("--OmitSingularTerms", OmitSingularTerms, "omit singular contributions");
+  App.add_flag("--Derivatives", Derivatives, "");
+  App.add_option("--MaxTerms", MaxTerms, "")->take_last();
+  App.add_option("--RelTol", RelTol, "")->take_last();
+  App.add_option("--AbsTol", AbsTol, "")->take_last();
+  App.add_option("--EtaFD", EtaFD, "")->take_last();
+
+  if (auto Status=scuff::cli::Parse(App,argc,argv))
+   return *Status;
    
   /***************************************************************/
   /***************************************************************/

@@ -27,6 +27,7 @@
 
 #include <libhrutil.h>
 #include "libhmat.h"
+#include "ScuffCLI.h"
 
 #if defined(_WIN32)
 #  define srand48 srand
@@ -45,19 +46,16 @@ int main(int argc, char *argv[])
   /*- process options  -------------------------------------------*/
   /*--------------------------------------------------------------*/
   int N=1000;
-  int Complex=0;
-  char *Flag=0;
-  /* name               type    #args  max_instances  storage           count         description*/
-  OptStruct OSArray[]=
-   { {"N",       PA_INT,     1, 1, (void *)&N,       0, "dimension "},
-     {"Complex", PA_BOOL,    0, 1, (void *)&Complex, 0, "complex-valued matrix"},
-     {"Flag",    PA_STRING,  1, 1, (void *)&Flag,    0, "either N, C, or T"},
-     {0,0,0,0,0,0,0}
-   };
-  ProcessOptions(argc, argv, OSArray);
+  bool Complex=false;
+  std::string Flag="N";
+  CLI::App App{"test the libhmat LU solvers"};
+  App.option_defaults()->ignore_case();
+  App.add_option("--N", N, "dimension")->take_last();
+  App.add_flag("--Complex", Complex, "complex-valued matrix");
+  App.add_option("--Flag", Flag, "either N, C, or T")->take_last();
 
-  if (Flag==0)
-   Flag=strdupEC("N");
+  if (auto Status=scuff::cli::Parse(App,argc,argv))
+   return *Status;
 
   /*--------------------------------------------------------------*/
   /*--------------------------------------------------------------*/

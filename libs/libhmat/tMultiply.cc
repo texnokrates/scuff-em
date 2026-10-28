@@ -26,6 +26,7 @@
 
 #include "libhrutil.h"
 #include "libhmat.h"
+#include "ScuffCLI.h"
 
 #if defined(_WIN32)
 #  define srand48 srand
@@ -45,12 +46,13 @@ int main(int argc, char *argv[])
   /*--------------------------------------------------------------*/
   int N1=100;
   int N2=200;
-  ArgStruct ASArray[]=
-   { {"N1",         PA_INT,  (void *)&N1,        "100", "dimension 1"},
-     {"N2",         PA_INT,  (void *)&N2,        "200", "dimension 2"},
-     {0,0,0,0,0}
-   };
-  ProcessArguments(argc, argv, ASArray);
+  CLI::App App{"test matrix multiplication"};
+  App.option_defaults()->ignore_case();
+  App.add_option("--N1", N1, "dimension 1")->take_last();
+  App.add_option("--N2", N2, "dimension 2")->take_last();
+
+  if (auto Status=scuff::cli::Parse(App,argc,argv))
+   return *Status;
 
   HMatrix *A=new HMatrix(N2,N1,LHM_COMPLEX);
   HMatrix *B=new HMatrix(N2,N1,LHM_COMPLEX);

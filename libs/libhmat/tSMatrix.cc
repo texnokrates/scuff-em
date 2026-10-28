@@ -25,6 +25,7 @@
 
 #include <libhrutil.h>
 #include "libhmat.h"
+#include "ScuffCLI.h"
 
 /***************************************************************/
 /***************************************************************/
@@ -87,15 +88,15 @@ int main(int argc, char *argv[])
   int NC=12;
   double pnnz=0.2; // probability of nonzero entry
   bool Complex=false;
-  /* name, type, #args, max_instances, storage, count, description*/
-  OptStruct OSArray[]=
-   { {"NR",       PA_INT,     1, 1, (void *)&NR,       0,  "NR"},
-     {"NC",       PA_INT,     1, 1, (void *)&NC,       0,  "NC"},
-     {"pnnz",     PA_DOUBLE,  1, 1, (void *)&pnnz,     0,  "pnnz"},
-     {"Complex",  PA_BOOL,    0, 1, (void *)&Complex,  0,  "Complex"},
-     {0,0,0,0,0,0,0}
-   };
-  ProcessOptions(argc, argv, OSArray);
+  CLI::App App{"test the libhmat sparse matrix assembly"};
+  App.option_defaults()->ignore_case();
+  App.add_option("--NR", NR, "NR")->take_last();
+  App.add_option("--NC", NC, "NC")->take_last();
+  App.add_option("--pnnz", pnnz, "pnnz")->take_last();
+  App.add_flag("--Complex", Complex, "Complex");
+
+  if (auto Status=scuff::cli::Parse(App,argc,argv))
+   return *Status;
 
   SMatrix *S1=new SMatrix(NR, NC, Complex ? LHM_COMPLEX : LHM_REAL);
   S1->BeginAssembly( (int)(ceil(pnnz*NR*NC)) );

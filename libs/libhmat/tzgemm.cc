@@ -6,6 +6,7 @@
 
 #include "libhrutil.h"
 #include "libhmat.h"
+#include "ScuffCLI.h"
 #include "lapack.h"
 
 /***************************************************************/
@@ -19,13 +20,14 @@ int main(int argc, char *argv[])
   int N1=10;
   int N2=20;
   int N3=30;
-  ArgStruct ASArray[]=
-   { {"N1",         PA_INT,  (void *)&N1,        "10", "dimension 1"},
-     {"N2",         PA_INT,  (void *)&N2,        "20", "dimension 2"},
-     {"N3",         PA_INT,  (void *)&N3,        "30", "dimension 3"},
-     {0,0,0,0,0}
-   };
-  ProcessArguments(argc, argv, ASArray);
+  CLI::App App{"test zgemm"};
+  App.option_defaults()->ignore_case();
+  App.add_option("--N1", N1, "dimension 1")->take_last();
+  App.add_option("--N2", N2, "dimension 2")->take_last();
+  App.add_option("--N3", N3, "dimension 3")->take_last();
+
+  if (auto Status=scuff::cli::Parse(App,argc,argv))
+   return *Status;
 
   HMatrix *A=new HMatrix(N2,N1,LHM_COMPLEX);
   HMatrix *B=new HMatrix(N2,N3,LHM_COMPLEX);

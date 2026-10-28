@@ -146,28 +146,42 @@ int main(int argc, char *argv[])
   bool RegionVolumes=false;
   double WhichRegion[3]={HUGE_VAL, HUGE_VAL, HUGE_VAL};
   char *EPFile=0;
-  /* name, type, # args, max # instances, storage, count, description*/
-  OptStruct OSArray[]=
-   { {"geometry",           PA_STRING, 1, 1, (void *)&GeoFile,        0, "geometry file"},
-     {"mesh",               PA_STRING, 1, 1, (void *)&MeshFile,       0, "mesh file"},
-     {"meshfile",           PA_STRING, 1, 1, (void *)&MeshFile,       0, "mesh file"},
-     {"PhysicalRegion",     PA_INT,    1, 1, (void *)&PhysicalRegion, 0, "index of surface within mesh file"},
-     {"TransFile",          PA_STRING, 1, 1, (void *)&TransFile,      0, "list of transformations"},
-     {"EPFile",             PA_STRING, 1, 1, (void *)&EPFile,         0, "list of points"},
-     {"WriteGnuplotFiles",  PA_BOOL,   0, 1, (void *)&WriteGPFiles,   0, "write gnuplot visualization files"},
-     {"WriteGMSHFiles",     PA_BOOL,   0, 1, (void *)&WritePPFiles,   0, "write GMSH visualization files "},
-     {"WriteGMSHLabels",    PA_BOOL,   0, 1, (void *)&WriteLabels,    0, "write GMSH labels"},
-     {"Neighbors",          PA_INT,    1, 1, (void *)&Neighbors,      0, "number of neighboring cells to plot"},
-     {"RegionVolumes",      PA_BOOL,   0, 1, (void *)&RegionVolumes,  0, "compute volumes of closed regions"},
-     {"WhichRegion",        PA_DOUBLE, 3, 1, (void *)&WhichRegion,    0, "identify region in which the given point lives"},
-     {0,0,0,0,0,0,0}
-   };
-  ProcessOptions(argc, argv, OSArray);
+  CLI::App App{"run SCUFF regression tests"};
+  App.option_defaults()->ignore_case();
+  App.add_option("--geometry", GeoFile, "geometry file")->take_last();
+  App.add_option("--mesh", MeshFile, "mesh file")->take_last();
+  App.add_option("--meshfile", MeshFile, "mesh file")->take_last();
+  App.add_option("--PhysicalRegion", PhysicalRegion, "index of surface within mesh file")->take_last();
+  App.add_option("--TransFile", TransFile, "list of transformations")->take_last();
+  App.add_option("--EPFile", EPFile, "list of points")->take_last();
+  App.add_flag("--WriteGnuplotFiles", WriteGPFiles, "write gnuplot visualization files");
+  App.add_flag("--WriteGMSHFiles", WritePPFiles, "write GNUPLOT visualization files ");
+  App.add_flag("--WriteGMSHLabels", WriteLabels, "write GNUPLOT labels");
+  App.add_option("--Neighbors", Neighbors, "number of neighboring cells to plot")->take_last();
+  App.add_flag("--RegionVolumes", RegionVolumes, "compute volumes of closed regions");
+  App.add_option("--WhichRegion", WhichRegion, "identify region in which the given point lives")->type_name("COMPLEX")->expected(3)->take_last();
+
+  if (auto Status=scuff::cli::Parse(App,argc,argv))
+   return *Status;
+  if (GeoFile.empty() && MeshFile.empty())
+   { CLI::ValidationError Error("RunSCUFFTests","either --geometry or --meshfile option must be specified");
+     App.exit(Error);
+     return 1;
+   }
 
   /***************************************************************/
   /***************************************************************/
   /***************************************************************/
-  if (GeoFile==0 && MeshFile==0)
+  if (GeoFile.empty() && MeshFile.empty())
+   OSUsage(argv[0],OSArray,"either --geometry or --meshfile option must be specified");
+  if (GeoFile!=0 && MeshFile!=0)
+   ErrExit("--geometry and --meshfile options are mutually exclusive");
+  if (PhysicalRegion!=-1 && MeshFile==0)
+   ErrExit("--PhysicalRegion option may only be used with --meshfile");
+  if (TransFile && GeoFile==0)
+   ErrExit("--transfile option may only be used with --geometry");
+  if (EPFile)
+   WritePPFiles=1;  if (GeoFile==0 && MeshFile==0)
    OSUsage(argv[0],OSArray,"either --geometry or --meshfile option must be specified");
   if (GeoFile!=0 && MeshFile!=0)
    ErrExit("--geometry and --meshfile options are mutually exclusive");

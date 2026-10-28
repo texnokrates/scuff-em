@@ -328,10 +328,12 @@ buildable; recommend confirming deletions before doing them):
 
 **G3 — ownership modernization, leaf-first**
 1. Applications piggyback RAII on their Stage B CLI11 migration (one app =
-   one migration commit): `scuff-scatter` next per the existing plan —
-   typed CLI11 + main-scope `unique_ptr` for G/M/RHS/KN/IFList +
-   `vector<unique_ptr<HMatrix>>` with mate observers.  tmatrix gets the
-   same finishing touch as the canonical example.
+   one migration commit): `scuff-scatter`, `scuff-analyze`, `scuff-ldos`,
+   `scuff-transmission`, `scuff-static`, `scuff-cas3D`, `scuff-caspol`,
+   `scuff-neq` (+`scuff-integrate`), `scuff-spectrum`, `scuff-plotEpsMu`,
+   `scuff-rf` are all migrated (12 of 12 built applications).  Typed CLI11
+   declarations + main-scope `unique_ptr` for geometry/matrix/vector objects.
+   tmatrix gets the same finishing touch as the canonical example.
 2. Mechanical sweeps in libscuff: Fields/moments + PFT function-static
    buffers → `unique_ptr`/`vector`; factory returns annotated
    `owner<T*>`/converted to `unique_ptr` per subsystem.
@@ -347,6 +349,15 @@ buildable; recommend confirming deletions before doing them):
 6. libscuff geometry core last: RWGSurface/RWGGeometry rule-of-five,
    containerization, destructor-leak cleanup (most of the 74 MB backlog),
    after `owner`/`unique_ptr` conventions exist everywhere else.
+
+**G3 test programs (dev programs) — all migrated:**
+`tEig`, `tLUSolve`, `tQR`, `tSMatrix`, `tInvert`, `tMultiply`, `tzgemm`,
+`tlibhmat2`, `tInterp1D`, `tInterp2D`, `tInterp3D`, `tInterpND`, `tGTwiddle`,
+`tFullWaveSubstrate`, `tInterpolation`, `tInterpolationError`, `tMOISGFs`,
+`t1BFMOIFields`, `tEquivalentPairs`, `tBeyn411`, `tPolModel`, `GetTMatrix`,
+`tSphericalMoments`, `CheckSCUFFData`, `RunSCUFFTests`, `tProcessOptions`,
+`tProcessArguments` — all converted from legacy `ProcessOptions`/`ProcessArguments`
+to typed CLI11 with `gsl::owner`-aware RAII where applicable.
 
 **G4 — ratchet:** clang-tidy subset (§3) in CI non-blocking; flip to
 blocking-for-changed-files once quiet; warning-budget enforcement from the

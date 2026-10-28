@@ -10,28 +10,29 @@
 #include <stdlib.h>
 #include <math.h>
 
-#include "libhrutil.h"
+#include <libhrutil.h>
 #include "libhmat.h"
+#include "ScuffCLI.h"
 
 int main(int argc, char *argv[])
 {  
   /*--------------------------------------------------------------*/
   /*--------------------------------------------------------------*/
   /*--------------------------------------------------------------*/
-  char *MatrixFile=0;
-  /* name        type    #args  max_instances  storage    count  description*/
-  OptStruct OSArray[]=
-   { {"MatrixFile", PA_STRING,  1, 1, (void *)&MatrixFile,  0,  "matrix text file"},
-     {0,0,0,0,0,0,0}
-   };
-  ProcessOptions(argc, argv, OSArray);
-  if (MatrixFile==0)
-   OSUsage(argv[0],OSArray,"--MatrixFile option is mandatory");
+  std::string MatrixFile;
+  CLI::App App{"test the libhmat QR routine"};
+  App.option_defaults()->ignore_case();
+  App.add_option("--MatrixFile", MatrixFile, "matrix text file")
+     ->required()
+     ->take_last();
+
+  if (auto Status=scuff::cli::Parse(App,argc,argv))
+   return *Status;
 
   /*--------------------------------------------------------------*/
   /*--------------------------------------------------------------*/
   /*--------------------------------------------------------------*/
-  HMatrix *M = new HMatrix(MatrixFile);
+  HMatrix *M = new HMatrix(MatrixFile.c_str());
   if (M->ErrMsg)
    ErrExit(M->ErrMsg);
   

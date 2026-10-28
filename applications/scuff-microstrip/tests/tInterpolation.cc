@@ -31,6 +31,7 @@
 #endif
 
 #include "libhrutil.h"
+#include "ScuffCLI.h"
 #include "libSGJC.h"
 #include "libSubstrate.h"
 #include "libscuff.h"
@@ -84,23 +85,29 @@ int main(int argc, char *argv[])
   double Deltaz=0.1;
 //
   char *EPFile = 0;
-  /* name, type, #args, max_instances, storage, count, description*/
-  OptStruct OSArray[]=
-   { {"Geometry",      PA_STRING,  1, 1, (void *)&GeoFile,       0, ".scuffgeo file"},
-     {"SubstrateFile", PA_STRING,  1, 1, (void *)&SubstrateFile, 0, ".substrate file"},
-     {"Eps",           PA_CDOUBLE, 1, 1, (void *)&Eps,        0, ""},
-     {"h",             PA_DOUBLE,  1, 1, (void *)&h,          0, ""},
-//
-     {"Omega",         PA_CDOUBLE, 1, 1, (void *)&Omega,         0, "angular frequency"},
-//
-     {"EPFile",        PA_STRING,  1, 1, (void *)&EPFile,     0, ""},
-//
-     {"DeltaRho",      PA_DOUBLE,  1, 1, (void *)&DeltaRho,   0, ""},
-     {"Deltaz",        PA_DOUBLE,  1, 1, (void *)&Deltaz,     0, ""},
-//
-     {0,0,0,0,0,0,0}
-   };
-  ProcessOptions(argc, argv, OSArray);
+  CLI::App App{"microstrip interpolation test"};
+  App.option_defaults()->ignore_case();
+  App.add_option("--Geometry", GeoFile, ".scuffgeo file")->take_last();
+  App.add_option("--SubstrateFile", SubstrateFile, ".substrate file")->take_last();
+  scuff::cli::AddComplexOption(App, "--Eps", Eps, "");
+  App.add_option("--h", h, "")->take_last();
+  scuff::cli::AddComplexOption(App, "--Omega", Omega, "angular frequency");
+  App.add_option("--EPFile", EPFile, "")->take_last();
+  App.add_option("--DeltaRho", DeltaRho, "")->take_last();
+  App.add_option("--Deltaz", Deltaz, "")->take_last();
+
+  if (auto Status=scuff::cli::Parse(App,argc,argv))
+   return *Status;
+  if (GeoFile.empty())
+   { CLI::ValidationError Error("tInterpolation","--geometry option is mandatory");
+     App.exit(Error);
+     return 1;
+   }
+  if (EPFile.empty())
+   { CLI::ValidationError Error("tInterpolation","--epfile option is mandatory");
+     App.exit(Error);
+     return 1;
+   }
   if (GeoFile==0)
    OSUsage(argv[0], VERSION, OSArray,"--geometry option is mandatory");
   if (EPFile==0)

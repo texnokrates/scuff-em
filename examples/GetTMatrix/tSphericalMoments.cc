@@ -25,17 +25,23 @@ int main(int argc, char *argv[])
   int l=1, m=0;
   int Type=0;
   /* name        type    #args  max_instances  storage    count  description*/
-  OptStruct OSArray[]=
-   { {"geometry",  PA_STRING,  1, 1, (void *)&GeoFileName,  0,  ".scuffgeo file"},
-     {"l",         PA_INT,     1, 1, (void *)&l,            0,  "l value"},
-     {"m",         PA_INT,     1, 1, (void *)&m,            0,  "m value"},
-     {"electric",  PA_BOOL,    0, 1, (void *)&Type,         0,  "use electric monopole (default is magnetic)"},
-     {"lMax",      PA_INT,     1, 1, (void *)&lMax,         0,  "maximum l-value"},
-     {"Omega",     PA_CDOUBLE, 1, 1, (void *)&Omega,        0,  "angular frequency"},
-     {"Cache",     PA_STRING,  1, 1, (void *)&Cache,        0,  "scuff cache file"},
-     {0,0,0,0,0,0,0}
-   };
-  ProcessOptions(argc, argv, OSArray);
+  CLI::App App{"compute spherical moments"};
+  App.option_defaults()->ignore_case();
+  App.add_option("--geometry", GeoFileName, ".scuffgeo file")->take_last();
+  scuff::cli::AddComplexOption(App, "--Omega", Omega, "angular frequency");
+  App.add_option("--l", l, "l value")->take_last();
+  App.add_option("--m", m, "m value")->take_last();
+  App.add_flag("--electric", Type, "use electric monopole (default is magnetic)");
+  App.add_option("--lMax", lMax, "maximum l-value")->take_last();
+  App.add_option("--Cache", Cache, "scuff cache file")->take_last();
+
+  if (auto Status=scuff::cli::Parse(App,argc,argv))
+   return *Status;
+  if (GeoFileName.empty())
+   { CLI::ValidationError Error("tSphericalMoments","--geometry option is mandatory");
+     App.exit(Error);
+     return 1;
+   }
   if (GeoFileName==0)
    OSUsage(argv[0],OSArray,"--geometry option is mandatory");
 

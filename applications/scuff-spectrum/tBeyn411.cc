@@ -33,9 +33,12 @@
 #include <sys/types.h>
 
 #include <libhrutil.h>
+#include "ScuffCLI.h"
 #include "libBeyn.h"
 
 #define II cdouble(0.0,1.0)
+#define MAXEPF 10
+#define MAXFVM 10
 
 //using namespace scuff;
 
@@ -90,28 +93,62 @@ int main(int argc, char *argv[])
   /***************************************************************/
   /* process command-line arguments ******************************/
   /***************************************************************/
-  cdouble z0  =  cdouble(150.0, 2.0);
+  std::string GeoFileName;
+  cdouble Omega0;
+  cdouble z0 = cdouble(150.0, 2.0);
   double Rx   = 148.0;
   double Ry   = 148.0;
   int L       = 10;
   int N       = 50;
   int Dim     = 400;
-  /* name        type    #args  max_instances  storage    count  description*/
-  OptStruct OSArray[]=
-   { {"z0",                 PA_CDOUBLE, 1, 1, (void *)&z0,   0,   "center of elliptical contour ({150,0})"},
-//
-     {"Rx",                 PA_DOUBLE,  1, 1, (void *)&Rx,   0,   "horizontal radius of elliptical contour (148)"},
-//
-     {"Ry",                 PA_DOUBLE,  1, 1, (void *)&Ry,   0,   "vertical radius of elliptical contour (148)"},
-//
-     {"N",                  PA_INT,     1, 1, (void *)&N,    0,   "number of quadrature points (50)"},
-//
-     {"L",                  PA_INT,     1, 1, (void *)&L,    0,   "number of EVs expected in contour (10)"},
-//
-     {"Dim",                PA_INT,     1, 1, (void *)&Dim,  0,   "dimension of problem (400)"},
-     {0,0,0,0,0,0,0}
-   };
-  ProcessOptions(argc, argv, OSArray);
+  double kx   = 0.0;
+  double ky   = 0.0;
+  std::string ContourFile;
+  bool PlotContours=false;
+  bool PlotSurfaceCurrents=false;
+  bool PlotSurfaceFields=false;
+  std::string SphericalMomentFile;
+  int LMax=3;
+  std::string CartesianMomentFile;
+  std::vector<std::string> EPFiles;
+  std::vector<double> FVScreens;
+  int nFVScreens=0;
+  std::vector<std::string> FVMeshes;
+  std::vector<std::string> FVMeshTransFiles;
+  std::string FileBase;
+
+CLI::App App{"compute spectrum via Beyn method"};
+  App.option_defaults()->ignore_case();
+  App.add_option("--geometry", GeoFileName, ".scuffgeo file")->required()->take_last();
+  scuff::cli::AddComplexOption(App, "--Omega", Omega0, "center of contour");
+  App.add_option("--Rx", Rx, "horizonal radius")->take_last();
+  App.add_option("--Ry", Ry, "vertical radius")->take_last();
+  App.add_option("--N", N, "number of quadrature points")->take_last();
+  App.add_option("--L", L, "number of EVs expected in contour ")->take_last();
+  App.add_option("--kx", kx, "x component of bloch vector")->take_last();
+  App.add_option("--ky", ky, "y component of bloch vector")->take_last();
+  App.add_option("--ContourFile", ContourFile, "list of contours")->take_last();
+  App.add_flag("--PlotContours", PlotContours, "plot contours for visualization");
+  App.add_flag("--PlotSurfaceCurrents", PlotSurfaceCurrents, "generate visualization files for eigenmode currents");
+  App.add_flag("--PlotSurfaceFields", PlotSurfaceFields, "generate visualization files for eigenmode surface fields");
+  App.add_option("--SphericalMomentFile", SphericalMomentFile, "name of output file for spherical multipole moments")->take_last();
+  App.add_option("--LMax", LMax, "index of highest spherical multipole moment to retain")->take_last();
+  App.add_option("--CartesianMomentFile", CartesianMomentFile, "name of output file for cartesian multipole moments")->take_last();
+  App.add_option("--EPFile", EPFiles, "list of evaluation points")->expected(1, MAXEPF);
+  App.add_option("--FVScreen", FVScreens, "field visualization screen")->type_name("COMPLEX")->expected(11, MAXFVM);
+  App.add_option("--FVMesh", FVMeshes, "field visualization mesh")->expected(1, MAXFVM);
+  App.add_option("--FVMeshTransFile", FVMeshTransFiles, "list of geometrical transformations applied to FVMesh")->expected(1, MAXFVM);
+  App.add_option("--FileBase", FileBase, "base name for output files")->take_last();
+
+  if (auto Status=scuff::cli::Parse(App,argc,argv))
+   return *Status;
+  if (GeoFileName.empty())
+   { CLI::ValidationError Error("tBeyn411","--geometry option is mandatory");
+     App.exit(Error);
+     return 1;
+   }
+  int nEPFiles  = (int)EPFiles.size();
+  int nFVMeshes = (int)FVMeshes.size();
   SetDefaultCD2SFormat("{%+.12e,%+.12e}");
 
   /***************************************************************/
@@ -128,7 +165,7 @@ int main(int argc, char *argv[])
   /***************************************************************/
   /* compute eigenvalues by Beyn method                          */
   /***************************************************************/
-  int K=BeynSolve(Solver, BeynFunc, (void *)BFD, z0, Rx, Ry, N);
+  int K=BeynSolve(Solver, BeynFunc, (void *)BFD, Omega0, Rx, Ry, N);
 
   printf("Found %i eigenvalues: \n",K);
   for(int k=0; k<K; k++)
