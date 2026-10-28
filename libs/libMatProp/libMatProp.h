@@ -59,7 +59,13 @@ class MatProp
    MatProp(int Type);
    MatProp(const char *MaterialName);
    MatProp(const char *MaterialName, const char *MatPropFileName);
-   MatProp(MatProp *MP);
+
+   /* deep copy: interpolators and cmatheval expressions are cloned, so
+      the copy owns its state and the source is unaffected.  Copy
+      assignment is deleted -- MatProp objects are always handled
+      through pointers in this library (C.21/C.84). */
+   MatProp(const MatProp &MP);
+   MatProp &operator=(const MatProp &) = delete;
 
   /* destructor */
    ~MatProp();

@@ -63,7 +63,7 @@ static int MPDBLength=0;
 void AddMPToMatPropDataBase(MatProp *MP)
 { 
   MPDB=(MatProp **)realloc(MPDB, (MPDBLength+1)*sizeof(MatProp *));
-  MPDB[MPDBLength] = new MatProp(MP);
+  MPDB[MPDBLength] = new MatProp(*MP);
   MPDBLength++;
 }
 
@@ -111,14 +111,16 @@ MatProp::MatProp(const char *MaterialName)
 MatProp::MatProp(const char *MaterialName, const char *MatPropFileName)
  { InitMatProp(MaterialName, MatPropFileName); }
 
-// copy constructor
-MatProp::MatProp(MatProp *MP)
- { 
-   Type   = MP->Type;
+// copy constructor: deep-copies interpolators and cmatheval expressions
+// so the copy owns its state (used by AddMPToMatPropDataBase).
+MatProp::MatProp(const MatProp &MP)
+ {
+   Type   = MP.Type;
    Zeroed = 0;
-   Name   = strdup(MP->Name);
-   Eps    = MP->Eps;
-   Mu     = MP->Mu;
+   Name   = strdup(MP.Name);
+   Eps    = MP.Eps;
+   Mu     = MP.Mu;
+   ErrMsg = 0;
 
    /***************************************************************/
    /* 20140525 new handling of copy constructor for interpolated  */
@@ -126,40 +128,40 @@ MatProp::MatProp(MatProp *MP)
    /***************************************************************/
 #if 0
    InterpReal = InterpImag = 0;
-   if (MP->InterpReal || MP->InterpImag)
+   if (MP.InterpReal || MP.InterpImag)
     ErrExit("%s:%i: MatProp copy constructor not implemented for interpolated materials",__FILE__,__LINE__);
 #endif
-   InterpReal = MP->InterpReal ? new Interp1D(MP->InterpReal) : 0;
-   InterpImag = MP->InterpImag ? new Interp1D(MP->InterpImag) : 0;
+   InterpReal = MP.InterpReal ? new Interp1D(MP.InterpReal) : 0;
+   InterpImag = MP.InterpImag ? new Interp1D(MP.InterpImag) : 0;
    OwnsInterpolators = true;
 
    EpsExpression=MuExpression = 0;
-   if (MP->EpsExpression)
-    { 
-      EpsExpression=cevaluator_create(cevaluator_get_string(MP->EpsExpression));
+   if (MP.EpsExpression)
+    {
+      EpsExpression=cevaluator_create(cevaluator_get_string(MP.EpsExpression));
       cevaluator_set_var_index(EpsExpression, "w", 0); // w is thread-safe
 
       char **Vars;
       int NumVars;
-      cevaluator_get_variables(MP->EpsExpression, &Vars, &NumVars);
+      cevaluator_get_variables(MP.EpsExpression, &Vars, &NumVars);
       for(int nv=0; nv<NumVars; nv++)
-       cevaluator_set_var(EpsExpression, Vars[nv], 
-                          cevaluator_get_var(MP->EpsExpression, Vars[nv]) 
+       cevaluator_set_var(EpsExpression, Vars[nv],
+                          cevaluator_get_var(MP.EpsExpression, Vars[nv])
                           );
     };
 
-   if (MP->MuExpression)
-    { MuExpression=cevaluator_create(cevaluator_get_string(MP->MuExpression));
+   if (MP.MuExpression)
+    { MuExpression=cevaluator_create(cevaluator_get_string(MP.MuExpression));
       cevaluator_set_var_index(MuExpression, "w", 0); // w is thread-safe
 
       char **Vars;
       int NumVars;
-      cevaluator_get_variables(MP->MuExpression, &Vars, &NumVars);
+      cevaluator_get_variables(MP.MuExpression, &Vars, &NumVars);
       for(int nv=0; nv<NumVars; nv++)
-       cevaluator_set_var(MuExpression, Vars[nv], 
-                          cevaluator_get_var(MP->MuExpression, Vars[nv]) 
+       cevaluator_set_var(MuExpression, Vars[nv],
+                          cevaluator_get_var(MP.MuExpression, Vars[nv])
                          );
-      
+
     };
    OwnsExpressions= true;
 
