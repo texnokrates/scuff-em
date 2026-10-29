@@ -164,7 +164,6 @@ scuff_add_module(scuff_core
   libscuff/ParseMeshFiles.cc
   libscuff/RWGGeometry.cc
   libscuff/RWGSurface.cc
-  libscuff/rwlock.cc
   libscuff/SurfaceSurfaceInteractions.cc
   libscuff/TaylorDuffy.cc
   libscuff/Visualize.cc

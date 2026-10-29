@@ -29,8 +29,11 @@
 #define LIBSCUFFINTERNALS_H
 
 #include "libscuff.h"
-#include "rwlock.h"
 #include "GBarAccelerator.h"
+
+#include <mutex>
+#include <shared_mutex>
+#include <unordered_map>
 
 namespace scuff {
 
@@ -320,6 +323,40 @@ void GetQDFIPPIData(double **Va, double *Qa, double **Vb, double *Qb,
 /* i am encapsulating this as its own separate class to allow   */
 /* easy experimentation with various implementations.           */
 /*--------------------------------------------------------------*/
+long JenkinsHash(const char *key, size_t len); // defined in FIBBICache.cc
+
+/*--------------------------------------------------------------*/
+/* FIPPICache key: 15 floats encoding the relative geometry of  */
+/* a canonically-ordered pair of panels (see FIPPICache.cc).    */
+/*--------------------------------------------------------------*/
+struct FIPPIKeyStruct
+ { float Key[15];
+ };
+
+struct FIPPIKeyHash
+ {
+   long operator() (const FIPPIKeyStruct &K) const
+    { return JenkinsHash( (const char *)K.Key, 15*sizeof(float) );
+    }
+ };
+
+struct FIPPIKeyCmp
+ {
+   bool operator()(const FIPPIKeyStruct &K1, const FIPPIKeyStruct &K2) const
+    { return memcmp(K1.Key, K2.Key, 15*sizeof(float))==0;
+    }
+ };
+
+typedef std::pair<FIPPIKeyStruct, QIFIPPIData *> FIPPIKeyValuePair;
+
+typedef std::unordered_map< FIPPIKeyStruct,
+                            QIFIPPIData *,
+                            FIPPIKeyHash,
+                            FIPPIKeyCmp> FIPPIKeyValueMap;
+
+/*--------------------------------------------------------------*/
+/*--------------------------------------------------------------*/
+/*--------------------------------------------------------------*/
 class FIPPICache
  { 
   public:
@@ -339,14 +376,11 @@ class FIPPICache
 
   private:
 
-    // any implementation of this class will have some kind of
-    // storage table, but to allow maximal flexibility in implementation
-    // i am just going to store an opaque pointer to this table
-    // in the class body, with all the details left up to the 
-    // implementation 
-    void *opTable;
+    // key -> data table; values are owned as described in the
+    // PreloadedRecords comment below
+    FIPPIKeyValueMap Table;
 
-    rwlock FCLock;
+    std::shared_mutex FCLock;
 
     char *PreloadFileName;
     unsigned int RecordsPreloaded;

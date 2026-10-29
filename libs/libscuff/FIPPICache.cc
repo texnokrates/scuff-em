@@ -32,12 +32,6 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <unistd.h>
-#ifdef HAVE_CXX11
-#include <unordered_map>
-#elif defined(HAVE_TR1)
-#include <tr1/unordered_map>
-#endif
-
 #include <libhrutil.h>
 
 #include "libscuff.h"
@@ -60,59 +54,23 @@ long HashFunction(const float *Key)
 /*--------------------------------------------------------------*/
 /*--------------------------------------------------------------*/
 /*--------------------------------------------------------------*/
-typedef struct
- { float Key[KEYLEN];
- } KeyStruct;
-
 // on-disk record for the FIPPI cache file format: differs from the
-// KeyValuePair structure above in that it contains the actual contents
-// of a QIFIPPIData structure, whereas KeyValuePair contains just a
+// FIPPIKeyValuePair structure above in that it contains the actual contents
+// of a QIFIPPIData structure, whereas FIPPIKeyValuePair contains just a
 // pointer to such a structure.  (Defined here rather than with the
 // Store/PreLoad routines because the destructor needs FIPPICF_RECSIZE
 // to reason about the extent of the preloaded-records buffer.)
 typedef struct FIPPICF_Record
- { KeyStruct K;
+ { FIPPIKeyStruct K;
    QIFIPPIData QIFDBuffer;
  } FIPPICF_Record;
 #define FIPPICF_RECSIZE sizeof(FIPPICF_Record)
-
-typedef std::pair<KeyStruct, QIFIPPIData *> KeyValuePair;
-
-struct FIPPIKeyHash
- {
-   long operator() (const KeyStruct &K) const { return HashFunction(K.Key); }
- };
-
-typedef struct 
- { 
-   bool operator()(const KeyStruct &K1, const KeyStruct &K2) const
-    { 
-      if ( memcmp( (const void *)K1.Key, (const void *)K2.Key, KEYSIZE) )
-       return false;
-      return true;
-    };
-
- } FIPPIKeyCmp;
-
-#ifdef HAVE_CXX11
-typedef std::unordered_map< KeyStruct,
-                            QIFIPPIData *,
-                            FIPPIKeyHash,
-                            FIPPIKeyCmp> KeyValueMap;
-#elif defined(HAVE_TR1)
-typedef std::tr1::unordered_map< KeyStruct,
-                                 QIFIPPIData *, 
-                                 FIPPIKeyHash, 
-                                 FIPPIKeyCmp> KeyValueMap;
-#endif
 
 /*--------------------------------------------------------------*/
 /*- class constructor ------------------------------------------*/
 /*--------------------------------------------------------------*/
 FIPPICache::FIPPICache()
 {
-  KeyValueMap *KVM=new KeyValueMap;
-  opTable = (void *)KVM;
   PreloadFileName=0;
   RecordsPreloaded=0;
   PreloadedRecords=0;
@@ -132,13 +90,11 @@ FIPPICache::~FIPPICache()
      PreloadedRecords, which is freed in one piece. */
   const char *PreloadBegin=(const char *)PreloadedRecords;
   const char *PreloadEnd=PreloadBegin + NumPreloadedRecords*FIPPICF_RECSIZE;
-  KeyValueMap *KVM=(KeyValueMap *)opTable;
-  for(KeyValueMap::iterator p=KVM->begin(); p!=KVM->end(); p++)
+  for(FIPPIKeyValueMap::iterator p=Table.begin(); p!=Table.end(); p++)
    { const char *Value=(const char *)(p->second);
      if ( !(Value >= PreloadBegin && Value < PreloadEnd) )
       free(p->second);
    };
-  delete KVM;
   free(PreloadedRecords);
 }
 
@@ -173,7 +129,7 @@ QIFIPPIData *FIPPICache::GetQIFIPPIData(double **OVa, double **OVb, int ncv)
   /* to check equality of vertex coordinates up to one part in   */
   /* 10^8 anyway.                                                */
   /***************************************************************/
-  KeyStruct K;
+  FIPPIKeyStruct K;
   VecSubFloat(OVa[1], OVa[0], K.Key+0  );
   VecSubFloat(OVa[2], OVa[0], K.Key+3  );
   VecSubFloat(OVb[0], OVa[0], K.Key+6  );
@@ -183,17 +139,15 @@ QIFIPPIData *FIPPICache::GetQIFIPPIData(double **OVa, double **OVb, int ncv)
   /***************************************************************/
   /* look for this key in the cache ******************************/
   /***************************************************************/
-  KeyValueMap *KVM=(KeyValueMap *)opTable;
+  {
+    std::shared_lock<std::shared_mutex> Guard(FCLock);
+    FIPPIKeyValueMap::const_iterator p=Table.find(K);
+    if ( p != Table.end() )
+     { Hits++;
+       return p->second;
+     }
+  }
 
-  FCLock.read_lock();
-  KeyValueMap::iterator p=KVM->find(K);
-  FCLock.read_unlock();
-
-  if ( p != (KVM->end()) )
-   { Hits++;
-     return (QIFIPPIData *)(p->second);
-   }
-  
   /***************************************************************/
   /* if it was not found, allocate and compute a new QIFIPPIData */
   /* structure, then add this structure to the cache             */
@@ -202,9 +156,10 @@ QIFIPPIData *FIPPICache::GetQIFIPPIData(double **OVa, double **OVb, int ncv)
   QIFIPPIData *QIFD=(QIFIPPIData *)mallocEC(sizeof *QIFD);
   ComputeQIFIPPIData(OVa, OVb, ncv, QIFD);
 
-  FCLock.write_lock();
-  KVM->insert( KeyValuePair(K, QIFD) );
-  FCLock.write_unlock();
+  {
+    std::unique_lock<std::shared_mutex> Guard(FCLock);
+    Table.insert( FIPPIKeyValuePair(K, QIFD) );
+  }
 
   return QIFD;
 }
@@ -234,8 +189,6 @@ const char FIPPICF_Signature[]="FIPPICACHE";
 
 void FIPPICache::Store(const char *FileName)
 {
-  KeyValueMap *KVM=(KeyValueMap *)opTable;
-
   if (FileName==0) return;
 
   /*--------------------------------------------------------------*/
@@ -251,7 +204,7 @@ void FIPPICache::Store(const char *FileName)
   /*--------------------------------------------------------------*/
   if (     PreloadFileName 
        && !strcmp(PreloadFileName, FileName) 
-       && RecordsPreloaded==(KVM->size())
+       && RecordsPreloaded==(Table.size())
      )  
    { Log("FIPPI cache unchanged since reading from %s (skipping cache dump)",FileName);
      return;
@@ -260,9 +213,8 @@ void FIPPICache::Store(const char *FileName)
   /*--------------------------------------------------------------*/
   /*--------------------------------------------------------------*/
   /*--------------------------------------------------------------*/
-  FCLock.read_lock();
+  std::shared_lock<std::shared_mutex> Guard(FCLock);
 
-  KeyValueMap::iterator it;
   int NumRecords=0;
 
   /*--------------------------------------------------------------*/
@@ -271,7 +223,7 @@ void FIPPICache::Store(const char *FileName)
   FILE *f=fopen(FileName,"w");
   if (!f)
    { fprintf(stderr,"warning: could not open file %s (aborting cache dump)...",FileName);
-     goto done;
+     return;
    };
   Log("Writing FIPPI cache to file %s...",FileName);
 
@@ -283,10 +235,10 @@ void FIPPICache::Store(const char *FileName)
   /*---------------------------------------------------------------------*/
   /*- iterate through the table and write entries to the file one-by-one */
   /*---------------------------------------------------------------------*/
-  KeyStruct K;
+  FIPPIKeyStruct K;
   QIFIPPIData *QIFD;
   FIPPICF_Record MyRecord;
-  for ( it = KVM->begin(); it != KVM->end(); it++ ) 
+  for ( auto it = Table.begin(); it != Table.end(); it++ ) 
    { 
      K=it->first;
      QIFD=it->second;
@@ -302,17 +254,12 @@ void FIPPICache::Store(const char *FileName)
   /*---------------------------------------------------------------------*/
   fclose(f);
   Log(" ...wrote %i FIPPI records.",NumRecords);
-
- done:
-  FCLock.read_unlock();
 }
 
 void FIPPICache::PreLoad(const char *FileName)
 {
 
-  FCLock.write_lock();
-
-  KeyValueMap *KVM=(KeyValueMap *)opTable;
+  std::unique_lock<std::shared_mutex> Guard(FCLock);
 
   /*--------------------------------------------------------------*/
   /*- try to open the file ---------------------------------------*/
@@ -320,8 +267,8 @@ void FIPPICache::PreLoad(const char *FileName)
   FILE *f=fopen(FileName,"r");
   if (!f)
    { fprintf(stderr,"warning: could not open file %s (skipping cache preload)\n",FileName);
-     Log("Could not open FIPPI cache file %s...",FileName); 
-     goto done;
+     Log("Could not open FIPPI cache file %s...",FileName);
+     return;
    };
 
   /*--------------------------------------------------------------*/
@@ -382,7 +329,7 @@ void FIPPICache::PreLoad(const char *FileName)
    { fprintf(stderr,"warning: file %s: %s (skipping cache preload)\n",FileName,ErrMsg);
      Log("FIPPI cache file %s: %s (skipping cache preload)",FileName,ErrMsg);
      fclose(f);
-     goto done;
+     return;
    };
 
   /*--------------------------------------------------------------*/
@@ -396,10 +343,10 @@ void FIPPICache::PreLoad(const char *FileName)
      if ( fread(Records+nr, FIPPICF_RECSIZE,1,f) != 1 )
       { fprintf(stderr,"warning: file %s: read only %i of %i records",FileName,nr+1,NumRecords);
         fclose(f);
-	goto done;
+        return;
       };
 
-     KVM->insert( KeyValuePair(Records[nr].K, &(Records[nr].QIFDBuffer)) );
+     Table.insert( FIPPIKeyValuePair(Records[nr].K, &(Records[nr].QIFDBuffer)) );
    };
 
   /*--------------------------------------------------------------*/
@@ -416,9 +363,6 @@ void FIPPICache::PreLoad(const char *FileName)
    free(PreloadFileName);
   PreloadFileName=strdupEC(FileName);
   RecordsPreloaded=NumRecords;
-
- done:
-  FCLock.write_unlock();
 }
 
 /***************************************************************/

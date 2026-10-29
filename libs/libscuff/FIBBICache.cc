@@ -33,17 +33,9 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <unistd.h>
-#ifdef HAVE_CXX11
+#include <mutex>
 #include <unordered_map>
-#elif defined(HAVE_TR1)
-#include <tr1/unordered_map>
-#endif
-#ifdef USE_PTHREAD
-#include <pthread.h> // needed for rwlock
-#endif
-#ifdef USE_OPENMP
-#include <omp.h> // needed for rwlock
-#endif
+#include <shared_mutex>
 
 #include <libhrutil.h>
 #include "libscuff.h"
@@ -145,9 +137,9 @@ public:
 
    // data
    int Hits, Misses;
-   void *opTable;
+   KDMap Table;
 
-   pthread_rwlock_t lock;
+   std::shared_mutex Lock;
 
    char *LastFileName;
    unsigned int NumRecordsInFile;
@@ -159,11 +151,6 @@ public:
 /*--------------------------------------------------------------*/
 FIBBICache::FIBBICache(char *MeshFileName)
 {
-  KDMap *KDM=new KDMap;
-  opTable = (void *)KDM;
-
-  pthread_rwlock_init(&lock,0);
-
   Hits=Misses=0;
 
   /*--------------------------------------------------------------*/
@@ -198,14 +185,8 @@ FIBBICache::FIBBICache(char *MeshFileName)
 /*--------------------------------------------------------------*/
 FIBBICache::~FIBBICache()
 {
-  pthread_rwlock_destroy(&lock);
-
   if (LastFileName) free(LastFileName);
-
-  KDMap *KDM = (KDMap *)opTable;
-  delete KDM;
-
-} 
+}
 
 /***************************************************************/
 /* simple ordering scheme for pairs of RWG edges               */
@@ -286,13 +267,13 @@ void FIBBICache::GetFIBBIData(RWGSurface *SA, int neA,
   KeyStruct Key;
   GetFIBBICacheKey(SA, neA, SB, neB, Key.Key);
 
-  KDMap *KDM    = (KDMap *)opTable;
   bool Found;
-  pthread_rwlock_rdlock(&lock);
-  KDMap::iterator p=KDM->find(Key);
-  Found = (p != (KDM->end()) );
-  if (Found) memcpy(FIBBIs, p->second.Data, DATASIZE);
-  pthread_rwlock_unlock(&lock);
+  {
+    std::shared_lock<std::shared_mutex> Guard(Lock);
+    KDMap::const_iterator p=Table.find(Key);
+    Found = (p != Table.end());
+    if (Found) memcpy(FIBBIs, p->second.Data, DATASIZE);
+  }
 
   if ( Found )
    { Hits++;
@@ -307,9 +288,10 @@ void FIBBICache::GetFIBBIData(RWGSurface *SA, int neA,
   ComputeFIBBIData(SA, neA, SB, neB, FIBBIs);
   DataStruct DS;
   memcpy(DS.Data, FIBBIs, DATASIZE);
-  pthread_rwlock_wrlock(&lock);
-  KDM->insert( KDPair(Key,DS) );
-  pthread_rwlock_unlock(&lock);
+  {
+    std::unique_lock<std::shared_mutex> Guard(Lock);
+    Table.insert( KDPair(Key,DS) );
+  }
 }
 
 /***************************************************************/
@@ -356,12 +338,10 @@ void FIBBICache::Store(const char *MeshFileName)
   else
    snprintf(FileName,MAXSTR,"%s/%s.%s",s,GetFileBase(MFNCopy),SUFFIX);
 
-  KDMap *KDM = (KDMap *)opTable;
-
   /*--------------------------------------------------------------*/
   /*--------------------------------------------------------------*/
   /*--------------------------------------------------------------*/
-  unsigned int NumRecords = KDM->size();
+  unsigned int NumRecords = Table.size();
   if (    NumRecords==NumRecordsInFile
        && LastFileName 
        && !strcmp(FileName, LastFileName)
@@ -377,7 +357,6 @@ Log("I checked and: (%i,%i), (%s,%s)",NumRecords,NumRecordsInFile,FileName,(Last
   /*- i assume that Preload() and Store() won't be called from    */
   /*- multithreaded code sections.                                */
   /*--------------------------------------------------------------*/
-  //FCLock.read_lock();
 
   FILE *f=fopen(FileName,"w");
   if (!f)
@@ -395,8 +374,7 @@ Log("I checked and: (%i,%i), (%s,%s)",NumRecords,NumRecordsInFile,FileName,(Last
   /*- iterate through the table and write entries to the file one-by-one */
   /*---------------------------------------------------------------------*/
   NumRecordsInFile=0;
-  KDMap::iterator it;
-  for ( it = KDM->begin(); it != KDM->end(); it++ )
+  for ( auto it = Table.begin(); it != Table.end(); it++ )
    { 
      const float *Key   = it->first.Key;
      double *Data = it->second.Data;
@@ -412,7 +390,6 @@ Log("I checked and: (%i,%i), (%s,%s)",NumRecords,NumRecordsInFile,FileName,(Last
   fclose(f);
   Log("FC::S ...wrote %i/%i FIBBI records.",NumRecordsInFile,NumRecords);
 
-  //FCLock.read_unlock();
 }
 
 /***************************************************************/
@@ -429,7 +406,7 @@ int FIBBICache::PreLoad(const char *FileName)
      return 1;
    };
 
-  KDMap *KDM       = (KDMap *)opTable;
+
   int RecordSize   = KEYSIZE + DATASIZE;
   int NumRecords   = 0; 
   int RecordsRead  = 0;
@@ -492,7 +469,7 @@ int FIBBICache::PreLoad(const char *FileName)
 	return 1;
       };
   
-     KDM->insert( KDPair(Key,Data) );
+     Table.insert( KDPair(Key,Data) );
      RecordsRead++;
    };
 
@@ -528,9 +505,7 @@ int FIBBICache::Size(int *pHits, int *pMisses)
 { 
   if (pHits) *pHits=Hits;
   if (pMisses) *pMisses=Misses;
-  if (opTable==0) return -1;
-  KDMap *KDM = (KDMap *)opTable;
-  return KDM->size();
+  return Table.size();
 
 }
 
