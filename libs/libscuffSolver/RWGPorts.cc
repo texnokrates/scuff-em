@@ -268,7 +268,7 @@ RWGPortList *ReadGDSIIPorts(RWGGeometry *G, const char *GDSIIFileName, iVec Laye
 #ifndef HAVE_LIBGDSII
   (void) G; (void) GDSIIFileName; (void) Layers;
   ErrExit("SCUFF-EM must be compiled with libGDSII to process GDSII files");
-  return 0;
+  return nullptr;
 #else
 
   // Loop over text strings on the given GDSII layer (or all layers if Layer==-1).
@@ -346,7 +346,7 @@ RWGPortList *ParsePortFile(RWGGeometry *G, const char *PortFileName)
   /* try to open the file ****************************************/
   /***************************************************************/
   FILE *f=fopenPath(getenv("SCUFF_DATA_PATH"),PortFileName,"r");
-  if (f==0)
+  if (f==nullptr)
    ErrExit("could not open file %s",PortFileName);
   
   RWGPortList *PortList = new RWGPortList;
@@ -354,7 +354,7 @@ RWGPortList *ParsePortFile(RWGGeometry *G, const char *PortFileName)
   /***************************************************************/
   /* read through the file and parse lines one-at-a-time *********/
   /***************************************************************/
-  RWGPort *CurrentPort=0;
+  RWGPort *CurrentPort=nullptr;
   int CurrentPortIndex=0;
   char Line[1000];
   int LineNum=0;
@@ -374,7 +374,7 @@ RWGPortList *ParsePortFile(RWGGeometry *G, const char *PortFileName)
      /*--------------------------------------------------------------*/
      if ( !StrCaseCmp(Tokens[0],"PORT") )
       { 
-        if (CurrentPort!=0) ErrExit("%s:%i: syntax error (missing ENDPORT?)",PortFileName,LineNum);
+        if (CurrentPort!=nullptr) ErrExit("%s:%i: syntax error (missing ENDPORT?)",PortFileName,LineNum);
         CurrentPort = new RWGPort;
         CurrentPort->Perimeter[_PLUS]=CurrentPort->Perimeter[_MINUS]=0.0;
       }
@@ -382,7 +382,7 @@ RWGPortList *ParsePortFile(RWGGeometry *G, const char *PortFileName)
      else if ( !StrCaseCmp(Tokens[0],"ENDPORT") )
       { 
         PortList->Ports.push_back(CurrentPort);
-        CurrentPort=0;
+        CurrentPort=nullptr;
         CurrentPortIndex++;
       }
      /*--------------------------------------------------------------*/
@@ -487,8 +487,8 @@ void scuffSolver::AssemblePortBFInteractionMatrix(cdouble Omega)
   Log("Computing port<-->BF interaction matrix");
 
   int NBF = G->TotalBFs;
-  if (PBFIMatrix==0) PBFIMatrix = new HMatrix(NBF,      NumPorts, LHM_COMPLEX);
-  if (PPIMatrix==0)  PPIMatrix  = new HMatrix(NumPorts, NumPorts, LHM_COMPLEX);
+  if (PBFIMatrix==nullptr) PBFIMatrix = new HMatrix(NBF,      NumPorts, LHM_COMPLEX);
+  if (PPIMatrix==nullptr)  PPIMatrix  = new HMatrix(NumPorts, NumPorts, LHM_COMPLEX);
 
   /***************************************************************/
   /***************************************************************/
@@ -515,7 +515,7 @@ void scuffSolver::AssemblePortBFInteractionMatrix(cdouble Omega)
   int NumThreads             = GetNumThreads();
   bool AllocateThreadBuffers = (NumThreads>1 && !CheckEnv("SCUFF_NO_THREAD_BUFFERS"));
 
-  HMatrix **PBFPIByThread = 0;
+  HMatrix **PBFPIByThread = nullptr;
   if (AllocateThreadBuffers)
    { PBFPIByThread = new HMatrix *[NumThreads];
      for(int nt=0; nt<NumThreads; nt++)
@@ -542,7 +542,7 @@ void scuffSolver::AssemblePortBFInteractionMatrix(cdouble Omega)
 
      int nsRight, neRight, nPortPrime=-1;
      if (nBFPE < NBF)
-      { if (!G->ResolveEdge(nBFPE, &nsRight, &neRight, 0))
+      { if (!G->ResolveEdge(nBFPE, &nsRight, &neRight, nullptr))
          ErrExit("%s:%i: internal error (BF %i)",__FILE__,__LINE__,nBFPE);
       }
      else
@@ -625,7 +625,7 @@ void scuffSolver::EvalSourceDistribution(const double X[3], cdouble iwSigmaK[4])
 
   // add port contribution, if any, by looking at the three edges of the
   // panel containing X and checking if any of them belong to a port
-  if (CachedPortCurrents==0) return;
+  if (CachedPortCurrents==nullptr) return;
   RWGSurface *S    = G->Surfaces[ns];
   RWGPanel *P      = S->Panels[np];
   int NumPortEdges = PortList->PortEdges.size();
@@ -635,7 +635,7 @@ void scuffSolver::EvalSourceDistribution(const double X[3], cdouble iwSigmaK[4])
      if (ne>=0) continue; // not a half-RWG edge, can't be a port edge
 
      int npe;
-     RWGPortEdge *PE=0;
+     RWGPortEdge *PE=nullptr;
      for(npe=0; npe<NumPortEdges; npe++)
       { PE = PortList->PortEdges[npe];
         if ( (PE->ns == ns) && (PE->ne == ne ) )

@@ -78,7 +78,7 @@ SC3Data *CreateSC3Data(RWGGeometry *G, const char *TransFile,
 
   SC3D->XiConverged = (bool *)mallocEC( (SC3D->NTNQ) * sizeof(bool) );
   if (LDim==0)
-   SC3D->BZConverged = 0;
+   SC3D->BZConverged = nullptr;
   else
    SC3D->BZConverged = (bool *)mallocEC( (SC3D->NTNQ) * sizeof(bool) );
 
@@ -95,7 +95,7 @@ SC3Data *CreateSC3Data(RWGGeometry *G, const char *TransFile,
   /*--------------------------------------------------------------*/
   int NS=G->NumSurfaces;
   SC3D->TBlocks  = (HMatrix **)mallocEC(NS*sizeof(HMatrix *));
-  SC3D->TAccelerators = PBC ? (void **)mallocEC(NS*sizeof(void *)) : 0;
+  SC3D->TAccelerators = PBC ? (void **)mallocEC(NS*sizeof(void *)) : nullptr;
   bool NeedDMDZ = (WhichQuantities & QUANTITY_ZFORCE);
   for(int ns=0; ns<G->NumSurfaces; ns++)
    { int nsp = G->Mate[ns];
@@ -157,9 +157,9 @@ SC3Data *CreateSC3Data(RWGGeometry *G, const char *TransFile,
       SC3D->MM1MInf = new HMatrix(N, N, RealComplex);
    }
   else
-   { SC3D->MInfLUDiagonal=0;
-     SC3D->ipiv=0;
-     SC3D->MM1MInf = 0;
+   { SC3D->MInfLUDiagonal=nullptr;
+     SC3D->ipiv=nullptr;
+     SC3D->MM1MInf = nullptr;
    };
 
   /*--------------------------------------------------------------*/
@@ -183,7 +183,7 @@ SC3Data *CreateSC3Data(RWGGeometry *G, const char *TransFile,
   /*--------------------------------------------------------------*/
   /*--------------------------------------------------------------*/
   /*--------------------------------------------------------------*/
-  SC3D->UAccelerators = 0;
+  SC3D->UAccelerators = nullptr;
   if (PBC)
    { int NT = SC3D->NumTransformations;
      SC3D->UAccelerators = (void ***)mallocEC(NT*sizeof(void *));
@@ -205,7 +205,7 @@ SC3Data *CreateSC3Data(RWGGeometry *G, const char *TransFile,
 /***************************************************************/
 void WriteFilePreamble(SC3Data *SC3D, int PreambleType)
 {
-  char *FileName=0;
+  char *FileName=nullptr;
   switch(PreambleType)
    { case PREAMBLE_OUT:   FileName=SC3D->OutFileName;   break;
      case PREAMBLE_BYXI:  FileName=SC3D->ByXiFileName;  break;
@@ -214,14 +214,14 @@ void WriteFilePreamble(SC3Data *SC3D, int PreambleType)
    };
 
   FILE *f=fopen(FileName,"a");
-  if (f==0) 
+  if (f==nullptr) 
    ErrExit("could not open file %s",FileName);
 
   /*--------------------------------------------------------------*/
   /*- write some common basic header information -----------------*/
   /*--------------------------------------------------------------*/
   char DateStr[40];
-  time_t MyTime = time(0);
+  time_t MyTime = time(nullptr);
   struct tm *MyTm=localtime(&MyTime);
   strftime(DateStr,30,"%D::%T",MyTm);
   fprintf(f,"# scuff-cas3D " VERSIONSTRING " run on %s at %s\n",GetHostName(),DateStr);
@@ -246,7 +246,7 @@ void WriteFilePreamble(SC3Data *SC3D, int PreambleType)
      fprintf(f,"#%i: imaginary angular frequency\n",nc++);
 
      IntegrandString="Xi integrand";
-     ErrorString = (LDim==0) ? 0 :
+     ErrorString = (LDim==0) ? nullptr :
                    "error due to numerical Brillouin-zone integration";
    }
   else  // PREAMBLE_BYXIK
@@ -257,7 +257,7 @@ void WriteFilePreamble(SC3Data *SC3D, int PreambleType)
       fprintf(f,"#%i: bloch wavevector ky\n",nc++);
 
      IntegrandString="Brillouin-zone integrand";
-     ErrorString=0;
+     ErrorString=nullptr;
    };
   
   /*--------------------------------------------------------------*/
@@ -300,8 +300,8 @@ void WriteFilePreamble(SC3Data *SC3D, int PreambleType)
 
   fclose(f);
 
-  SC3D->UTIntegralBuffer[0]=SC3D->UTIntegralBuffer[1]=0;
+  SC3D->UTIntegralBuffer[0]=SC3D->UTIntegralBuffer[1]=nullptr;
 
-  SC3D->BZIArgs=0;
+  SC3D->BZIArgs=nullptr;
 
 }

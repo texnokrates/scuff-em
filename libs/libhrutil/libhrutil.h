@@ -69,25 +69,25 @@ using namespace std;
 /***************************************************************/
 //typedef _Complex double cdouble;
 #ifndef cdouble
-  typedef complex<double> cdouble;
+  using cdouble = complex<double>;
 #endif
 #ifndef iVec
-  typedef vector<int> iVec;
+  using iVec = vector<int>;
 #endif
 #ifndef dVec
-  typedef vector<double> dVec;
+  using dVec = vector<double>;
 #endif
 #ifndef zVec
-  typedef vector<cdouble> zVec;
+  using zVec = vector<cdouble>;
 #endif
 #ifndef sVec
-  typedef vector<char *> sVec;
+  using sVec = vector<char *>;
 #endif
 #ifndef strVec
-  typedef vector<string> strVec;
+  using strVec = vector<string>;
 #endif
 #ifndef bVec
-  typedef vector<bool> bVec;
+  using bVec = vector<bool>;
 #endif
 
 /***************************************************************/
@@ -117,7 +117,7 @@ using namespace std;
 /***************************************************************/
 double Secs();
 void Tic(bool MeasureBytesAllocated=false);
-double Toc(unsigned long *BytesAllocated=0);
+double Toc(unsigned long *BytesAllocated=nullptr);
 
 /***************************************************************/
 /* string functions  *******************************************/
@@ -127,11 +127,11 @@ char *RemoveExtension(const char *s);
 char *GetFileExtension(const char *s);
 char *GetFileBase(const char *s);
 int Tokenize(char *s, char **Tokens, int MaxTokens,
-             const char *Separators=" \t\n", bool *Truncated=0);
+             const char *Separators=" \t\n", bool *Truncated=nullptr);
 sVec Tokenize(char *s, const char *Separators=" \t\n");
 int StrCaseCmp(const char *s1, const char *s2);
 
-FILE *fopenPath(const char *Path, const char *FileName, const char *Mode, char **WhichDir=0);
+FILE *fopenPath(const char *Path, const char *FileName, const char *Mode, char **WhichDir=nullptr);
 
 /***************************************************************/
 /* Vararg versions of common functions *************************/
@@ -161,10 +161,10 @@ void Warn(const char *format, ...)
 /* General-purpose status logging ******************************/
 /***************************************************************/
 char *GetHostName(); 
-char *GetTimeString(char *s=0);
+char *GetTimeString(char *s=nullptr);
 void SetLogFileName(const char *format, ...)
   SCUFF_PRINTF_FORMAT(1,2);
-void InitializeLog(char *argv0, const char *Path=0);
+void InitializeLog(char *argv0, const char *Path=nullptr);
 void SetConsoleLogging();
 void Log(const char *format, ...)
   SCUFF_PRINTF_FORMAT(1,2);
@@ -183,7 +183,7 @@ int GetNumProcs();
 void SetNumThreads(int pNumThreads);
 int GetNumThreads();
 int GetThreadNum();
-unsigned long GetMemoryUsage(unsigned long *MemoryUsage=0);
+unsigned long GetMemoryUsage(unsigned long *MemoryUsage=nullptr);
 void SetCPUAffinity(int WhichProcessor);
 
 /***************************************************************/
@@ -250,7 +250,7 @@ double randN(double Sigma=1.0, double Mu=0.0); // normal real-valued
 /***************************************************************/
 /* finite-difference derivatives *******************************/
 /***************************************************************/
-typedef void (*VVFunction) (void *UserData, double X[3], cdouble V[3]);
+using VVFunction = void (*) (void *UserData, double X[3], cdouble V[3]);
 cdouble GetDivCurl(VVFunction VVFun, void *UserData, int Order,
                    double X[3], double Delta, cdouble CurlF[3]);
 

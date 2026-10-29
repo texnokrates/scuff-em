@@ -57,7 +57,7 @@ double MatProp::FreqUnit=2.99792458e14; // c / (1 micron)
 /*          material in the MPDB, so that we know when it's    */
 /*          safe to delete an entry from the table.            */
 /***************************************************************/
-static MatProp **MPDB=0;
+static MatProp **MPDB=nullptr;
 static int MPDBLength=0;
 
 void AddMPToMatPropDataBase(MatProp *MP)
@@ -73,7 +73,7 @@ MatProp *FindMPInMatPropDataBase(const char *MaterialName)
   for (nmp=0; nmp<MPDBLength; nmp++)
    if (!StrCaseCmp(MPDB[nmp]->Name, MaterialName) )
     return MPDB[nmp];
-  return 0;
+  return nullptr;
 }
 
 /***************************************************************/
@@ -85,11 +85,11 @@ MatProp::MatProp()
    Name=strdupEC("PEC");
    Eps=1.0;
    Mu=1.0;
-   InterpReal=InterpImag=NULL;
+   InterpReal=InterpImag=nullptr;
    OwnsInterpolators=false;
-   EpsExpression=MuExpression=NULL;
+   EpsExpression=MuExpression=nullptr;
    OwnsExpressions=false;
-   ErrMsg=0;
+   ErrMsg=nullptr;
  }
 
 MatProp::MatProp(int pType)
@@ -98,15 +98,15 @@ MatProp::MatProp(int pType)
    Name=strdupEC("VACUUM");
    Eps=1.0;
    Mu=1.0;
-   InterpReal=InterpImag=NULL;
+   InterpReal=InterpImag=nullptr;
    OwnsInterpolators=false;
-   EpsExpression=MuExpression=NULL;
+   EpsExpression=MuExpression=nullptr;
    OwnsExpressions=false;
-   ErrMsg=0;
+   ErrMsg=nullptr;
  }
  
 MatProp::MatProp(const char *MaterialName)
- { InitMatProp(MaterialName, 0); }
+ { InitMatProp(MaterialName, nullptr); }
 
 MatProp::MatProp(const char *MaterialName, const char *MatPropFileName)
  { InitMatProp(MaterialName, MatPropFileName); }
@@ -120,7 +120,7 @@ MatProp::MatProp(const MatProp &MP)
    Name   = strdup(MP.Name);
    Eps    = MP.Eps;
    Mu     = MP.Mu;
-   ErrMsg = 0;
+   ErrMsg = nullptr;
 
    /***************************************************************/
    /* 20140525 new handling of copy constructor for interpolated  */
@@ -131,11 +131,11 @@ MatProp::MatProp(const MatProp &MP)
    if (MP.InterpReal || MP.InterpImag)
     ErrExit("%s:%i: MatProp copy constructor not implemented for interpolated materials",__FILE__,__LINE__);
 #endif
-   InterpReal = MP.InterpReal ? new Interp1D(*MP.InterpReal) : 0;
-   InterpImag = MP.InterpImag ? new Interp1D(*MP.InterpImag) : 0;
+   InterpReal = MP.InterpReal ? new Interp1D(*MP.InterpReal) : nullptr;
+   InterpImag = MP.InterpImag ? new Interp1D(*MP.InterpImag) : nullptr;
    OwnsInterpolators = true;
 
-   EpsExpression=MuExpression = 0;
+   EpsExpression=MuExpression = nullptr;
    if (MP.EpsExpression)
     {
       EpsExpression=cevaluator_create(cevaluator_get_string(MP.EpsExpression));
@@ -180,12 +180,12 @@ void MatProp::InitMatProp(const char *MaterialName, const char *MatPropFileName)
   Eps=1.0;
   Mu=1.0;
   Zeroed=0;
-  EpsExpression = MuExpression = NULL;
-  InterpReal = InterpImag = NULL;
+  EpsExpression = MuExpression = nullptr;
+  InterpReal = InterpImag = nullptr;
   OwnsExpressions = OwnsInterpolators = false;
 
   /* assume things will go OK */
-  ErrMsg=0;
+  ErrMsg=nullptr;
 
   /* set *p = first non-whitespace character in MaterialName */
   p=MaterialName;
@@ -199,7 +199,7 @@ void MatProp::InitMatProp(const char *MaterialName, const char *MatPropFileName)
   /*--------------------------------------------------------------*/
   /*- PEC keyword ------------------------------------------------*/
   /*--------------------------------------------------------------*/
-  if ( p==0 || *p==0 || !StrCaseCmp(p,"PEC") )
+  if ( p==nullptr || *p==0 || !StrCaseCmp(p,"PEC") )
    { Type=MP_PEC;
      Name=strdupEC("PEC");
      return;
@@ -388,7 +388,7 @@ void MatProp::ReadInterpolationTable(const char *FileName)
   /***************************************************************/
   /* attempt to read in the data file as a big matrix            */
   /***************************************************************/
-  char *Dir=0;
+  char *Dir=nullptr;
   FILE *f=fopenPath(getenv("SCUFF_MATPROP_PATH"), FileName, "r", &Dir);
   if (!f) 
    ErrExit("could not open file %s",FileName);
@@ -412,7 +412,7 @@ void MatProp::ReadInterpolationTable(const char *FileName)
   int nr, NR=Data->NR;
   double *XPoints=(double *)mallocEC(NR*sizeof(double));
   double *YPoints=(double *)mallocEC(4*NR*sizeof(double));
-  if (XPoints==0 || YPoints==0)
+  if (XPoints==nullptr || YPoints==nullptr)
    ErrExit("insufficient memory to read interpolation data file %s",FileName);
   
   /* count number of purely real frequencies */
@@ -448,11 +448,11 @@ void MatProp::ReadInterpolationTable(const char *FileName)
   /***************************************************************/
   /* create the interpolators ************************************/
   /***************************************************************/
-  InterpReal = (nreal == 0) ? NULL : new Interp1D(XPoints, YPoints, nreal, 4);
+  InterpReal = (nreal == 0) ? nullptr : new Interp1D(XPoints, YPoints, nreal, 4);
 
   // (strictly speaking, we should be able to omit the imaginary parts
   //  along the imaginary-frequency axis since they should always be zero)
-  InterpImag = (nreal == NR) ? NULL : new Interp1D(XPoints + nreal, YPoints + 4*nreal, NR-nreal, 4);
+  InterpImag = (nreal == NR) ? nullptr : new Interp1D(XPoints + nreal, YPoints + 4*nreal, NR-nreal, 4);
 
   /***************************************************************/
   /* deallocate temporary storage ********************************/
@@ -542,7 +542,7 @@ void MatProp::GetEpsMu(cdouble Omega, cdouble *pEps, cdouble *pMu)
      double Data[4];
      if(imag(Omega)==0.0)
       { 
-        if (InterpReal==0)
+        if (InterpReal==nullptr)
          ErrExit("no real-frequency data given in material data file %s",Name+5);
 	if(InterpReal->Evaluate(real(Omega)*FreqUnit, Data)) {
 	  EpsRV=cdouble(Data[0], Data[1]);
@@ -554,7 +554,7 @@ void MatProp::GetEpsMu(cdouble Omega, cdouble *pEps, cdouble *pMu)
       }
      else if (real(Omega)==0.0)
       {
-        if (InterpImag==0)
+        if (InterpImag==nullptr)
          ErrExit("no imaginary-frequency data given in material data file %s); setting Eps, Mu to NaN.",Name+5);
 	if(InterpImag->Evaluate(imag(Omega)*FreqUnit, Data)) {
 	  EpsRV=cdouble(Data[0], 0.0);
@@ -584,13 +584,13 @@ void MatProp::GetEpsMu(cdouble Omega, cdouble *pEps, cdouble *pMu)
 
 cdouble MatProp::GetEps(cdouble Omega) {
   cdouble EpsRV;
-  GetEpsMu(Omega, &EpsRV, 0);
+  GetEpsMu(Omega, &EpsRV, nullptr);
   return EpsRV;
 }
 
 cdouble MatProp::GetMu(cdouble Omega) {
   cdouble MuRV;
-  GetEpsMu(Omega, 0, &MuRV);
+  GetEpsMu(Omega, nullptr, &MuRV);
   return MuRV;
 }
 

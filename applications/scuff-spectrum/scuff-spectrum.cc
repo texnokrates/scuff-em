@@ -51,13 +51,13 @@ void WriteSphericalMoments(RWGGeometry *G, HVector *KN, cdouble Omega, int LMax,
 /***************************************************************/
 /***************************************************************/
 /***************************************************************/
-typedef struct BFData
+using BFData = struct BFData
  { 
    RWGGeometry *G;
    HMatrix *M;
    double kBloch[2];
    FILE *LogFile;
- } BFData;
+ };
 
 void BeynFunc(cdouble Omega, void *UserData, HMatrix *VHat, HMatrix *MVHat)
 {
@@ -216,8 +216,8 @@ int main(int argc, char *argv[])
      /***************************************************************/
      /* extract information on the contour **************************/
      /***************************************************************/
-     struct BFData MyBFData = {G.get(), M.get(), {0,0}, 0};
-     double *kBloch = (G->LDim > 0) ? MyBFData.kBloch : 0;
+     struct BFData MyBFData = {G.get(), M.get(), {0,0}, nullptr};
+     double *kBloch = (G->LDim > 0) ? MyBFData.kBloch : nullptr;
      for(int d=0; d<G->LDim; d++) 
       MyBFData.kBloch[d] = ContourMatrix->GetEntryD(nr, d);
      Omega0              = ContourMatrix->GetEntry (nr, G->LDim+0);
@@ -312,11 +312,11 @@ int main(int argc, char *argv[])
         for(int nfm=0; nfm<nFVMeshes; nfm++)
          VisualizeFields(G.get(), &KN, Omega, kBloch, OutFileBase.c_str(),
                          FVMeshes[nfm].c_str(),
-                         FVMeshTransFiles.size() ? FVMeshTransFiles[nfm].c_str() : 0);
+                         FVMeshTransFiles.size() ? FVMeshTransFiles[nfm].c_str() : nullptr);
         for(int ns=0; ns<nFVScreens; ns++)
          { std::string VFFileBase=OutFileBase+".Screen"+std::to_string(ns);
            VisualizeFields(G.get(), &KN, Omega, kBloch, VFFileBase.c_str(),
-                           FVScreens.data() + 11*ns);
+                           FVScreens.data() + (size_t)11*ns);
          }
       }
 

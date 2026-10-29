@@ -89,13 +89,13 @@ static void KillDP(char *s)
 /* this is a data structure containing everything that i need  */
 /* to keep track of in a C2ML session.                         */
 /***************************************************************/
-typedef struct MATLABContext
+using MATLABContext = struct MATLABContext
  { 
    void *pHC;     // HDF5Context 
    FILE *MFile;   // .m file to which I write matlab instructions
    char *HDF5FileName;
 
- } MATLABContext;
+ };
 
 /***************************************************************/
 /***************************************************************/
@@ -117,7 +117,7 @@ void *HMatrix::OpenMATLABContext(const char *format, ... )
   snprintf(buffer,sizeof(buffer),"%s.hdf5",Name);
   void *pHC=HMatrix::OpenHDF5Context(buffer);
 
-  if ( pHC!=0 && MFile!=0 )
+  if ( pHC!=nullptr && MFile!=nullptr )
    { MATLABContext *CC=(MATLABContext *)malloc(sizeof(*CC));
      CC->pHC=pHC;
      CC->MFile=MFile;
@@ -127,7 +127,7 @@ void *HMatrix::OpenMATLABContext(const char *format, ... )
   else
    { if (MFile) fclose(MFile);
      fprintf(stderr,"warning: failed to open MATLAB context %s\n",Name);
-     return 0;
+     return nullptr;
    };
 
 }

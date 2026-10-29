@@ -44,6 +44,9 @@
 extern "C" {
 #endif
 
+/* NOLINTBEGIN(modernize-use-using): this header is shared with the C
+   translation units TCR.c, libTriInt.c, CCCubature.c and
+   IntegrateCliffFunction.c, so the typedefs must stay typedefs. */
 typedef void (*TriIntFun)(double *X, void *UserData, double *F);
 
 /* TCR.c -- triangle cubature rules */
@@ -97,5 +100,7 @@ int IntegrateCliffFunction(CliffFunction fCliff, void *UserData, int nFun,
 #ifdef __cplusplus
 }
 #endif
+
+/* NOLINTEND(modernize-use-using) */
 
 #endif /* LIBTRIINTC_H */

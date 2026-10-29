@@ -54,7 +54,7 @@ void MatProp::CreateUserDefinedMaterial(const char *MatPropFileName,
   int status=0;
   char FileName[MAXSTR];
 
-  EpsExpression = MuExpression = NULL;
+  EpsExpression = MuExpression = nullptr;
 
   if (MatPropFileName)
    { snprintf(FileName,MAXSTR,"%s",MatPropFileName);
@@ -113,7 +113,7 @@ int MatProp::ReadMaterialFromFile(const char *FileName, const char *MaterialName
   char *Tokens[3];
   int LineNum, NumTokens;
    
-  if ( FileName==0 ) return 0;
+  if ( FileName==nullptr ) return 0;
   if ( !(f=fopen(FileName,"r")) ) return 0;
 
   /*--------------------------------------------------------------*/
@@ -175,7 +175,7 @@ int MatProp::ParseMaterialSectionInFile(FILE *f, const char *FileName, int *Line
   /*- read lines until we encounter 'ENDMATERIAL'               --*/
   /*--------------------------------------------------------------*/
   NumConstants=0;
-  ErrMsg=0;
+  ErrMsg=nullptr;
   while ( fgets(Line,MAXSTR,f) )
    { 
      (*LineNum)++;
@@ -350,9 +350,9 @@ char *AddMaterialToMatPropDataBase(FILE *f, char *FileName,
   free(MP->Name);
   MP->Name=strdupEC(MaterialName);
 
-  MP->ErrMsg=0;
-  MP->EpsExpression=MP->MuExpression=NULL;
-  MP->InterpReal=MP->InterpImag=NULL;
+  MP->ErrMsg=nullptr;
+  MP->EpsExpression=MP->MuExpression=nullptr;
+  MP->InterpReal=MP->InterpImag=nullptr;
   MP->ParseMaterialSectionInFile(f, FileName, LineNum);
 
   if (MP->ErrMsg)
@@ -360,7 +360,7 @@ char *AddMaterialToMatPropDataBase(FILE *f, char *FileName,
 
   AddMPToMatPropDataBase(MP);
 
-  return 0;
+  return nullptr;
 } 
 
 /***************************************************************/

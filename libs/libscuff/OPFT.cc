@@ -190,7 +190,7 @@ void RWGSurface::GetOverlaps(int neAlpha, int neBeta, double *Overlaps)
   RWGEdge *EBeta  = Edges[neBeta];
 
   RWGPanel *PAlphaP = Panels[EAlpha->iPPanel];
-  RWGPanel *PAlphaM = (EAlpha->iMPanel == -1) ? 0 : Panels[EAlpha->iMPanel];
+  RWGPanel *PAlphaM = (EAlpha->iMPanel == -1) ? nullptr : Panels[EAlpha->iMPanel];
   int iQPAlpha = EAlpha->PIndex;
   int iQMAlpha = EAlpha->MIndex;
   int iQPBeta  = EBeta->PIndex;
@@ -501,7 +501,7 @@ void GetOPFTMatrices(RWGGeometry *G,
                          )
            )
          { Warn("incorrect Q matrix passed to GetOPFTMatrices (reallocating...)");
-           QPFT[nq]=0;
+           QPFT[nq]=nullptr;
          };
 
         if (!QPFT[nq])
@@ -511,13 +511,13 @@ void GetOPFTMatrices(RWGGeometry *G,
       };
    };
   HMatrix *QPAbs, *QF[3], *QT[3];
-  QPAbs = (NeedMatrix[PFT_PABS] && !IsPEC) ? QPFT[PFT_PABS] : 0;
-  QF[0] = NeedMatrix[PFT_XFORCE]  ? QPFT[PFT_XFORCE]  : 0;
-  QF[1] = NeedMatrix[PFT_YFORCE]  ? QPFT[PFT_YFORCE]  : 0;
-  QF[2] = NeedMatrix[PFT_ZFORCE]  ? QPFT[PFT_ZFORCE]  : 0;
-  QT[0] = NeedMatrix[PFT_XTORQUE] ? QPFT[PFT_XTORQUE] : 0;
-  QT[1] = NeedMatrix[PFT_YTORQUE] ? QPFT[PFT_YTORQUE] : 0;
-  QT[2] = NeedMatrix[PFT_ZTORQUE] ? QPFT[PFT_ZTORQUE] : 0;
+  QPAbs = (NeedMatrix[PFT_PABS] && !IsPEC) ? QPFT[PFT_PABS] : nullptr;
+  QF[0] = NeedMatrix[PFT_XFORCE]  ? QPFT[PFT_XFORCE]  : nullptr;
+  QF[1] = NeedMatrix[PFT_YFORCE]  ? QPFT[PFT_YFORCE]  : nullptr;
+  QF[2] = NeedMatrix[PFT_ZFORCE]  ? QPFT[PFT_ZFORCE]  : nullptr;
+  QT[0] = NeedMatrix[PFT_XTORQUE] ? QPFT[PFT_XTORQUE] : nullptr;
+  QT[1] = NeedMatrix[PFT_YTORQUE] ? QPFT[PFT_YTORQUE] : nullptr;
+  QT[2] = NeedMatrix[PFT_ZTORQUE] ? QPFT[PFT_ZTORQUE] : nullptr;
 
   /*--------------------------------------------------------------*/
   /*- get material parameters of exterior medium -----------------*/

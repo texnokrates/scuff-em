@@ -419,12 +419,12 @@ int main(int argc, char *argv[])
      if (Ext && !strcasecmp(Ext,"scuffgeo"))
       { GeoFile=argv[1];
         argc-=1;
-        memmove(&argv[1],&argv[2],(argc)*sizeof(char *));
+        memmove((void *)&argv[1],(void *)&argv[2],(argc)*sizeof(char *));
       }
      else if (Ext && !strcasecmp(Ext,"msh"))
       { MeshFile=argv[1];
         argc-=1;
-        memmove(&argv[1],&argv[2],(argc)*sizeof(char *));
+        memmove((void *)&argv[1],(void *)&argv[2],(argc)*sizeof(char *));
       }
    }
 
@@ -521,7 +521,7 @@ int main(int argc, char *argv[])
 
      AnalyzeGeometry(G.get());
 
-     if (Neighbors!=0 && G->LBasis==0)
+     if (Neighbors!=0 && G->LBasis==nullptr)
       { Warn("--Neighbors option only makes sense for periodic geometries");
         Neighbors=0;
       }

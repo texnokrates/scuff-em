@@ -73,7 +73,7 @@ void ProcessFVMesh(RWGGeometry *G, HVector *KN, cdouble Omega,
 /***************************************************************/
 void HVConcat(HVector *V1, HVector *V2)
 { 
-  if ( V1==0 || V2==0 || V2->N==0 ) return;
+  if ( V1==nullptr || V2==nullptr || V2->N==0 ) return;
 
   int NewN=V1->N + V2->N;
   V1->DV = (double *)realloc(V1->DV, NewN*sizeof(double));
@@ -264,25 +264,25 @@ int main(int argc, char *argv[])
    ErrExit("--zparameters and/or --sparameters must be specified if a frequency specification is present");
   if (!PCFile.empty() && (ZParameters || SParameters) )
    ErrExit("--zparameters and --sparameters may not be used with --portcurrentfile");
-  if (PCList.get()!=0 && nEPFiles==0 && nFVMeshes==0)
+  if (PCList.get()!=nullptr && nEPFiles==0 && nFVMeshes==0)
    ErrExit("--EPFile or --FVMesh must be specified if --portcurrentfile is specified");
 
   /***************************************************************/
   /* create output files *****************************************/
   /***************************************************************/
   char TimeString[200];
-  time_t MyTime=time(0);
+  time_t MyTime=time(nullptr);
   struct tm *MyTm=localtime(&MyTime);
   strftime(TimeString,30,"%D::%T",MyTm);
 
-  FILE *ZParFile=0;
+  FILE *ZParFile=nullptr;
   char ZParFileName[1000];
   std::unique_ptr<HMatrix> ZMatrix;
   if (ZParameters)
    {
      snprintf(ZParFileName,999,"%s.zparms",GetFileBase(G->GeoFileName));
      ZParFile=CreateUniqueFile(ZParFileName,1,ZParFileName);
-     setbuf(ZParFile,0);
+     setbuf(ZParFile,nullptr);
      fprintf(ZParFile,"# %s ran on %s (%s)\n",argv[0],getenv("HOST"),TimeString);
      fprintf(ZParFile,"# command-line arguments: \n#");
      for(int narg=0; narg<argc; narg++)
@@ -302,14 +302,14 @@ int main(int argc, char *argv[])
      ZMatrix.reset(new HMatrix(NumPorts, NumPorts, LHM_COMPLEX));
    };
 
-  FILE *SParFile=0;
+  FILE *SParFile=nullptr;
   char SParFileName[1000];
   std::unique_ptr<HMatrix> SMatrix;
   if (SParameters)
    { 
      snprintf(SParFileName,999,"%s.sparms",GetFileBase(G->GeoFileName));
      SParFile=CreateUniqueFile(SParFileName,1,SParFileName);
-     setbuf(SParFile,0);
+     setbuf(SParFile,nullptr);
      fprintf(SParFile,"# %s ran on %s (%s)\n",argv[0],getenv("HOST"),TimeString);
      fprintf(SParFile,"# command-line arguments: \n#");
      for(int narg=0; narg<argc; narg++)
@@ -327,14 +327,14 @@ int main(int argc, char *argv[])
       };
 
      SMatrix.reset(new HMatrix(NumPorts, NumPorts, LHM_COMPLEX));
-     if (ZMatrix==0) //ZMatrix is needed if s-parameters are computed
+     if (ZMatrix==nullptr) //ZMatrix is needed if s-parameters are computed
       ZMatrix.reset(new HMatrix(NumPorts, NumPorts, LHM_COMPLEX)); 
    };
 
   /*******************************************************************/
   /*******************************************************************/
   /*******************************************************************/
-  FILE *MomentFile=0;
+  FILE *MomentFile=nullptr;
   std::unique_ptr<HMatrix> PM, PSD;
   if (Moments)
    { PM.reset(new HMatrix(G->NumSurfaces, 6, LHM_COMPLEX));
@@ -362,7 +362,7 @@ int main(int argc, char *argv[])
   /* c / (1 mm) = 3e11 rad/sec                                   */
   /***************************************************************/
   int np, npp;
-  double Freq;
+  double Freq = 0.0;
   cdouble Omega;
   std::vector<cdouble> PortCurrents(NumPorts, cdouble(0.0,0.0));
   std::vector<cdouble> PortVoltages(NumPorts, cdouble(0.0,0.0));

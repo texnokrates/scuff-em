@@ -45,6 +45,9 @@ extern "C"
    to pass any additional data through to your function (it corresponds
    to the fdata parameter you pass to cubature).  Return 0 on
    success or nonzero to terminate the integration. */
+/* NOLINTBEGIN(modernize-use-using): this header is shared with C
+   translation units (libSGJC.c, the vendored cubature package), so the
+   typedefs must stay typedefs. */
 typedef int (*integrand) (unsigned ndim, const double *x, void *,
                           unsigned fdim, double *fval);
 
@@ -155,5 +158,7 @@ int adapt_integrate_log(unsigned fdim, oldintegrand f,
 #ifdef __cplusplus
 }  /* extern "C" */
 #endif /* __cplusplus */
+
+/* NOLINTEND(modernize-use-using) */
 
 #endif /* CUBATURE_H */

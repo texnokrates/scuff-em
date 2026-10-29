@@ -63,9 +63,9 @@ namespace scuff {
 /***************************************************************/
 int RWGGeometry::UpdateIncFields(IncField *IFList, cdouble Omega, double *kBloch)
 {
-  if (IFList==0) return 0;
+  if (IFList==nullptr) return 0;
 
-  if ( (LBasis==0 && kBloch!=0) || (LBasis!=0 && kBloch==0) )
+  if ( (LBasis==nullptr && kBloch!=nullptr) || (LBasis!=nullptr && kBloch==nullptr) )
    ErrExit("%s:%i: internal error",__FILE__,__LINE__);
 
   /*--------------------------------------------------------------*/
@@ -122,7 +122,7 @@ int RWGGeometry::UpdateIncFields(IncField *IFList, cdouble Omega, double *kBloch
 /* data structure used to pass parameters to                   */
 /* InnerProductIntegrand routine.                              */
 /***************************************************************/
-typedef struct InnerProductIntegrandData 
+using InnerProductIntegrandData = struct InnerProductIntegrandData 
  { 
    double *Q;
    double PreFac;
@@ -134,7 +134,7 @@ typedef struct InnerProductIntegrandData
 
    int NeedHProd;
 
- } InnerProductIntegrandData;
+ };
 
 /***************************************************************/
 /* integrand routine passed to TriInt. this returns the dot    */
@@ -201,7 +201,7 @@ void GetInnerProducts(RWGSurface *S, int ne,
   double *QM;
   double MArea=0.0;
   if ( E->iQM == -1 )
-   QM = 0;
+   QM = nullptr;
   else
    { QM = S->Vertices + 3*(E->iQM);
      MArea = S->Panels[E->iMPanel]->Area;
@@ -213,9 +213,9 @@ void GetInnerProducts(RWGSurface *S, int ne,
   IPID->NPositiveIFs = NPositiveIFs;
   IPID->NegativeIFs  = NegativeIFs;
   IPID->NNegativeIFs = NNegativeIFs;
-  IPID->NeedHProd    = (pHProd==NULL ? 0 : 1);
+  IPID->NeedHProd    = (pHProd==nullptr ? 0 : 1);
   
-  int nFun = (pHProd==NULL ? 2 : 4);
+  int nFun = (pHProd==nullptr ? 2 : 4);
   double I[4], IP[4], IM[4];
 
   /* integrate over positive panel */
@@ -248,7 +248,7 @@ void GetInnerProducts(RWGSurface *S, int ne,
 /***************************************************************/
 /* data structure used to pass data to AssembleRHS_Thread      */
 /***************************************************************/
-typedef struct ThreadData
+using ThreadData = struct ThreadData
  { 
    int nt, NumTasks;
 
@@ -257,7 +257,7 @@ typedef struct ThreadData
    int NIF;
    HVector *RHS;
 
- } ThreadData;
+ };
 
 /***************************************************************/
 /* AssembleRHS_Thread        ***********************************/
@@ -337,7 +337,7 @@ void *AssembleRHS_Thread(void *data)
         GetInnerProducts(S,ne, 
                          PositiveIFs, NPositiveIFs,
                          NegativeIFs, NNegativeIFs,
-                         &EProd, IsPEC ? 0 : &HProd );
+                         &EProd, IsPEC ? nullptr : &HProd );
 
         if ( IsPEC )
          { 
@@ -355,7 +355,7 @@ void *AssembleRHS_Thread(void *data)
   delete[] PositiveIFs;
   delete[] NegativeIFs;
 
-  return 0;
+  return nullptr;
  
 }
 
@@ -365,7 +365,7 @@ void *AssembleRHS_Thread(void *data)
 HVector *RWGGeometry::AssembleRHSVector(cdouble Omega, double *kBloch,
                                         IncField *IF, HVector *RHS)
 { 
-  if (RHS==NULL)
+  if (RHS==nullptr)
    RHS=AllocateRHSVector();
 
   RHS->Zero();
@@ -418,7 +418,7 @@ HVector *RWGGeometry::AssembleRHSVector(cdouble Omega, double *kBloch,
 #endif
 
   if (UseHRWGFunctions && NumMMJs>0 )
-   ApplyMMJTransformation(0, RHS);
+   ApplyMMJTransformation(nullptr, RHS);
 
   return RHS;
 }
@@ -427,7 +427,7 @@ HVector *RWGGeometry::AssembleRHSVector(cdouble Omega, double *kBloch,
 /* non-PBC entry point for AssembleRHSVector                   */
 /***************************************************************/
 HVector *RWGGeometry::AssembleRHSVector(cdouble Omega, IncField *IF, HVector *RHS)
-{ return AssembleRHSVector(Omega, 0, IF, RHS); }
+{ return AssembleRHSVector(Omega, nullptr, IF, RHS); }
 
 /***************************************************************/
 /* Allocate an RHS vector of the appropriate size. *************/
@@ -436,7 +436,7 @@ HVector *RWGGeometry::AllocateRHSVector(bool PureImagFreq)
 { 
   HVector *V;
 
-  if (PureImagFreq && LBasis==0)
+  if (PureImagFreq && LBasis==nullptr)
    V=new HVector(TotalBFs,LHM_REAL);
   else
    V=new HVector(TotalBFs,LHM_COMPLEX);

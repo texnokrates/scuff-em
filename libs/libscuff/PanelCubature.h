@@ -36,21 +36,21 @@ namespace scuff{
 /* routine; it contains data on the panel and (optionally) the */
 /* surface-current distribution on the panel.                  */
 /***************************************************************/
-typedef struct PCData
+using PCData = struct PCData
  { 
    double *nHat;       // panel normal
    cdouble Omega;      // angular frequency
    cdouble *K, *N;     // surface currents at eval point
    cdouble DivK, DivN; // divergences of surface currents
 
- } PCData;
+ };
 
 /***************************************************************/
 /* This is the prototype for the integrand routine to be       */
 /* written by the user and passed as a parameter to            */
 /* GetPanelCubature.                                           */
 /***************************************************************/
-typedef void (*PCFunction)(double *x, PCData *PCD,
+using PCFunction = void (*)(double *x, PCData *PCD,
                            void *UserData, double *Result);
 
 /***************************************************************/
@@ -79,21 +79,21 @@ void GetBFCubature(RWGGeometry *G, int ns, int ne,
 /* routine; it contains data on the two panels and (optionally)*/
 /* the surface-current distributions on the two panels.        */
 /***************************************************************/
-typedef struct PPCData
+using PPCData = struct PPCData
  { 
    double *nHat1, *nHat2;       // panel normals
    cdouble Omega;               // angular frequency
    cdouble *K1, *N1, *K2, *N2;  // surface currents at eval points
    cdouble DivK1, DivN1, DivK2, DivN2; // divergences of surface currents
 
- } PPCData;
+ };
 
 /***************************************************************/
 /* This is the prototype for the integrand routine to be       */
 /* written by the user and passed as a parameter to            */
 /* GetPanelPanelCubature.                                      */
 /***************************************************************/
-typedef void (*PPCFunction)(double *x, double *xp, PPCData *PPCD,
+using PPCFunction = void (*)(double *x, double *xp, PPCData *PPCD,
                             void *UserData, double *Result);
 
 /***************************************************************/
@@ -128,11 +128,11 @@ void GetBFBFCubature(RWGGeometry *G, int ns1, int ne1, int ns2, int ne2,
 /* In these versions, the user's integrand function must       */
 /* *accumulate* contributions to Integral with weight Weight.  */
 /***************************************************************/
-typedef void PCFunction2(double x[3], double b[3], double Divb,
+using PCFunction2 = void (double x[3], double b[3], double Divb,
                          void *UserData, double Weight, double *Integral);
 
 
-typedef void PPCFunction2(double x[3], double b[3], double Divb,
+using PPCFunction2 = void (double x[3], double b[3], double Divb,
                           double xp[3], double bp[3], double Divbp,
                           void *UserData,
                           double Weight, double *Integral);
@@ -169,9 +169,9 @@ void GetBFBFCubatureTD(RWGGeometry *G,
 /* slightly modified versions of the Cubature2 routines for use*/
 /* with scuff-static                                           */
 /***************************************************************/
-typedef void (*PC2Function)(double X[3], void *UserData, double Weight, double *Integral);
+using PC2Function = void (*)(double X[3], void *UserData, double Weight, double *Integral);
 
-typedef void (*PPC2Function)(double XA[3], double XB[3], void *UserData,
+using PPC2Function = void (*)(double XA[3], double XB[3], void *UserData,
                              double Weight, double *Integral);
 
 void GetPanelCubature2(RWGSurface *S, int np, PC2Function Integrand,

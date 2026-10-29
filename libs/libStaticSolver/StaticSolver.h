@@ -62,15 +62,15 @@ enum IntegralType { PHIINTEGRAL = 0, ENORMALINTEGRAL=1 };
 /* geometry) plus an optional externally-sourced electrostatic  */
 /* field.                                                       */
 /****************************************************************/
-typedef void (*StaticField)(double *x, void *UserData, double PhiE[4]);
+using StaticField = void (*)(double *x, void *UserData, double PhiE[4]);
 
-typedef struct StaticExcitation
+using StaticExcitation = struct StaticExcitation
  { char *Label;
    double *Potentials;
    StaticField *SFs;
    void **SFData;
    int NumSFs;
- } StaticExcitation;
+ };
 
 /****************************************************************/
 /****************************************************************/
@@ -85,13 +85,13 @@ class StaticSolver
 
    /* constructor / destructor */
    StaticSolver(const char *GeoFileName,
-                const char *SubstrateFile=0,
+                const char *SubstrateFile=nullptr,
                 int pLogLevel = SCUFF_NOLOGGING);
    ~StaticSolver();
 
    /* routines for allocating, and then filling in, the electrostatic BEM matrix */
    HMatrix *AllocateBEMMatrix();
-   HMatrix *AssembleBEMMatrix(HMatrix *M = NULL);
+   HMatrix *AssembleBEMMatrix(HMatrix *M = nullptr);
 
    /* lower-level routine for assembling individual BEM matrix blocks */
    void AssembleBEMMatrixBlock(int nsa, int nsb,
@@ -99,8 +99,8 @@ class StaticSolver
 
    /* routines for allocating, and then filling in, the RHS vector */
    HVector *AllocateRHSVector();
-   HVector *AssembleRHSVector(StaticExcitation *SE, HVector *RHS = NULL);
-   HVector *AssembleRHSVector(double *Potentials, HVector *RHS = NULL);
+   HVector *AssembleRHSVector(StaticExcitation *SE, HVector *RHS = nullptr);
+   HVector *AssembleRHSVector(double *Potentials, HVector *RHS = nullptr);
 
    /* routine for calculating electric dipole moment */
    HMatrix *GetCartesianMoments(HVector *Sigma, HMatrix *Moments);
@@ -109,18 +109,18 @@ class StaticSolver
                                 int lMax, HVector *Moments);
 
    /* compute fields */
-   HMatrix *GetFields(StaticExcitation *SE, HVector *Sigma, HMatrix *X, HMatrix *PhiE=0);
-   HMatrix *GetFields(HVector *Sigma, HMatrix *X, HMatrix *PhiE=0);
+   HMatrix *GetFields(StaticExcitation *SE, HVector *Sigma, HMatrix *X, HMatrix *PhiE=nullptr);
+   HMatrix *GetFields(HVector *Sigma, HMatrix *X, HMatrix *PhiE=nullptr);
 
    /* compute capacitance matrix */
-   HMatrix *GetCapacitanceMatrix(HMatrix *M=0, HVector *Sigma=0,
-                                 HMatrix *CMatrix=0);
+   HMatrix *GetCapacitanceMatrix(HMatrix *M=nullptr, HVector *Sigma=nullptr,
+                                 HMatrix *CMatrix=nullptr);
 
    /* visualization */
    void PlotChargeDensity(HVector *Sigma, const char *FileName);
    void VisualizeFields(HVector *Sigma,  const char *FVMeshFile,
-                        const char *OutFileBase=0, StaticExcitation *SE=0,
-                        const char *TransFile=0);
+                        const char *OutFileBase=nullptr, StaticExcitation *SE=nullptr,
+                        const char *TransFile=nullptr);
 
    /*--------------------------------------------------------------------*/ 
    /*- class methods intended for internal use only, i.e. which          */ 
@@ -157,32 +157,32 @@ class StaticSolver
 /* a few types of built-in implementations of the StaticField  */
 /* function to be passed to AssembleRHSVector()                */
 /***************************************************************/
-typedef struct UserSFData
+using UserSFData = struct UserSFData
  { void *PhiEvaluator;
    void *EEvaluator[3];
- } UserSFData;
+ };
 void UserStaticField(double *x, void *UserData, double PhiE[4]);
 
-typedef struct SphericalSFData
+using SphericalSFData = struct SphericalSFData
  { int l, m;
- } SphericalSFData;
+ };
 void SphericalStaticField(double *x, void *UserData, double PhiE[4]);
 
-typedef struct ConstantSFData
+using ConstantSFData = struct ConstantSFData
  { double E0[3];
- } ConstantSFData;
+ };
 void ConstantStaticField(double *x, void *UserData, double PhiE[4]);
 
-typedef struct MonopoleSFData
+using MonopoleSFData = struct MonopoleSFData
  { double x0[3];
    double Q;
- } MonopoleSFData;
+ };
 void MonopoleStaticField(double *x, void *UserData, double PhiE[4]);
 
-typedef struct DipoleSFData
+using DipoleSFData = struct DipoleSFData
  { double x0[3];
    double P[3];
- } DipoleSFData;
+ };
 void DipoleStaticField(double *x, void *UserData, double PhiE[4]);
 
 void EvalStaticField(StaticExcitation *SE, double *x, double *PhiE);

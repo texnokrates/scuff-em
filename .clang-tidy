@@ -1,0 +1,58 @@
+# clang-tidy configuration for SCUFF-EM (G4 ratchet, see
+# ai_notes/core-guidelines-survey-2026-10-27.md Section 3 and 7).
+#
+# The CI job gates *changed lines only* (clang-tidy-diff against the base
+# branch), so pre-existing violations in untouched legacy code do not fail
+# the build; code you touch must be clean under this set.
+#
+# Excluded by design:
+#  - modernize-* sweeps beyond the four listed (use-trailing-return-type,
+#    use-std-print, ...) -- wholesale churn, banned by the workstream
+#    conventions.
+#  - cppcoreguidelines-pro-bounds-* / pro-type-reinterpret-cast: pervasive
+#    in legacy numerical kernels; addressed per-file as kernels are
+#    refactored, not by ratchet.
+#  - readability-identifier-naming: would rename the world.
+#  - bugprone-throwing-static-initialization: the process-lifetime
+#    singleton pattern (GlobalFIPPICache, the MPDB, ...) is deliberate and
+#    documented; the checker cannot prove these constructors don't throw.
+#  - bugprone-exception-escape: all 29 findings are main() functions in
+#    applications whose error strategy is ErrExit/exit plus a catch at the
+#    CLI boundary (scuff::cli::Parse); residual throw paths (bad_alloc)
+#    terminate by design, which is acceptable for these CLI tools.
+#
+# Vendored/generated sources (cmatheval, cubature packages, f2c output,
+# quadrature tables) are excluded via HeaderFilterRegex and CI path
+# filtering; they are not held to these rules.
+
+Checks: >
+  -*,
+  bugprone-*,
+  -bugprone-easily-swappable-parameters,
+  -bugprone-narrowing-conversions,
+  -bugprone-reserved-identifier,
+  -bugprone-throwing-static-initialization,
+  -bugprone-exception-escape,
+  cppcoreguidelines-init-variables,
+  cppcoreguidelines-pro-type-member-init,
+  cppcoreguidelines-no-malloc,
+  cppcoreguidelines-owning-memory,
+  cppcoreguidelines-slicing,
+  modernize-use-nullptr,
+  modernize-use-using,
+  modernize-avoid-c-style-cast,
+  modernize-use-override,
+  performance-*,
+  -performance-unnecessary-value-param
+
+# Diagnostics from project headers only (LLVM regex does not support
+# lookahead, so this is a positive list of module directories; the vendored
+# cmatheval headers under libMatProp/cmatheval/ are excluded by the [^/]
+# path segment).  Diagnostics in the main source file are always reported
+# regardless of this filter.
+HeaderFilterRegex: '.*/libs/(libhrutil|libhmat|libSubstrate|libMDInterp|libIncField|libStaticSolver|libscuffSolver|libSpherical|libTriInt|libSGJC|libscuff|libMatProp)/[^/]*\.(h|hh)$'
+
+FormatStyle: file
+
+# Warnings-as-errors is deliberately NOT set here; the CI ratchet job
+# decides blocking behavior.

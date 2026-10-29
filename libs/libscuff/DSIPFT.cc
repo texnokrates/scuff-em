@@ -85,9 +85,9 @@ HMatrix *GetSRFluxTrace(RWGGeometry *G, HMatrix *XMatrix, cdouble Omega,
   if ( FMatrix && ( (FMatrix->NR != NX) || (FMatrix->NC != NUMSRFLUX) ) )
    { Warn("Wrong-size FMatrix in GetSRFluxTrace (reallocating...)");
      delete FMatrix;
-     FMatrix=0;
+     FMatrix=nullptr;
    };
-  if (FMatrix==0)
+  if (FMatrix==nullptr)
    FMatrix = new HMatrix(NX, NUMSRFLUX, LHM_REAL);
 
   Log("Computing spatially-resolved fluxes at %i evaluation points...",NX);
@@ -97,7 +97,7 @@ HMatrix *GetSRFluxTrace(RWGGeometry *G, HMatrix *XMatrix, cdouble Omega,
   /* the RFMatrix has been precomputed for this XMatrix and this */
   /* frequency and thus bypass its calculation.                  */
   /***************************************************************/
-  bool OwnsRFMatrix = (RFMatrix==0);
+  bool OwnsRFMatrix = (RFMatrix==nullptr);
   int NBF=G->TotalBFs;
   if (RFMatrix && (RFMatrix->NR!=NBF || RFMatrix->NC!=6*NX) )
    { Log(" wrong-size RFMatrix in GetSRFluxTrace (reallocating...)");
@@ -110,7 +110,7 @@ HMatrix *GetSRFluxTrace(RWGGeometry *G, HMatrix *XMatrix, cdouble Omega,
    Log(" Reusing cached RFMatrix");
   else 
    { Log(" Computing RF matrix for %i evaluation points...",NX);
-     G->GetRFMatrix(Omega, 0, XMatrix, RFMatrix);
+     G->GetRFMatrix(Omega, nullptr, XMatrix, RFMatrix);
      Log(" ...done with RF matrix for %i evaluation points",NX);
    }
 
@@ -160,7 +160,7 @@ HMatrix *GetSRFluxTrace(RWGGeometry *G, HMatrix *XMatrix, cdouble Omega,
          G->ResolveEdge(nebTot, &nsb, &neb, &KNIndexB);
 
          cdouble Bilinears[4];
-         GetKNBilinears(0, DRMatrix,
+         GetKNBilinears(nullptr, DRMatrix,
                         IsPECA, KNIndexA, IsPECB, KNIndexB, Bilinears);
          cdouble KK=Bilinears[0];
          cdouble KN=Bilinears[1]/(-1.0*ZVAC);
@@ -255,7 +255,7 @@ HMatrix *GetSRFluxTrace(RWGGeometry *G, HMatrix *XMatrix, cdouble Omega,
 /* normal vector is transformed by GT1 (first) and then GT2.   */
 /***************************************************************/
 HMatrix *GetSCRMatrix(const char *DSIMesh, double DSIRadius, int DSIPoints,
-                      GTransformation *GT1=0, GTransformation *GT2=0)
+                      GTransformation *GT1=nullptr, GTransformation *GT2=nullptr)
 {
   HMatrix *SCRMatrix;
 
@@ -295,7 +295,7 @@ HMatrix *GetSCRMatrix(const char *DSIMesh, double DSIRadius, int DSIPoints,
   /*--------------------------------------------------------------*/
   else
    { double *LRule = GetLebedevRule(DSIPoints);
-     if (LRule==0) ErrExit("no Lebedev rule with %i points",DSIPoints);
+     if (LRule==nullptr) ErrExit("no Lebedev rule with %i points",DSIPoints);
      SCRMatrix = new HMatrix(DSIPoints, 7);
      double R=DSIRadius, R2=R*R;
      for(int np=0; np<DSIPoints; np++)
@@ -318,7 +318,7 @@ HMatrix *GetSCRMatrix(const char *DSIMesh, double DSIRadius, int DSIPoints,
   for(int nGT=0; nGT<2; nGT++)
    { 
      GTransformation *GT = GTs[nGT];
-     if (GT==0) continue;
+     if (GT==nullptr) continue;
      
      for(int nr=0; nr<SCRMatrix->NR; nr++)
       { 
@@ -353,7 +353,7 @@ static double LeviCivita[3][3][3]=
 };
 void GetNMatrices(double nHat[3], double X[3], double XTorque[3],
                   double NMatrix[NUMPFT][3][3], 
-                  bool *NeedQuantity=0)
+                  bool *NeedQuantity=nullptr)
 {
   if ( !NeedQuantity || NeedQuantity[PFT_PABS] )
    { NMatrix[PFT_PABS][0][0] = NMatrix[PFT_PABS][1][1] = NMatrix[PFT_PABS][2][2] = 0.0;
@@ -490,23 +490,23 @@ void GetDSIPFT(RWGGeometry *G, cdouble Omega, double *kBloch,
   else
    FMatrixScat = G->GetFields(0, KN, Omega, kBloch, SCRMatrix);
 */
-  FMatrixScat = G->GetFields(0, KN, Omega, kBloch, SCRMatrix);
+  FMatrixScat = G->GetFields(nullptr, KN, Omega, kBloch, SCRMatrix);
 
   HMatrix *FMatrix;
-  if (IF==0)
+  if (IF==nullptr)
    { 
      FMatrix = FMatrixScat;
    }
   else
-   { FMatrix = G->GetFields(IF, 0, Omega, kBloch, SCRMatrix);
+   { FMatrix = G->GetFields(IF, nullptr, Omega, kBloch, SCRMatrix);
      FMatrix->AddBlock(FMatrixScat, 0, 0);
    };
 
   /***************************************************************/
   /***************************************************************/
   /***************************************************************/
-  double **ByPanel=0;
-  RWGSurface *BS=0;
+  double **ByPanel=nullptr;
+  RWGSurface *BS=nullptr;
   if (DSIMesh && PlotFileName)
    { BS=new RWGSurface(DSIMesh);
      if (GT1) BS->Transform(GT1);
@@ -617,7 +617,7 @@ void GetDSIPFTTrace(RWGGeometry *G, cdouble Omega, HMatrix *DRMatrix,
   /*--------------------------------------------------------------*/
   /*--------------------------------------------------------------*/
   HMatrix *SCRMatrix = GetSCRMatrix(DSIMesh, DSIRadius, DSIPoints, GT1, GT2);
-  HMatrix *SRMatrix  = GetSRFluxTrace(G, SCRMatrix, Omega, DRMatrix, 0,
+  HMatrix *SRMatrix  = GetSRFluxTrace(G, SCRMatrix, Omega, DRMatrix, nullptr,
                                       RFMatrix, RFMatrixDirty); 
 
   /*--------------------------------------------------------------*/

@@ -291,7 +291,7 @@ char *ParseGMSHFile(FILE *MeshFile, char *FileName, int MeshTag,
 
   free(GMSH2HR);
   fclose(MeshFile);
-  return 0;
+  return nullptr;
 } 
 
 #define MAXSTR 1000
@@ -410,7 +410,7 @@ char *ParseComsolFile(FILE *MeshFile, char *FileName, int MeshTag,
   /* ignore the rest of the file and we are done *****************/
   /***************************************************************/
   fclose(MeshFile);
-  return 0;
+  return nullptr;
 } 
 
 } // namespace scuff

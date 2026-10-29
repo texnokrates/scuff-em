@@ -54,7 +54,7 @@ void WriteFilePreamble(SCPData *SCPD, const char *FileName,
   FILE *f = fopen(FileName, "a");
   if (!f) return;
 
-  time_t MyTime=time(0);
+  time_t MyTime=time(nullptr);
   struct tm *MyTm=localtime(&MyTime);
   char TimeString[200];
   strftime(TimeString,30,"%D::%T",MyTm);
@@ -79,7 +79,7 @@ void WriteFilePreamble(SCPData *SCPD, const char *FileName,
      fprintf(f,"#%i: Xi (imaginary frequency) (3e14 rad/sec)\n",nc++);
 
      int LDim = (FileType==FILETYPE_BYXI ? 0 : SCPD->G->LDim);
-     char const *Quantity=0, *Units=0;
+     char const *Quantity=nullptr, *Units=nullptr;
      switch(LDim)
       { case 0: Quantity="CP potential per unit frequency";
                 Units="neV / (3e14 rad/sec)";
@@ -211,11 +211,11 @@ int main(int argc, char *argv[])
   /*******************************************************************/
   /*******************************************************************/
   /*******************************************************************/
-  SCPData *SCPD=CreateSCPData(GeoFile.empty() ? 0 : GeoFile.c_str(),
+  SCPData *SCPD=CreateSCPData(GeoFile.empty() ? nullptr : GeoFile.c_str(),
                               AtomPtrs.data(), (int)Atoms.size(),
                               ParticlePtrs.data(), (int)Particles.size(),
                               EPFile.c_str(),
-                              FileBase.empty() ? 0 : FileBase.c_str());
+                              FileBase.empty() ? nullptr : FileBase.c_str());
 
   /*******************************************************************/
   /* fill in a few simple fields in the SCPData structure ************/
@@ -263,9 +263,9 @@ int main(int argc, char *argv[])
   /*******************************************************************/
   /*******************************************************************/
   /*******************************************************************/
-  if ( XikList.get()!=0 )
+  if ( XikList.get()!=nullptr )
    Log("Computing CP integrand at %i (Xi,k) points",XikList->NR);
-  else if ( XiList.get()!=0 )
+  else if ( XiList.get()!=nullptr )
    Log("Computing Casimir-Polder quantities at %i user-specified frequency points.",XiList->N);
   else if ( Temperature!=0.0 )
    Log("Computing full Matsubara-summed Casimir-Polder potentials at T=%e Kelvin.",Temperature);
@@ -291,7 +291,7 @@ int main(int argc, char *argv[])
   int NumEvalPoints=SCPD->EPMatrix->NR;
   int NumDataValues = NumEvalPoints*NumAtoms;
   std::vector<double> U(NumDataValues, 0.0);
-  if (XikList.get()!=0)
+  if (XikList.get()!=nullptr)
    {
      for(int n=0; n<XikList->NR; n++)
       {
@@ -304,7 +304,7 @@ int main(int argc, char *argv[])
         GetCPIntegrand((void *)SCPD, cdouble(0.0,Xi), kBloch, U.data());
       }
    }
-  if (XiList.get()!=0)
+  if (XiList.get()!=nullptr)
    {
      for(int nXi=0; nXi<XiList->N; nXi++)
       GetXiIntegrand(SCPD, XiList->GetEntryD(nXi), U.data());
@@ -322,7 +322,7 @@ int main(int argc, char *argv[])
   /* write frequency-integrated or Matsubara-summed results to   */
   /* output file                                                 */
   /***************************************************************/
-  if (XiList.get()==0)
+  if (XiList.get()==nullptr)
    {
      std::string OutFileName=std::string(GetFileBase(GeoFile.empty()
                                 ? "PECPlate" : GeoFile.c_str())) + ".out";

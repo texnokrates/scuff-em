@@ -111,8 +111,8 @@ int main(int argc, char *argv[])
   /* RWGGeometry for it in order to get its MATERIAL definitions */
   /* into the system.                                            */
   /***************************************************************/
-  std::unique_ptr<RWGGeometry> G( GeoFile.empty() ? 0 : new RWGGeometry(GeoFile.c_str()) );
-  if (G.get()!=0)
+  std::unique_ptr<RWGGeometry> G( GeoFile.empty() ? nullptr : new RWGGeometry(GeoFile.c_str()) );
+  if (G.get()!=nullptr)
    { Log("Reading material definitions from geometry file %s.\n",G->GeoFileName);
      MatProp::SetFreqUnit(1.0);
    };
@@ -128,9 +128,9 @@ int main(int argc, char *argv[])
   /***************************************************************/
   /***************************************************************/
   int HaveRealFreqData=1, HaveImagFreqData=1;
-  if (MP->Type==MP_INTERP && MP->InterpReal==0)
+  if (MP->Type==MP_INTERP && MP->InterpReal==nullptr)
    HaveRealFreqData=0;
-  if (MP->Type==MP_INTERP && MP->InterpImag==0)
+  if (MP->Type==MP_INTERP && MP->InterpImag==nullptr)
    HaveImagFreqData=0;
 
   /***************************************************************/

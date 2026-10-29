@@ -31,7 +31,7 @@
 #include "libhmat.h"
 
 #ifndef cdouble
-  typedef std::complex<double> cdouble;
+  using cdouble = std::complex<double>;
 #endif
 
 #ifndef ZVAC
@@ -69,7 +69,7 @@ class IncField
 
    void SetFrequency(cdouble Omega, bool Traverse=true);
    void SetFrequencyAndEpsMu(cdouble Omega, cdouble Eps, cdouble Mu, bool Traverse=true);
-   void SetRegionLabel(const char *Label = 0);
+   void SetRegionLabel(const char *Label = nullptr);
 
    void SetLattice(HMatrix *LBasis, bool Traverse=true);
    void SetkBloch(double *NewkBloch, bool Traverse=true);
@@ -109,7 +109,7 @@ class PlaneWave : public IncField
    cdouble E0[3];         /* E-field polarization vector */
    double nHat[3];        /* unit vector in direction of propagation */
 
-   PlaneWave(const cdouble E0[3], const double nHat[3], const char *Label = 0);
+   PlaneWave(const cdouble E0[3], const double nHat[3], const char *Label = nullptr);
    PlaneWave(const PlaneWave &PW);
    PlaneWave();
    ~PlaneWave();
@@ -135,7 +135,7 @@ class PointSource: public IncField
    int Type;             /* LIF_ELECTRIC_DIPOLE or LIF_MAGNETIC_DIPOLE */
 
    PointSource(const double X0[3], const cdouble P[3], 
-               int Type = LIF_ELECTRIC_DIPOLE, const char *Label = 0);
+               int Type = LIF_ELECTRIC_DIPOLE, const char *Label = nullptr);
    PointSource(const PointSource &PS);
    PointSource();
    ~PointSource();
@@ -168,7 +168,7 @@ class GaussianBeam: public IncField
 
    // constructor 
    GaussianBeam(const double X0[3], const double KProp[3], 
-                const cdouble E0[3], double W0, const char *Label = 0);
+                const cdouble E0[3], double W0, const char *Label = nullptr);
    ~GaussianBeam();
 
    void SetX0(double pX0[3]);
@@ -236,13 +236,13 @@ class MagneticSolenoid: public IncField
 /* a list of incident fields; used to implement "advanced mode" in    */
 /* scuff-scatter and buff-scatter                                     */
 /**********************************************************************/
-typedef struct IncFieldList
+using IncFieldList = struct IncFieldList
  { IncField **IFs;
    char **Labels;
    int NumIFs;
- } IncFieldList;
+ };
 
 IncFieldList *ReadIncFieldList(const char *FileName);
-IncFieldList *AddIncFieldToList(IncField *IF, const char *Label=0, IncFieldList *IFList=0); 
+IncFieldList *AddIncFieldToList(IncField *IF, const char *Label=nullptr, IncFieldList *IFList=nullptr); 
 
 #endif

@@ -25,7 +25,7 @@
 
 void freadEC(void *p, size_t size, size_t nmemb, FILE *f, const char *FileName)
 {
-  size_t nRead;
+  size_t nRead = 0;
 
   nRead=fread(p, size, nmemb, f);
   if (nRead!=nmemb)

@@ -67,7 +67,7 @@ namespace scuff {
 /*--------------------------------------------------------------*/
 /*- GetPanelPanelInteractions() --------------------------------*/
 /*--------------------------------------------------------------*/
-typedef struct GetPPIArgStruct
+using GetPPIArgStruct = struct GetPPIArgStruct
  { 
    // input fields to be filled in by caller
    RWGSurface *Sa, *Sb;
@@ -105,7 +105,7 @@ typedef struct GetPPIArgStruct
    cdouble GradH[6];
    cdouble dHdT[6];
 
- } GetPPIArgStruct;
+ };
 
 void InitGetPPIArgs(GetPPIArgStruct *Args);
 void GetPanelPanelInteractions(GetPPIArgStruct *Args);
@@ -120,7 +120,7 @@ void GetPanelPanelInteractions(GetPPIArgStruct *Args,
 #define EEI_NOFORCE  0       // values for the 'Force' field
 #define EEI_FORCE_PP 12345   //  of the GetEEIArgStruct
 #define EEI_FORCE_SM 23456
-typedef struct GetEEIArgStruct
+using GetEEIArgStruct = struct GetEEIArgStruct
  { 
    // input fields to be filled in by caller
    RWGSurface *Sa, *Sb;
@@ -161,7 +161,7 @@ typedef struct GetEEIArgStruct
    cdouble GradGC[6];
    cdouble dGCdT[6];
 
- } GetEEIArgStruct;
+ };
 
 void InitGetEEIArgs(GetEEIArgStruct *Args);
 void GetEdgeEdgeInteractions(GetEEIArgStruct *Args);
@@ -175,7 +175,7 @@ void GetSubstrateEEIs(LayeredSubstrate *S,
 /*--------------------------------------------------------------*/
 /*- GetGCMatrixElements ----------------------------------------*/
 /*--------------------------------------------------------------*/
-typedef struct GetGCMEArgStruct
+using GetGCMEArgStruct = struct GetGCMEArgStruct
 {
   // these fields must be filled in by caller
   int nsa, nsb;
@@ -194,7 +194,7 @@ typedef struct GetGCMEArgStruct
   bool DoNotDeSingularize;
   int  ForceOrder;
 
-} GetGCMEArgStruct;
+};
 
 #define GCME_GC 0
 #define GCME_DW 1
@@ -210,14 +210,14 @@ void GetGCMatrixElements(RWGGeometry *G,
                          int nea, int neb,
                          cdouble Gab[2][NUMGCMES],
                          cdouble ikCab[2][NUMGCMES],
-                         cdouble *GPhiTerm=0);
+                         cdouble *GPhiTerm=nullptr);
 
 void InitGetGCMEArgs(GetGCMEArgStruct *Args);
 
 /*--------------------------------------------------------------*/
 /*- GetSurfaceSurfaceInteractions() ----------------------------*/
 /*--------------------------------------------------------------*/
-typedef struct GetSSIArgStruct
+using GetSSIArgStruct = struct GetSSIArgStruct
  {
    // input fields to be filled in by caller
    RWGGeometry *G;
@@ -264,7 +264,7 @@ typedef struct GetSSIArgStruct
    cdouble MuA, MuB;
    bool SaIsPEC, SbIsPEC;
 
- } GetSSIArgStruct;
+ };
 
 void InitGetSSIArgs(GetSSIArgStruct *Args);
 void GetSurfaceSurfaceInteractions(GetSSIArgStruct *Args);
@@ -282,7 +282,7 @@ void AddSurfaceZetaContributionToBEMMatrix(GetSSIArgStruct *Args);
 
 // a 'QIFIPPIData' is the minimal chunk of data that needs
 // to be stored for each panel-panel pair.
-typedef struct QIFIPPIData
+using QIFIPPIData = struct QIFIPPIData
  { 
    double xMxpRM3[3], xXxpRM3[3];
    double uvupvpRM1[9];
@@ -292,18 +292,18 @@ typedef struct QIFIPPIData
 #ifdef FIPPIFIX_20150306
    double x0[3];
 #endif 
- } QIFIPPIData;
+ };
 
 // a 'QDFIPPIData' is ...
 //
-typedef struct QDFIPPIData
+using QDFIPPIData = struct QDFIPPIData
  { 
    double hTimesRM3;
    double hDotRM1, hNablaRM1, hTimesRM1;
    double hDotR0,  hNablaR0,  hTimesR0;
    double hDotR1,  hNablaR1,  hTimesR1;
    double hDotR2,  hNablaR2;
- } QDFIPPIData;
+ };
 
 /*--------------------------------------------------------------*/
 /*--------------------------------------------------------------*/
@@ -347,12 +347,12 @@ struct FIPPIKeyCmp
     }
  };
 
-typedef std::pair<FIPPIKeyStruct, QIFIPPIData *> FIPPIKeyValuePair;
+using FIPPIKeyValuePair = std::pair<FIPPIKeyStruct, QIFIPPIData *>;
 
-typedef std::unordered_map< FIPPIKeyStruct,
+using FIPPIKeyValueMap = std::unordered_map< FIPPIKeyStruct,
                             QIFIPPIData *,
                             FIPPIKeyHash,
-                            FIPPIKeyCmp> FIPPIKeyValueMap;
+                            FIPPIKeyCmp>;
 
 /*--------------------------------------------------------------*/
 /*--------------------------------------------------------------*/
@@ -425,7 +425,7 @@ int AssessPanelPair(RWGSurface *Sa, int npa,
                     RWGSurface *Sb, int npb,
                     double *rRel);
 
-int AssessBFPair(RWGSurface *Sa, int nea, RWGSurface *Sb, int neb, double *rRel=0);
+int AssessBFPair(RWGSurface *Sa, int nea, RWGSurface *Sb, int neb, double *rRel=nullptr);
 
 int NumCommonVertices(RWGSurface *Sa, int npa, RWGSurface *Sb, int npb);
 

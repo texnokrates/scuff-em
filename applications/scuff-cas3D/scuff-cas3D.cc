@@ -271,7 +271,7 @@ int main(int argc, char *argv[])
   SC3Data *SC3D=CreateSC3Data(G.get(), TransFile.c_str(), WhichQuantities, NumQuantities,
                               nTorque, TorqueAxes.data(), NewEnergyMethod, FileBase.c_str());
 
-  SC3D->WriteCache         = WriteCache.empty() ? 0 : WriteCache.c_str();
+  SC3D->WriteCache         = WriteCache.empty() ? nullptr : WriteCache.c_str();
   SC3D->WriteHDF5Files     = WriteHDF5Files;
   SC3D->AbsTol             = AbsTol;
   SC3D->RelTol             = RelTol;
@@ -293,7 +293,7 @@ int main(int argc, char *argv[])
   /*******************************************************************/
   std::vector<double> EFT(SC3D->NTNQ, 0.0);
   std::vector<double> Error;
-  if ( XiKPoints.get()!=0 )
+  if ( XiKPoints.get()!=nullptr )
    {
      for(int nr=0; nr<XiKPoints->NR; nr++)
       {
@@ -305,7 +305,7 @@ int main(int argc, char *argv[])
         GetCasimirIntegrand(SC3D, cdouble(0.0,Xi), kBloch, EFT.data());
       };
    }
-  else if ( XiPoints.get()!=0 )
+  else if ( XiPoints.get()!=nullptr )
    {
      for (int nr=0; nr<XiPoints->NR; nr++)
       GetXiIntegrand(SC3D, XiPoints->GetEntryD(nr,0), EFT.data());

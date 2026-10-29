@@ -139,7 +139,7 @@ enum DGFMethod {AUTO, SURFACE_CURRENT, STATIC_LIMIT};
 /***************************************************************/
 #define NEED_DRHO 1
 #define NEED_DZ   2
-typedef struct ScalarGFOptions
+using ScalarGFOptions = struct ScalarGFOptions
  { bool PPIsOnly;
    bool Subtract;
    bool RetainSingularTerms;
@@ -149,7 +149,7 @@ typedef struct ScalarGFOptions
    int MaxTerms;   // in series for Silvester potential
    double RelTol;  // for series summation
    double AbsTol; 
- } ScalarGFOptions;
+ };
 void InitScalarGFOptions(ScalarGFOptions *Options);
 
 /***************************************************************/
@@ -170,10 +170,10 @@ public:
 
    // body of constructor for the above two cases
    // if ErrMsg is nonzero on return, something failed
-   void Initialize(FILE *f, const char *FileName, int *pLineNum=0);
+   void Initialize(FILE *f, const char *FileName, int *pLineNum=nullptr);
 
    // write a text description of the substrate to f (stdout if f==0)
-   void Describe(FILE *f=0);
+   void Describe(FILE *f=nullptr);
 
    // destructor
    ~LayeredSubstrate();
@@ -184,7 +184,7 @@ public:
    /*--------------------------------------------------------------*/
    // substrate contribution
    void GetDeltaPhiE(double XD[3], double XS[3],
-                     double PhiE[4], double *pG0Correction=0);
+                     double PhiE[4], double *pG0Correction=nullptr);
 
    // total (free-space + substrate)
    void GetTotalPhiE(double XD[3], double XS[3], double PhiE[4]);
@@ -202,7 +202,7 @@ public:
    /* dyadic GF for eval point #n stored in column-major order,    */
    /* i.e. as a fortran/lapack/libhmat style array, not a C array. */
    /*--------------------------------------------------------------*/
-   HMatrix *GetSubstrateDGF(cdouble Omega, HMatrix *XMatrix, HMatrix *GMatrix=0, 
+   HMatrix *GetSubstrateDGF(cdouble Omega, HMatrix *XMatrix, HMatrix *GMatrix=nullptr, 
                             bool AddHomogeneousDGF=false,
                             bool SubtractQS=false);
    void GetSubstrateDGF(cdouble Omega, double XD[3], double XS[3],
@@ -273,7 +273,7 @@ public:
    void DestroyScriptGTwiddleWorkspace(cdouble *Workspace);
    void GetScriptGTwiddle(cdouble Omega, cdouble q2D[2],
                           double zDest, double zSource,
-                          HMatrix *GTwiddle, cdouble *Workspace=0,
+                          HMatrix *GTwiddle, cdouble *Workspace=nullptr,
                           bool dzDest=false, bool dzSource=false,
                           bool AddGamma0Twiddle=false);
 
@@ -286,7 +286,7 @@ public:
    void DestroyScriptLTwiddleWorkspace(cdouble *Workspace);
    void GetScriptLTwiddle(cdouble Omega, cdouble q2D[2],
                           double zDest, double zSource, HMatrix *LTwiddle,
-                          cdouble *Workspace=0, 
+                          cdouble *Workspace=nullptr, 
                           bool dzDest=false, bool dzSource=false,
                           bool AddLambda0Twiddle=false);
 
@@ -299,7 +299,7 @@ public:
                         bool SubtractQS=false, bool EEOnly=false, 
                         bool ScalarPPIs=false);
    int GetgFrak(cdouble Omega, HMatrix *XMatrix, cdouble *gFrak,
-                cdouble *Workspace=0, bool SubstractQS=false,
+                cdouble *Workspace=nullptr, bool SubstractQS=false,
                 bool EEOnly=false, bool ScalarPPIs=false,
                 bool dRho=false, bool dzDest=false, bool dzSource=false);
    void gFrakToScriptG(cdouble gFrak[NUMGFRAK], double Theta,
@@ -313,10 +313,10 @@ public:
                             cdouble *V, const ScalarGFOptions *Options);
 
    int GetScalarGFs_MOI(cdouble Omega, HMatrix *XMatrix,
-                        HMatrix *VMatrix, const ScalarGFOptions *Options=0);
+                        HMatrix *VMatrix, const ScalarGFOptions *Options=nullptr);
 
    int GetScalarGFs_MOI(cdouble Omega, double Rho, double zDest, cdouble *V,
-                        const ScalarGFOptions *Options=0);
+                        const ScalarGFOptions *Options=nullptr);
 
 // internal ("private") class data
 
@@ -383,7 +383,7 @@ void SommerfeldIntegrate(integrand f, void *fdata, unsigned zfdim,
                          size_t MaxEvalA, size_t MaxEvalB,
                          double AbsTol, double RelTol,
                          cdouble *Integral, cdouble *Error,
-                         bool Verbose=false, const char *LogFileName=0);
+                         bool Verbose=false, const char *LogFileName=nullptr);
 
 void GetacSommerfeld(LayeredSubstrate *S, cdouble Omega,
                      double Rho, double zDest, double zSource,
@@ -394,6 +394,6 @@ void GetacSommerfeld(LayeredSubstrate *S, cdouble Omega,
 /***************************************************************/
 int GetSGFCorrection_MOI(cdouble Omega, double Rho, double z,
                          cdouble Eps, double h, cdouble *V,
-                         const ScalarGFOptions *Options=0);
+                         const ScalarGFOptions *Options=nullptr);
 
 #endif // LIBSUBSTRATE_H

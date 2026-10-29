@@ -83,7 +83,7 @@ class MatProp
    cdouble GetMu(cdouble Omega);
 
    /* get index of refraction and relative wave impedance at given freq*/
-   cdouble GetRefractiveIndex(cdouble Omega, cdouble *ZRel=0);
+   cdouble GetRefractiveIndex(cdouble Omega, cdouble *ZRel=nullptr);
 
    /* set constant eps/mu */
    void SetEpsMu(cdouble pEps, cdouble pMu);

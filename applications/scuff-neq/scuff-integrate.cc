@@ -59,10 +59,10 @@ using namespace scuff;
 #define MAXPARMS    20
 #define MAXOBJ      9
 
-typedef std::vector<int>     ivec;
-typedef std::vector<char>    cvec;
-typedef std::vector<double>  dvec;
-typedef std::vector<cdouble> zvec;
+using ivec = std::vector<int>;
+using cvec = std::vector<char>;
+using dvec = std::vector<double>;
+using zvec = std::vector<cdouble>;
 
 /***************************************************************/
 /***************************************************************/
@@ -84,7 +84,7 @@ double GetThetaFactor(double Omega, double T)
 /***************************************************************/
 /***************************************************************/
 /***************************************************************/
-typedef struct IntegrandData
+using IntegrandData = struct IntegrandData
 {
   Interp1D *I1D;
   double Temperature;
@@ -92,7 +92,7 @@ typedef struct IntegrandData
   double PreFactor;
   FILE *LogFile;
 
-} IntegrandData;
+};
 
 int Integrand(unsigned ndim, const double *x, void *UserData,
               unsigned fdim, double *fval)
@@ -410,11 +410,11 @@ int main(int argc, char *argv[])
 
      for(size_t nts=0; nts<TempStrings.size()/2; nts++)
       { int Index; 
-        int Status=sscanf(TempStrings[2*nts+0].c_str(),"%i",&Index);
+        int Status=sscanf(TempStrings[2*nts+0].c_str(),"%i",&Index); // NOLINT(bugprone-unchecked-string-to-number-conversion) -- Status checked below
         if (Status!=1 || Index<0 || Index>NSource)
          ErrExit("invalid object index %s",TempStrings[2*nts+0].c_str());
         double T;
-        Status=sscanf(TempStrings[2*nts+1].c_str(),"%le",&T);
+        Status=sscanf(TempStrings[2*nts+1].c_str(),"%le",&T); // NOLINT(bugprone-unchecked-string-to-number-conversion) -- Status checked below
         if (Status!=1) 
          ErrExit("invalid temperature %s",TempStrings[2*nts+1].c_str());
         TemperatureMatrix->SetEntry(0,Index,T);
@@ -427,7 +427,7 @@ int main(int argc, char *argv[])
   int NumTemperatures = TemperatureMatrix ? TemperatureMatrix->NR : 1;
 
   if (PreFactor==0.0)
-   PreFactor = (TemperatureMatrix.get()==0) ? 1.0 : HBAROMEGA02;
+   PreFactor = (TemperatureMatrix.get()==nullptr) ? 1.0 : HBAROMEGA02;
 
   /***************************************************************/
   /* NumParmValues is the total number of distinct sets of       */
@@ -484,7 +484,7 @@ int main(int argc, char *argv[])
 
   /* array to accumulate contributions of all source objects to */
   /* quantities for individual destination objects              */
-  double *TotalByDest=0;
+  double *TotalByDest=nullptr;
   if (NSource>1)
    TotalByDest=(double *)mallocEC(NDest*NumTemperatures*NumData*sizeof(double));
      
@@ -531,7 +531,7 @@ int main(int argc, char *argv[])
      IntegrandData MyID;
      MyID.I1D=new Interp1D(XValues, YValues, NSamples, NumData);
      MyID.PreFactor    = PreFactor;
-     MyID.LogFile      = 0;
+     MyID.LogFile      = nullptr;
      MyID.Temperature  = -1.0;
      MyID.TEnvironment = -1.0;
   
@@ -545,7 +545,7 @@ int main(int argc, char *argv[])
            MyID.Temperature  = TemperatureMatrix->GetEntryD(nTemp,SourceObject+1);
          };
            
-        MyID.LogFile=0;
+        MyID.LogFile=nullptr;
 #if 0
         if (IntegrandFileName)
          { MyID.LogFile=fopen(IntegrandFileName,"a");
@@ -570,7 +570,7 @@ int main(int argc, char *argv[])
 
         if (MyID.LogFile)
          { fclose(MyID.LogFile);
-           MyID.LogFile=0;
+           MyID.LogFile=nullptr;
          };
 
         /*--------------------------------------------------------------*/
@@ -625,7 +625,7 @@ int main(int argc, char *argv[])
   /***************************************************************/
   /***************************************************************/
   fclose(OutFile);
-  printf("Integrated data written to %s.\n",OutFileName);
+  printf("Integrated data written to %s.\n",OutFileNameStr.c_str());
   printf("Thank you for your support.\n");
  
 }

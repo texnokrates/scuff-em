@@ -49,7 +49,7 @@ const char *TimeNames[]={"G0", "BESSEL", "W", "SOLVE", "STAMP"};
 /***************************************************************/
 LayeredSubstrate::LayeredSubstrate(const char *FileName)
 {
-  char *Dir=0;
+  char *Dir=nullptr;
   FILE *f=fopenPath(getenv("SCUFF_SUBSTRATE_PATH"), FileName,"r",&Dir);
   if (!f)
    { ErrMsg=vstrdup("could not open file %s",FileName);
@@ -57,7 +57,7 @@ LayeredSubstrate::LayeredSubstrate(const char *FileName)
    };
   Log("Reading substrate definition from %s/%s.",Dir ? Dir : ".",FileName);
 
-  Initialize(f,FileName,0);
+  Initialize(f,FileName,nullptr);
   fclose(f);
 }
 
@@ -68,7 +68,7 @@ LayeredSubstrate::LayeredSubstrate(const char *FileName)
 /***************************************************************/
 LayeredSubstrate::LayeredSubstrate(FILE *f, int *pLineNum)
 {
-  Initialize(f,0,pLineNum);
+  Initialize(f,nullptr,pLineNum);
 }
 
 /***************************************************************/
@@ -85,12 +85,12 @@ void LayeredSubstrate::Initialize(FILE *f, const char *FileName, int *pLineNum)
   NumLayers=1;
   MPLayer=(MatProp **)mallocEC(NumLayers*sizeof(MatProp *));
   MPLayer[0]=new MatProp("VACUUM");
-  zInterface=0;
+  zInterface=nullptr;
   zGP=-1.0*HUGE_VAL;
   
   // keep track of whether we're in a .substrate file or in a
   // SUBSTRATE...ENDSUBSTRATE section of a .scuffgeo file
-  bool InSubstrateFile = (FileName!=0);
+  bool InSubstrateFile = (FileName!=nullptr);
 
   /*--------------------------------------------------------------*/
   /*- read and parse lines from the file one at a time -----------*/
@@ -250,7 +250,7 @@ void LayeredSubstrate::Initialize(FILE *f, const char *FileName, int *pLineNum)
   ForceMethod=AUTO;
   ForceFreeSpace=StaticLimit=false;
 
-  ErrMsg=0;
+  ErrMsg=nullptr;
 }
 
 /***************************************************************/
@@ -272,7 +272,7 @@ LayeredSubstrate::~LayeredSubstrate()
 /***************************************************************/
 void LayeredSubstrate::Describe(FILE *f)
 { 
-  if (f==0) f=stdout;
+  if (f==nullptr) f=stdout;
   int MaxLength = strlen(MPLayer[0]->Name);
   for(int nl=1; nl<NumLayers; nl++)
    { int Length = strlen(MPLayer[nl]->Name);

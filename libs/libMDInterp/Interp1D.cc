@@ -70,7 +70,7 @@ static int GetCTableOffset(int nf, int nFun, int n)
 /* thread routine used to compute values and derivatives of     */
 /* user's function at grid points                               */
 /****************************************************************/
-typedef struct ThreadData
+using ThreadData = struct ThreadData
  {
    double *XPoints;
    double XMin, DX;
@@ -85,7 +85,7 @@ typedef struct ThreadData
 
    int nt, nThread;
 
- } ThreadData;
+ };
 
 void *GetPhiVD_Thread(void *data)
 {
@@ -151,7 +151,7 @@ void *GetPhiVD_Thread(void *data)
 
   delete[] PhiVD;
 
-  return 0;
+  return nullptr;
   
 }
 
@@ -188,7 +188,7 @@ Interp1D::Interp1D(double pXMin, double XMax, int pN,
    ErrExit("Interp1D: grid must have 1 or more data values");
 
 
-  XPoints=0;
+  XPoints=nullptr;
   XMin=pXMin;
   N=pN;
   DX = (XMax-XMin) / ( (double)(N-1) );
@@ -536,7 +536,7 @@ Interp1D::Interp1D(const char *FileName)
   int XPointsIsNULL;
   freadEC(&XPointsIsNULL, sizeof(int), 1, f, FileName);
   if (XPointsIsNULL)
-   { XPoints=0;
+   { XPoints=nullptr;
      freadEC(&XMin, sizeof(double), 1, f, FileName);
      freadEC(&DX  , sizeof(double), 1, f, FileName);
    }
@@ -575,7 +575,7 @@ Interp1D::Interp1D(const Interp1D &Original)
      memcpy(XPoints, Original.XPoints, N*sizeof(double));
    }
   else
-   XPoints=0;
+   XPoints=nullptr;
 
   int CTableSize = (N-1)*nFun*NCOEFF*sizeof(double);
   CTable=(double *)mallocEC(CTableSize);
@@ -600,7 +600,7 @@ void Interp1D::WriteToFile(const char *FileName)
   fwrite(&N   , sizeof(int), 1, f); 
   fwrite(&nFun, sizeof(int), 1, f);
 
-  int XPointsIsNULL = (XPoints==0 ? 1 : 0);
+  int XPointsIsNULL = (XPoints==nullptr ? 1 : 0);
   fwrite(&XPointsIsNULL, 1, sizeof(int), f);
   if (XPointsIsNULL)
    { fwrite(&XMin, sizeof(double), 1, f);
@@ -644,7 +644,7 @@ bool Interp1D::Evaluate(double X, double *Phi)
   int n;
   double XBar;
   bool Inside = FindInterval(X, XPoints, N, XMin, DX, &n, &XBar);
-  if (Inside==false || Phi==0)
+  if (Inside==false || Phi==nullptr)
    return Inside;
 
   /****************************************************************/
@@ -693,5 +693,5 @@ double Interp1D::Evaluate(double X)
 /***************************************************************/
 bool Interp1D::PointInGrid(double X)
 {
-  return Evaluate(X,0);
+  return Evaluate(X,nullptr);
 }

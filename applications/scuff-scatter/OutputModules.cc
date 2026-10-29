@@ -68,8 +68,8 @@ void ProcessEPFile(SSData *SSD, const char *EPFileName)
   /*--------------------------------------------------------------*/
   Log("Evaluating fields at points in file %s...",EPFileName);
 
-  HMatrix *SFMatrix = G->GetFields( 0, KN, Omega, kBloch, XMatrix); // scattered
-  HMatrix *IFMatrix = G->GetFields(IF,  0, Omega, kBloch, XMatrix); // incident
+  HMatrix *SFMatrix = G->GetFields( nullptr, KN, Omega, kBloch, XMatrix); // scattered
+  HMatrix *IFMatrix = G->GetFields(IF,  nullptr, Omega, kBloch, XMatrix); // incident
 
   /*--------------------------------------------------------------*/
   /*- create .scattered and .total output files and write fields -*/
@@ -389,7 +389,7 @@ void WritePFTFile(SSData *SSD, PFTOptions *PFTOpts, int Method,
      PFTOpts->FluxFileName=FileNameBuffer;
    }
   else
-   PFTOpts->FluxFileName=0;
+   PFTOpts->FluxFileName=nullptr;
 
   static bool WrotePreamble[SCUFF_PFT_NUMMETHODS];
   static bool Initialized=false;
@@ -406,7 +406,7 @@ void WritePFTFile(SSData *SSD, PFTOptions *PFTOpts, int Method,
   /***************************************************************/
   /***************************************************************/
   /***************************************************************/
-  double *RegionPFTs=0;
+  double *RegionPFTs=nullptr;
   if (PFTOpts->GetRegionPFTs)
    RegionPFTs=(double *)mallocEC( G->NumRegions*NUMPFT*sizeof(double) );
 
@@ -469,7 +469,7 @@ void WritePSDFile(SSData *SSD, const char *PSDFile)
   char *IFLabel        = SSD->IFLabel;
   FILE *f=fopen(PSDFile,"r");
   fclose(f);
-  if (f==0)
+  if (f==nullptr)
    { f=fopen(PSDFile,"w");
      fprintf(f,"# Data file columns: \n");
      fprintf(f,"# 1:      angular frequency\n");
@@ -500,9 +500,9 @@ void WritePSDFile(SSData *SSD, const char *PSDFile)
 
   Log("Computing panel source densities at Omega=%s...",z2s(SSD->Omega));
 
-  static HMatrix *PSDMatrix=0;
-  if (PSDMatrix==0)
-   PSDMatrix=SSD->G->GetPanelSourceDensities(SSD->Omega, SSD->KN, 0); 
+  static HMatrix *PSDMatrix=nullptr;
+  if (PSDMatrix==nullptr)
+   PSDMatrix=SSD->G->GetPanelSourceDensities(SSD->Omega, SSD->KN, nullptr); 
   else
    SSD->G->GetPanelSourceDensities(SSD->Omega, SSD->KN, PSDMatrix); 
 

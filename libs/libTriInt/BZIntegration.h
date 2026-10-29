@@ -44,14 +44,14 @@
 /***************************************************************/
 /***************************************************************/
 /***************************************************************/
-typedef void (*BZIFunction)(void *UserData,
+using BZIFunction = void (*)(void *UserData,
                             cdouble Omega, double *kBloch,
                             double *BZIntegrand);
 
 /***************************************************************/
 /***************************************************************/
 /***************************************************************/
-typedef struct GetBZIArgStruct
+using GetBZIArgStruct = struct GetBZIArgStruct
 {
   // information on the Brillouin-zone integrand function
   BZIFunction BZIFunc;
@@ -84,7 +84,7 @@ typedef struct GetBZIArgStruct
   int NumCalls;       // actual # integrand samples (return value)
   double *BZIError;   // error (for adaptive schemes)
   
-} GetBZIArgStruct;
+};
 
 /***************************************************************/
 /***************************************************************/
@@ -92,7 +92,7 @@ typedef struct GetBZIArgStruct
 void GetBZIntegral(GetBZIArgStruct *Args, cdouble Omega,
                    double *BZIntegral);
 
-GetBZIArgStruct *InitBZIArgs(int argc=0, char **argv=0);
+GetBZIArgStruct *InitBZIArgs(int argc=0, char **argv=nullptr);
 void DestroyBZIArgs(GetBZIArgStruct *BZIArgs);
 void UpdateBZIArgs(GetBZIArgStruct *BZIArgs, HMatrix *RLBasis,
                    double RLVolume);

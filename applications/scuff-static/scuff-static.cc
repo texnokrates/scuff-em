@@ -221,6 +221,7 @@ int main(int argc, char *argv[])
    FileBase=GetFileBase(GeoFile.c_str());
 
   std::vector<const char *> EPFilePtrs;
+  EPFilePtrs.reserve(EPFiles.size());
   for(const std::string &EPFile : EPFiles)
    EPFilePtrs.push_back(EPFile.c_str());
 
@@ -228,17 +229,17 @@ int main(int argc, char *argv[])
   /* create the ScuffStaticGeometry **********************************/
   /*******************************************************************/
   std::unique_ptr<StaticSolver> SS(
-    new StaticSolver(GeoFile.c_str(), SubstrateFile.empty() ? 0 : SubstrateFile.c_str()));
+    new StaticSolver(GeoFile.c_str(), SubstrateFile.empty() ? nullptr : SubstrateFile.c_str()));
   SS->SeparateOutputFiles = SeparateOutputFiles;
 
-  HMatrix *M      = 0;   // owned by ReassembleBEMMatrix's realloc-in-place contract
+  HMatrix *M      = nullptr;   // owned by ReassembleBEMMatrix's realloc-in-place contract
   std::unique_ptr<HVector> Sigma(SS->AllocateRHSVector());
   RWGGeometry *G  = SS->G;
 
   /*******************************************************************/
   /* read in information about excitations ***************************/
   /*******************************************************************/
-  StaticExcitation **SEList=0;
+  StaticExcitation **SEList=nullptr;
   int NumExcitations=0;
   if (!ExcitationFile.empty())
    {
@@ -249,11 +250,11 @@ int main(int argc, char *argv[])
    {
      if (!ExcitationFile.empty())
       ErrExit("--ExcitationFile is incompatible with [--PotFile | --ConstField | --Monopole | --Dipole | --PhiExt]");
-     SEList = CreateSimpleSEList(G, PotFile.empty() ? 0 : PotFile.c_str(),
-                                 ConstField.empty() ? 0 : ConstField.c_str(),
+     SEList = CreateSimpleSEList(G, PotFile.empty() ? nullptr : PotFile.c_str(),
+                                 ConstField.empty() ? nullptr : ConstField.c_str(),
                                  (int)Monopoles.size()/4, Monopoles.data(),
                                  (int)Dipoles.size()/6, Dipoles.data(),
-                                 PhiExt.empty() ? 0 : PhiExt.c_str());
+                                 PhiExt.empty() ? nullptr : PhiExt.c_str());
      NumExcitations=1;
    };
 
@@ -264,7 +265,7 @@ int main(int argc, char *argv[])
   /*- this case the list of GTComplices is initialized to contain */
   /*- a single empty GTComplex and the check automatically passes.*/
   /****************************************************************/
-  GTCList GTCs=ReadTransFile(TransFile.empty() ? 0 : TransFile.c_str());
+  GTCList GTCs=ReadTransFile(TransFile.empty() ? nullptr : TransFile.c_str());
   int NT = GTCs.size();
   char *ErrMsg=G->CheckGTCList(GTCs);
   if (ErrMsg)
@@ -317,7 +318,7 @@ int main(int argc, char *argv[])
       WriteCapacitanceMatrix(SS.get(), M, Sigma.get(), CapFile.c_str());
      if (!CMatrixFile.empty() || !CMatrixHDF5File.empty())
       WriteCMatrix(SS.get(), M, Sigma.get(), lMax, CMatrixFile.c_str(),
-                   CMatrixHDF5File.empty() ? 0 : CMatrixHDF5File.c_str());
+                   CMatrixHDF5File.empty() ? nullptr : CMatrixHDF5File.c_str());
 
      /******************************************************************/
      /* The remaining options do require user-specified external       */
@@ -346,7 +347,7 @@ int main(int argc, char *argv[])
 
         for(size_t nfm=0; nfm<FVMeshes.size(); nfm++)
          SS->VisualizeFields(Sigma.get(), FVMeshes[nfm].c_str(), FileBase.c_str(), SE,
-                             FVMeshTransFiles.size() ? FVMeshTransFiles[nfm].c_str() : 0);
+                             FVMeshTransFiles.size() ? FVMeshTransFiles[nfm].c_str() : nullptr);
       };
 
      /*******************************************************************/

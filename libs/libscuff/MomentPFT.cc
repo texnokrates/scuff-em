@@ -203,7 +203,7 @@ HMatrix *GetMomentPFTMatrix(RWGGeometry *G, cdouble Omega, IncField *IF,
   /***************************************************************/
   /***************************************************************/
   int NS = G->NumSurfaces;
-  if (    (PFTMatrix==0)
+  if (    (PFTMatrix==nullptr)
        || (PFTMatrix->NR != NS)
        || (PFTMatrix->NC != NUMPFT)
      )

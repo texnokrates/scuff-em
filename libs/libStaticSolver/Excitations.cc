@@ -70,7 +70,7 @@ void UserStaticField(double *x, void *UserData, double PhiE[4])
   UserSFData *Data = (UserSFData *)UserData;
 
   memset(PhiE, 0, 4*sizeof(double));
-  if ( Data==0 || Data->PhiEvaluator==0 ) return;
+  if ( Data==nullptr || Data->PhiEvaluator==nullptr ) return;
 
   /*--------------------------------------------------------------*/
   /*--------------------------------------------------------------*/
@@ -260,8 +260,8 @@ StaticExcitation *ParseExcitationSection(StaticSolver *SSS,
   SE->Label=strdup(Label);
   SE->Potentials=(double *)mallocEC(NS * sizeof(double));
   memset(SE->Potentials, 0, NS*sizeof(double));
-  SE->SFs=0;
-  SE->SFData=0;
+  SE->SFs=nullptr;
+  SE->SFData=nullptr;
   SE->NumSFs=0;
 
   /***************************************************************/
@@ -341,7 +341,7 @@ StaticExcitation *ParseExcitationSection(StaticSolver *SSS,
          ErrExit("%s:%i: invalid PHI specification",FileName,*LineNum);
 
         UserSFData *Data = (UserSFData *)mallocEC(sizeof *Data);
-        char *str=0;
+        char *str=nullptr;
         for(int nt=1; nt<NumTokens; nt++)
          str=vstrappend(str, " %s",Tokens[nt]);
         Data->PhiEvaluator=cevaluator_create(str);
@@ -372,7 +372,7 @@ StaticExcitation *ParseExcitationSection(StaticSolver *SSS,
 
   //never get here
   ErrExit("%s:%i: internal error",__FILE__,__LINE__);
-  return 0;
+  return nullptr;
 
   
 }
@@ -386,7 +386,7 @@ StaticExcitation **ReadExcitationFile(StaticSolver *SSS, const char *FileName,
                                       int *pNumExcitations)
 {
   int NumExcitations=0;
-  StaticExcitation **SEList=0;
+  StaticExcitation **SEList=nullptr;
 
   /***************************************************************/
   /* read and parse lines from the file one by one ***************/
@@ -458,7 +458,7 @@ void ParsePotentialFile(RWGGeometry *G, const char *PotFile, double *Potentials)
       ErrExit("%s:%i: syntax error",PotFile,LineNum);
 
      int ns;
-     if (G->GetSurfaceByLabel(Tokens[0],&ns)==0)
+     if (G->GetSurfaceByLabel(Tokens[0],&ns)==nullptr)
       ErrExit("%s:%i: unknown surface %s",PotFile,LineNum,Tokens[0]);
      if ( ! (G->Surfaces[ns]->IsPEC) )
       ErrExit("%s:%i: attempt to assign potential to non-PEC surface %s",
@@ -493,9 +493,9 @@ StaticExcitation **CreateSimpleSEList(RWGGeometry *G,
   StaticExcitation **SEList
    = (StaticExcitation **)mallocEC(sizeof(StaticExcitation *));
   StaticExcitation *SE = SEList[0] = (StaticExcitation *)mallocEC(sizeof(*SE));
-  SE->Label            = 0;
-  SE->SFs              = 0;
-  SE->SFData           = 0;
+  SE->Label            = nullptr;
+  SE->SFs              = nullptr;
+  SE->SFData           = nullptr;
   SE->NumSFs           = 0;
   SE->Potentials       = (double *)mallocEC(NS*sizeof(double));
   memset(SE->Potentials, 0, NS*sizeof(double));

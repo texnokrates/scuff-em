@@ -148,7 +148,7 @@ void GetVSWRadialFunctions(int LMax, cdouble k, double r,
                            bool Conjugate)
 {
   if (r==0.0)
-   { memset(RFArray, 0, 3*(LMax+1)*sizeof(cdouble));
+   { memset(RFArray, 0, (size_t)3*(LMax+1)*sizeof(cdouble));
      if (TimesrFactor) return;
      RFArray[3*1+1] = 2.0/3.0;
      RFArray[3*1+2] = -M_SQRT2/3.0; //-1.41421356237309504880/3.0;
@@ -226,9 +226,9 @@ HMatrix *GetWaveMatrix(double r, double Theta, double Phi,
   if (WaveMatrix && (WaveMatrix->NR!=3 || WaveMatrix->NC!=NW))
    { Warn("wrong-size WaveMatrix in GetWaveMatrix (reallocating...)");
      delete WaveMatrix;
-     WaveMatrix=0;
+     WaveMatrix=nullptr;
    };
-  if (WaveMatrix==0)
+  if (WaveMatrix==nullptr)
    WaveMatrix = new HMatrix(3, NW, LHM_COMPLEX);
 
   /***************************************************************/
@@ -236,7 +236,7 @@ HMatrix *GetWaveMatrix(double r, double Theta, double Phi,
   /* RFArray[3*L+P] = radial-function factor for polarization P  */
   /***************************************************************/
   bool OwnsWorkspace = false;
-  if (Workspace==0)
+  if (Workspace==nullptr)
    { Workspace = (cdouble *)mallocEC( (7*LMax+7)*(LMax+1)*sizeof(cdouble));
      OwnsWorkspace=true;
    };

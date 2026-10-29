@@ -77,7 +77,7 @@ SNEQData *CreateSNEQData(const char *GeoFile, const char *TransFile,
 {
 
   SNEQData *SNEQD=(SNEQData *)mallocEC(sizeof(*SNEQD));
-  SNEQD->WriteCache=0;
+  SNEQD->WriteCache=nullptr;
   SNEQD->SourceOnly=-1;
   SNEQD->DestOnly=-1;
 
@@ -114,7 +114,7 @@ SNEQData *CreateSNEQData(const char *GeoFile, const char *TransFile,
   SNEQD->PFTMatrix = new HMatrix(G->NumSurfaces, NUMPFT);
   InitPFTOptions( &(SNEQD->PFTOpts) );
   SNEQD->NumPFTMethods = NumPFTMethods;
-  SNEQD->DSIOmegaPoints=0;
+  SNEQD->DSIOmegaPoints=nullptr;
   for(int npm=0; npm<NumPFTMethods; npm++)
    { 
      SNEQD->PFTMethods[npm] = PFTMethods[npm];
@@ -146,8 +146,8 @@ SNEQData *CreateSNEQData(const char *GeoFile, const char *TransFile,
   /*- read the list of evaluation points for spatially-resolved  -*/
   /*- quantities                                                 -*/
   /*--------------------------------------------------------------*/
-  SNEQD->SRXMatrix = 0;
-  SNEQD->SRFMatrix = 0;
+  SNEQD->SRXMatrix = nullptr;
+  SNEQD->SRFMatrix = nullptr;
   SNEQD->NX        = 0; 
   SNEQD->NumSRQs   = 0;
   if (EPFile)
@@ -240,8 +240,8 @@ SNEQData *CreateSNEQData(const char *GeoFile, const char *TransFile,
   /*--------------------------------------------------------------*/
   /*--------------------------------------------------------------*/
   /*--------------------------------------------------------------*/
-  SNEQD->PFTByRegion=0;
-  SNEQD->RegionRegionPFT=0;
+  SNEQD->PFTByRegion=nullptr;
+  SNEQD->RegionRegionPFT=nullptr;
   if( NS > (NR-1) ) 
    { SNEQD->PFTByRegion = new HMatrix(NR, NUMPFT);
      SNEQD->RegionRegionPFT = (HMatrix **)mallocEC( NumPFTMethods*sizeof(HMatrix *));

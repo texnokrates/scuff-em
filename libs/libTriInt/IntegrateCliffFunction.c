@@ -153,7 +153,7 @@ int IntegrateCliffFunction(CliffFunction fCliff, void *UserData, int nFun,
   int *ConvergedIters = (int *)malloc(nFun*sizeof(int));
   memset(ConvergedIters, 0, nFun*sizeof(int));
 
-  double *Workspace = (double *)malloc(7*nFun*sizeof(double));
+  double *Workspace = (double *)malloc((size_t)7*nFun*sizeof(double));
 
   double *fBuffer[3];
   double *fLeft  = fBuffer[0] = Workspace + 0*nFun;

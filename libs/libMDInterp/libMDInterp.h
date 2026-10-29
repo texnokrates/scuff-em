@@ -60,7 +60,7 @@
 /* note: the function should be thread-safe, as it may be      */
 /* called simultaneously by multiple concurrent threads.       */
 /***************************************************************/ 
-typedef void (*Phi1D)(double X1, void *UserData, double *PhiVD);
+using Phi1D = void (*)(double X1, void *UserData, double *PhiVD);
 
 /***************************************************************/ 
 /* prototype for a user-supplied function of two variables.    */
@@ -88,7 +88,7 @@ typedef void (*Phi1D)(double X1, void *UserData, double *PhiVD);
 /* note: the function should be thread-safe, as it may be      */
 /* called simultaneously by multiple concurrent threads.       */
 /***************************************************************/ 
-typedef void (*Phi2D)(double X1, double X2, void *UserData, double *PhiVD);
+using Phi2D = void (*)(double X1, double X2, void *UserData, double *PhiVD);
 
 /***************************************************************/
 /* prototype for a user-supplied function of three variables.  */
@@ -120,7 +120,7 @@ typedef void (*Phi2D)(double X1, double X2, void *UserData, double *PhiVD);
 /* note: the function should be thread-safe, as it may be      */
 /* called simultaneously by multiple concurrent threads.       */
 /***************************************************************/ 
-typedef void (*Phi3D)(double X1, double X2, double X3, 
+using Phi3D = void (*)(double X1, double X2, double X3, 
                       void *UserData, double *PhiVD);
 
 /***************************************************************/
@@ -161,7 +161,7 @@ typedef void (*Phi3D)(double X1, double X2, double X3,
 /* note: the function should be thread-safe, as it may be      */
 /* called simultaneously by multiple concurrent threads.       */
 /***************************************************************/
-typedef void (*Phi4D)(double X1, double X2, double X3, double X4,
+using Phi4D = void (*)(double X1, double X2, double X3, double X4,
                       void *UserData, double *PhiVD);
 
 /***************************************************************/
@@ -268,7 +268,7 @@ class Interp2D
     /*- and nonuniform grid                                         */
     /*--------------------------------------------------------------*/
     Interp2D(double *X1Points, int N1, double *X2Points, int N2,
-             int nFun, Phi2D PhiFunc=0, void *UserData=0,
+             int nFun, Phi2D PhiFunc=nullptr, void *UserData=nullptr,
              int LogLevel=LMDI_LOGLEVEL_TERSE);
 
     /*--------------------------------------------------------------*/
@@ -277,7 +277,7 @@ class Interp2D
     /*--------------------------------------------------------------*/
     Interp2D(double X1Min, double X1Max, int N1, 
              double X2Min, double X2Max, int N2, 
-             int nFun, Phi2D PhiFunc=0, void *UserData=0,
+             int nFun, Phi2D PhiFunc=nullptr, void *UserData=nullptr,
              int LogLevel=LMDI_LOGLEVEL_TERSE);
 
     /*--------------------------------------------------------------*/
@@ -352,7 +352,7 @@ class Interp3D
     Interp3D(double *X1Points, int N1,
              double *X2Points, int N2,
              double *X3Points, int N3,
-             int nFun, Phi3D PhiFunc=0, void *UserData=0,
+             int nFun, Phi3D PhiFunc=nullptr, void *UserData=nullptr,
              int LogLevel=LMDI_LOGLEVEL_TERSE);
 
     /*--------------------------------------------------------------*/
@@ -370,7 +370,7 @@ class Interp3D
     Interp3D(double X1Min, double X1Max, int N1,
              double X2Min, double X2Max, int N2,
              double X3Min, double X3Max, int N3,
-             int nFun, Phi3D PhiFunc=0, void *UserData=0,
+             int nFun, Phi3D PhiFunc=nullptr, void *UserData=nullptr,
              int LogLevel=LMDI_LOGLEVEL_TERSE);
 
     /*--------------------------------------------------------------*/
@@ -428,7 +428,7 @@ class Interp3D
     /*- within that cell (0<=pXbar[i]<=1).                          */
     /*--------------------------------------------------------------*/
     bool PointInGrid(double X1, double X2, double X3, 
-                     int *pn=0, double *pxBar=0);
+                     int *pn=nullptr, double *pxBar=nullptr);
 
     /*--------------------------------------------------------------*/
     /*- class method that writes all internal data to a binary file */
@@ -536,13 +536,13 @@ class Interp4D
 /*         replace all the above classes.                      */
 /***************************************************************/
 #ifndef iVec
-  typedef std::vector<int>    iVec;
+  using iVec = std::vector<int>;
 #endif
 #ifndef dVec
-  typedef std::vector<double> dVec;
+  using dVec = std::vector<double>;
 #endif
 #ifndef bVec
-  typedef std::vector<bool> bVec;
+  using bVec = std::vector<bool>;
 #endif
 bool Increment(iVec &n, iVec &N);
 double Monomial(dVec xVec, iVec pVec);
@@ -552,7 +552,7 @@ double Monomial(dVec xVec, iVec pVec);
    for(bool np ## _Done=false; !np ## _Done; np++, np ## _Done=Increment(nVec,NVec))
 #define MAXDIM 4
 
-typedef void (*PhiVDFunc)(dVec X, void *UserData, double *PhiVD, iVec dXMax);
+using PhiVDFunc = void (*)(dVec X, void *UserData, double *PhiVD, iVec dXMax);
 
 class InterpND
  { 
@@ -600,7 +600,7 @@ class InterpND
     /*- grid cell has length 2 and is centered at the origin (so    */
     /*- -1 \le XBarVec[d] \le +1.                                   */
     /*--------------------------------------------------------------*/
-    bool PointInGrid(double *X0, int *nVec=0, double *XBarVec=0);
+    bool PointInGrid(double *X0, int *nVec=nullptr, double *XBarVec=nullptr);
 
     /*--------------------------------------------------------------*/
     /*- perform interpolation to return approximate values for the  */
@@ -680,11 +680,11 @@ class InterpND
 /***************************************************************/
 double GetInterpolationError(PhiVDFunc UserFunc, void *UserData, int NF,
                              dVec X0Vec, dVec DeltaVec, bool ComplexData=false,
-                             double AbsTol=1.0e-8, char *LogFile=0);
+                             double AbsTol=1.0e-8, char *LogFile=nullptr);
 
 double GetInterpolationError(PhiVDFunc UserFunc, void *UserData, int NF,
                              int d0, double X, double Delta, dVec X0Min, dVec X0Max,
-                             bool ComplexData=false, double AbsTol=1.0e-8, char *LogFile=0);
+                             bool ComplexData=false, double AbsTol=1.0e-8, char *LogFile=nullptr);
 
 dVec GetXGrid(PhiVDFunc UserFunc, void *UserData, int NF, dVec XMin, dVec XMax, int d,
               double DesiredMaxRE, bool ComplexData=false);

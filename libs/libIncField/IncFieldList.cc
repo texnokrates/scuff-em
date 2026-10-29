@@ -65,20 +65,20 @@ IncField *ProcessIFTokens(char **Tokens, int NumTokens, char **pErrMsg)
   }
  else
   { *pErrMsg = vstrdup("unknown field type %s",Tokens[0]);
-    return 0;
+    return nullptr;
   };
 
  if ( NumTokens != NumParameters+1 )
   { *pErrMsg = vstrdup("incorrect number of parameters "
                        "(need %i for %s)",NumParameters,Tokens[0]);
-     return 0;
+     return nullptr;
   };
 
  cdouble Parameters[10];
  for(int nt=1; nt<NumTokens; nt++)
   if ( S2CD(Tokens[nt],&(Parameters[nt-1])) )
    { *pErrMsg = vstrdup("invalid parameter value %s",Tokens[nt]);
-     return 0;
+     return nullptr;
    };
 
  if (Type==IFTYPE_PW)
@@ -122,7 +122,7 @@ IncField *ProcessIFTokens(char **Tokens, int NumTokens, char **pErrMsg)
     return new GaussianBeam(X0, nHat, E0, W);
   };
 
- return 0; // never get here
+ return nullptr; // never get here
  
 }
 
@@ -131,11 +131,11 @@ IncField *ProcessIFTokens(char **Tokens, int NumTokens, char **pErrMsg)
 /***************************************************************/
 IncFieldList *AddIncFieldToList(IncField *IF, const char *Label, IncFieldList *IFList)
 {
-  if (IFList==0)
+  if (IFList==nullptr)
    { IFList = (IncFieldList *)mallocEC(sizeof(IncFieldList));
-     IFList->IFs    = 0;
+     IFList->IFs    = nullptr;
      IFList->NumIFs = 0;
-     IFList->Labels = 0;
+     IFList->Labels = nullptr;
    };
  
   int N = IFList->NumIFs;
@@ -179,19 +179,19 @@ void ProcessSinCos(char **Tokens, int NumTokens)
 /***************************************************************/
 IncFieldList *ReadIncFieldList(const char *FileName)
 {
-  IncFieldList *IFList=0;
+  IncFieldList *IFList=nullptr;
 
   FILE *f=fopen(FileName,"r");
-  if (f==0)
+  if (f==nullptr)
    ErrExit("could not open file %s",FileName);
 
   char Line[MAXSTR];
   int NumTokens;
   char *Tokens[MAXTOK];
-  char *ErrMsg=0;
+  char *ErrMsg=nullptr;
   int LineNum=0;
-  IncField *CompoundIF=0;
-  char *CompoundIFLabel=0;
+  IncField *CompoundIF=nullptr;
+  char *CompoundIFLabel=nullptr;
   while(fgets(Line, MAXSTR, f))
    { 
      // read line, break it up into tokens, skip blank lines and comments
@@ -211,17 +211,17 @@ IncFieldList *ReadIncFieldList(const char *FileName)
          {
            if (NumTokens!=1)
             ErrExit("%s:%i: junk on line following keyword END",FileName,LineNum);
-           if (CompoundIF==0)
+           if (CompoundIF==nullptr)
             ErrExit("%s:%i: empty compound field definition",FileName,LineNum);
  
            IFList=AddIncFieldToList(CompoundIF, CompoundIFLabel, IFList);
            free(CompoundIFLabel);
-           CompoundIFLabel=0;
-           CompoundIF=0;
+           CompoundIFLabel=nullptr;
+           CompoundIF=nullptr;
          }
         else
          { IncField *IFTerm=ProcessIFTokens(Tokens, NumTokens, &ErrMsg);
-           if (IFTerm==0)
+           if (IFTerm==nullptr)
             ErrExit("%s:%i: %s",FileName,LineNum,ErrMsg ? ErrMsg : "syntax error");
            IFTerm->Next=CompoundIF;
            CompoundIF=IFTerm;
@@ -236,7 +236,7 @@ IncFieldList *ReadIncFieldList(const char *FileName)
          }
         else
          { IncField *IFTerm=ProcessIFTokens(Tokens+1, NumTokens-1, &ErrMsg);
-           if (IFTerm==0)
+           if (IFTerm==nullptr)
             ErrExit("%s:%i: %s",FileName,LineNum,ErrMsg ? ErrMsg : "syntax error");
            IFList=AddIncFieldToList(IFTerm, Tokens[0], IFList);
          };
@@ -248,7 +248,7 @@ IncFieldList *ReadIncFieldList(const char *FileName)
   if (CompoundIFLabel)
    ErrExit("%s:%i: expected END",FileName,LineNum);
 
-  if ( IFList==0 )
+  if ( IFList==nullptr )
    ErrExit("file %s contains no valid incident-field descriptions",FileName);
 
   Log("Read %i incident-field descriptions from file %s.",IFList->NumIFs,FileName);

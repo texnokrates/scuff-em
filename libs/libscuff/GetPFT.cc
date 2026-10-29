@@ -44,13 +44,13 @@ namespace scuff {
 // PFT by overlap method
 void GetOPFT(RWGGeometry *G, int SurfaceIndex, cdouble Omega,
              HVector *KNVector, HVector *RHS, HMatrix *DRMatrix,
-             double PFT[NUMPFT], double **ByEdge=0);
+             double PFT[NUMPFT], double **ByEdge=nullptr);
 
 // PFT by cartesian multipole-moment method
 HMatrix *GetMomentPFTMatrix(RWGGeometry *G, cdouble Omega,
                             IncField *IF,
-                            HVector *KNVector, HMatrix *DRMatrix=0,
-                            HMatrix *PFTMatrix=0, bool Itemize=false);
+                            HVector *KNVector, HMatrix *DRMatrix=nullptr,
+                            HMatrix *PFTMatrix=nullptr, bool Itemize=false);
 
 // PFT by displaced-surface-integral method
 void GetDSIPFT(RWGGeometry *G, cdouble Omega, double *kBloch,
@@ -60,18 +60,18 @@ void GetDSIPFT(RWGGeometry *G, cdouble Omega, double *kBloch,
                GTransformation *GT1, GTransformation *GT2);
 
 HMatrix *GetEMTPFTMatrix(RWGGeometry *G, cdouble Omega, IncField *IF,
-                         HVector *KNVector, HMatrix *DRMatrix=0,
-                         HMatrix *PFTMatrix=0, bool Interior=false,
+                         HVector *KNVector, HMatrix *DRMatrix=nullptr,
+                         HMatrix *PFTMatrix=nullptr, bool Interior=false,
                          int EMTPFTIMethod=SCUFF_EMTPFTI_DEFAULT,
                          bool Itemize=false);
 
 // matrix-trace version of DSIPFT for non-equilibrium calculations
 void GetDSIPFTTrace(RWGGeometry *G, cdouble Omega, HMatrix *DRMatrix,
                     double PFT[NUMPFT],
-                    const char *DSIMesh=0, double DSIRadius=0.0, int DSIPoints=302,
-                    bool FarField=false, const char *PlotFileName=0,
-                    GTransformation *GT1=0, GTransformation *GT2=0,
-                    HMatrix *RFMatrix=0, bool RFMatrixDirty=true);
+                    const char *DSIMesh=nullptr, double DSIRadius=0.0, int DSIPoints=302,
+                    bool FarField=false, const char *PlotFileName=nullptr,
+                    GTransformation *GT1=nullptr, GTransformation *GT2=nullptr,
+                    HMatrix *RFMatrix=nullptr, bool RFMatrixDirty=true);
 
 /***************************************************************/
 /***************************************************************/
@@ -136,8 +136,8 @@ void GetKNBilinears(RWGGeometry *G, int neA, int neB,
                     cdouble Bilinears[4])
 {
   int nbfA, nbfB;
-  RWGSurface *SA=G->ResolveEdge(neA, 0, 0, &nbfA);
-  RWGSurface *SB=G->ResolveEdge(neB, 0, 0, &nbfB);
+  RWGSurface *SA=G->ResolveEdge(neA, nullptr, nullptr, &nbfA);
+  RWGSurface *SB=G->ResolveEdge(neB, nullptr, nullptr, &nbfB);
 
   GetKNBilinears(KNVector, DRMatrix, 
                  SA->IsPEC, nbfA, SB->IsPEC, nbfB,
@@ -155,7 +155,7 @@ void RWGGeometry::GetPFT(int SurfaceIndex, HVector *KN,
   /***************************************************************/
   /***************************************************************/
   PFTOptions DefaultOptions;
-  if (Options==0)
+  if (Options==nullptr)
    { Options=&DefaultOptions;
      InitPFTOptions(Options);
    };
@@ -169,7 +169,7 @@ void RWGGeometry::GetPFT(int SurfaceIndex, HVector *KN,
   /* allocate arrays for the edge-by-edge contributions if the   */
   /* user requested flux plots                                   */
   /***************************************************************/
-  double **ByEdge=0;
+  double **ByEdge=nullptr;
   if (FluxFileName && PFTMethod!=SCUFF_PFT_DSI )
    { 
      int NE = S->NumEdges;
@@ -202,7 +202,7 @@ void RWGGeometry::GetPFT(int SurfaceIndex, HVector *KN,
      if (DSIRadius==0)
       DSIRadius=AutodetectDSIRadius(S, GT1, GT2);
 
-     if (DRMatrix==0)
+     if (DRMatrix==nullptr)
       GetDSIPFT(this, Omega, kBloch, KN, IF, PFT,
                 DSIMesh, DSIRadius, DSIPoints,
                 DSIFarField, FluxFileName, GT1, GT2);
@@ -260,7 +260,7 @@ HMatrix *RWGGeometry::GetPFTMatrix(HVector *KN, cdouble Omega,
   /***************************************************************/
   /***************************************************************/
   PFTOptions DefaultOptions;
-  if (Options==0)
+  if (Options==nullptr)
    { Options=&DefaultOptions;
      InitPFTOptions(Options);
    };
@@ -275,9 +275,9 @@ HMatrix *RWGGeometry::GetPFTMatrix(HVector *KN, cdouble Omega,
      ) 
    { Warn("wrong-size PFTMatrix in GetPFTMatrix (reallocating...)");
      delete PFTMatrix;
-     PFTMatrix=0;
+     PFTMatrix=nullptr;
    };
-  if (PFTMatrix==0)
+  if (PFTMatrix==nullptr)
    PFTMatrix=new HMatrix(NumSurfaces, NUMPFT);
   
   /***************************************************************/
@@ -321,9 +321,9 @@ HMatrix *GetPFTByRegion(RWGGeometry *G, HMatrix *PFTBySurface,
   if (PFTByRegion && (PFTByRegion->NR!=NR || PFTByRegion->NC!=NUMPFT))
    { Warn("wrong-size matrix in GetPFTByRegion (reallocating)");
      delete PFTByRegion;
-     PFTByRegion=0;
+     PFTByRegion=nullptr;
    };
-  if (PFTByRegion==0)
+  if (PFTByRegion==nullptr)
    PFTByRegion = new HMatrix(NR, NUMPFT);
 
   PFTByRegion->Zero();
@@ -352,22 +352,22 @@ HMatrix *GetPFTByRegion(RWGGeometry *G, HMatrix *PFTBySurface,
 /***************************************************************/
 PFTOptions *InitPFTOptions(PFTOptions *Options)
 {
-  if (Options==0)
+  if (Options==nullptr)
    Options = (PFTOptions *)mallocEC( sizeof(PFTOptions) );
 
   // general options
   Options->PFTMethod = SCUFF_PFT_DEFAULT;
-  Options->FluxFileName=0;
-  Options->DRMatrix=0;
-  Options->IF=0;
-  Options->kBloch=0;
+  Options->FluxFileName=nullptr;
+  Options->DRMatrix=nullptr;
+  Options->IF=nullptr;
+  Options->kBloch=nullptr;
 
   // options affecting overlap PFT computation
-  Options->RHSVector = 0;
+  Options->RHSVector = nullptr;
 
   // options affecting DSI PFT computation
   // (note: DSIRadius=0 means autodetect the radius)
-  Options->DSIMesh=0;
+  Options->DSIMesh=nullptr;
   Options->DSIRadius=0.0;
   Options->DSIPoints=302;
   Options->DSIFarField=false;
@@ -376,11 +376,11 @@ PFTOptions *InitPFTOptions(PFTOptions *Options)
   Options->Itemize=false;
   Options->Interior=false;
   Options->EMTPFTIMethod=SCUFF_EMTPFTI_DEFAULT;
-  Options->TInterior=Options->TExterior=0;
+  Options->TInterior=Options->TExterior=nullptr;
 
   // options affecting moment PFT computation
   Options->KeepQpTerm=false;
-  Options->MomentFileBase=0;
+  Options->MomentFileBase=nullptr;
 
   Options->GetRegionPFTs=false;
 

@@ -60,10 +60,10 @@ long HashFunction(const float *Key)
 // pointer to such a structure.  (Defined here rather than with the
 // Store/PreLoad routines because the destructor needs FIPPICF_RECSIZE
 // to reason about the extent of the preloaded-records buffer.)
-typedef struct FIPPICF_Record
+using FIPPICF_Record = struct FIPPICF_Record
  { FIPPIKeyStruct K;
    QIFIPPIData QIFDBuffer;
- } FIPPICF_Record;
+ };
 #define FIPPICF_RECSIZE sizeof(FIPPICF_Record)
 
 /*--------------------------------------------------------------*/
@@ -71,9 +71,9 @@ typedef struct FIPPICF_Record
 /*--------------------------------------------------------------*/
 FIPPICache::FIPPICache()
 {
-  PreloadFileName=0;
+  PreloadFileName=nullptr;
   RecordsPreloaded=0;
-  PreloadedRecords=0;
+  PreloadedRecords=nullptr;
   NumPreloadedRecords=0;
 }
 
@@ -93,9 +93,9 @@ FIPPICache::~FIPPICache()
   for(FIPPIKeyValueMap::iterator p=Table.begin(); p!=Table.end(); p++)
    { const char *Value=(const char *)(p->second);
      if ( !(Value >= PreloadBegin && Value < PreloadEnd) )
-      free(p->second);
+      free(p->second); // NOLINT(cppcoreguidelines-no-malloc) -- mixed value ownership documented above
    };
-  free(PreloadedRecords);
+  free(PreloadedRecords); // NOLINT(cppcoreguidelines-no-malloc)
 }
 
 static void inline VecSubFloat(double *V1, double *V2, float *V1mV2)
@@ -129,7 +129,7 @@ QIFIPPIData *FIPPICache::GetQIFIPPIData(double **OVa, double **OVb, int ncv)
   /* to check equality of vertex coordinates up to one part in   */
   /* 10^8 anyway.                                                */
   /***************************************************************/
-  FIPPIKeyStruct K;
+  FIPPIKeyStruct K = {};
   VecSubFloat(OVa[1], OVa[0], K.Key+0  );
   VecSubFloat(OVa[2], OVa[0], K.Key+3  );
   VecSubFloat(OVb[0], OVa[0], K.Key+6  );
@@ -189,7 +189,7 @@ const char FIPPICF_Signature[]="FIPPICACHE";
 
 void FIPPICache::Store(const char *FileName)
 {
-  if (FileName==0) return;
+  if (FileName==nullptr) return;
 
   /*--------------------------------------------------------------*/
   /*- pause to check if the following conditions are satisfied:  -*/
@@ -235,7 +235,7 @@ void FIPPICache::Store(const char *FileName)
   /*---------------------------------------------------------------------*/
   /*- iterate through the table and write entries to the file one-by-one */
   /*---------------------------------------------------------------------*/
-  FIPPIKeyStruct K;
+  FIPPIKeyStruct K = {};
   QIFIPPIData *QIFD;
   FIPPICF_Record MyRecord;
   for ( auto it = Table.begin(); it != Table.end(); it++ ) 
@@ -276,7 +276,7 @@ void FIPPICache::PreLoad(const char *FileName)
   /*- cache file                                                  */
   /*--------------------------------------------------------------*/
   const char *ErrMsg;
-  ErrMsg = 0;
+  ErrMsg = nullptr;
   
   struct stat fileStats;
   if ( fstat(fileno(f), &fileStats) )
@@ -286,17 +286,17 @@ void FIPPICache::PreLoad(const char *FileName)
   off_t FileSize;
   FileSize=fileStats.st_size;
   char FileSignature[FIPPICF_SIGSIZE]; 
-  if ( ErrMsg==0 && (FileSize < (signed int )FIPPICF_SIGSIZE) )
+  if ( ErrMsg==nullptr && (FileSize < (signed int )FIPPICF_SIGSIZE) )
    ErrMsg="invalid cache file";
-  if ( ErrMsg==0 && 1!=fread(FileSignature, FIPPICF_SIGSIZE, 1, f) )
+  if ( ErrMsg==nullptr && 1!=fread(FileSignature, FIPPICF_SIGSIZE, 1, f) )
    ErrMsg="invalid cache file";
-  if ( ErrMsg==0 && strcmp(FileSignature, FIPPICF_Signature) ) 
+  if ( ErrMsg==nullptr && strcmp(FileSignature, FIPPICF_Signature) ) 
    ErrMsg="invalid cache file";
 
   // the file size, minus the portion taken up by the signature, 
   // should be an integer multiple of the size of a FIPPICF_Record
   FileSize-=FIPPICF_SIGSIZE;
-  if ( ErrMsg==0 && (FileSize % FIPPICF_RECSIZE)!=0 )
+  if ( ErrMsg==nullptr && (FileSize % FIPPICF_RECSIZE)!=0 )
    ErrMsg="cache file has incorrect size";
 
   /*--------------------------------------------------------------*/
@@ -307,7 +307,7 @@ void FIPPICache::PreLoad(const char *FileName)
   unsigned int NumRecords;
   FIPPICF_Record *Records;
   NumRecords = FileSize / FIPPICF_RECSIZE;
-  if ( ErrMsg==0 )
+  if ( ErrMsg==nullptr )
    { Records=(FIPPICF_Record *)mallocEC(NumRecords*FIPPICF_RECSIZE);
      if ( !Records)
       ErrMsg="insufficient memory to preload cache";
@@ -317,7 +317,7 @@ void FIPPICache::PreLoad(const char *FileName)
      Records buffer, so the destructor needs to know about it even if
      the preload is aborted midway.  (PreLoad is called at most once
      per cache instance.) */
-  if (ErrMsg==0)
+  if (ErrMsg==nullptr)
    { PreloadedRecords=Records;
      NumPreloadedRecords=NumRecords;
    };

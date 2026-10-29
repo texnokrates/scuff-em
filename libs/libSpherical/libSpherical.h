@@ -40,7 +40,7 @@
 #include <libhmat.h>
 
 #ifndef cdouble
- typedef std::complex<double> cdouble;
+ using cdouble = std::complex<double>;
 #endif
 
 // values for the 'WaveType' flag passed to functions below
@@ -120,10 +120,10 @@ void GetYlmDerivArray(int lMax, double Theta, double Phi,
 /* extra slot to compute derivatives via recurrence relations. */
 /***************************************************************/
 void GetRadialFunctions(int lMax, cdouble k, double r, int WaveType,
-                        cdouble *R, cdouble *dRdr, double *Workspace=0);
+                        cdouble *R, cdouble *dRdr, double *Workspace=nullptr);
 
 void GetRadialFunction(int l, cdouble k, double r, int WaveType,
-                       cdouble *R, cdouble *dRdr=0, cdouble *RlSlash=0);
+                       cdouble *R, cdouble *dRdr=nullptr, cdouble *RlSlash=nullptr);
 
 /***************************************************************/
 /* scalar helmholtz solutions **********************************/
@@ -147,27 +147,27 @@ void GetAngularFunctionArray(int LMax, double X[3],
 
 void GetVSWRadialFunctions(int LMax, cdouble k, double r,
                            int WaveType, cdouble *RFArray,
-                           double *Workspace=0,
+                           double *Workspace=nullptr,
                            bool TimesrFactor=false,
                            bool Conjugate=false);
 
 HMatrix *GetWaveMatrix(double r, double Theta, double Phi,
                        cdouble k, int LMax, int WaveType,
-                       HMatrix *WaveMatrix=0, bool MaxwellWaves=true,
-                       cdouble *Workspace=0, bool RConjugate=false);
+                       HMatrix *WaveMatrix=nullptr, bool MaxwellWaves=true,
+                       cdouble *Workspace=nullptr, bool RConjugate=false);
 
 HMatrix *GetWaveMatrix(double X[3],
                        cdouble k, int LMax, int WaveType,
-                       HMatrix *WaveMatrix=0, bool MaxwellWaves=true,
-                       cdouble *Workspace=0, bool RConjugate=0);
+                       HMatrix *WaveMatrix=nullptr, bool MaxwellWaves=true,
+                       cdouble *Workspace=nullptr, bool RConjugate=0);
 
 HMatrix *GetMWMatrix(double r, double Theta, double Phi,
                      cdouble k, int LMax, int WaveType,
-                     HMatrix *WaveMatrix=0, cdouble *Workspace=0,
+                     HMatrix *WaveMatrix=nullptr, cdouble *Workspace=nullptr,
                      bool RConjugate=false);
 
 HMatrix *GetMWMatrix(double X[3], cdouble k, int LMax, int WaveType,
-                     HMatrix *WaveMatrix=0, cdouble *Workspace=0, 
+                     HMatrix *WaveMatrix=nullptr, cdouble *Workspace=nullptr, 
                      bool RConjugate=false);
 
 double GetdzVSWCoefficient(int L,  int M,  int T,
@@ -197,7 +197,7 @@ void GetMNlm(int l, int m, cdouble k, double r, double Theta, double Phi,
 void GetMNlmArray(int lMax, cdouble k,
                   double r, double Theta, double Phi,
                   int WaveType, cdouble *M, cdouble *N, 
-                  double *Workspace=0, cdouble *LL=0, cdouble *DivLL=0);
+                  double *Workspace=nullptr, cdouble *LL=nullptr, cdouble *DivLL=nullptr);
 
 /***************************************************************/
 /***************************************************************/
@@ -210,7 +210,7 @@ void GetMNlmArray(int lMax, cdouble k,
 /***************************************************************/
 int AmosBessel(char WhichFunction, cdouble z,
                double MinOrder, int NumOrders,
-               bool Scale, cdouble *f, double *Workspace=0);
+               bool Scale, cdouble *f, double *Workspace=nullptr);
 
 int AmosAiry(char WhichFunction, cdouble z, bool Scale, cdouble *f);
 

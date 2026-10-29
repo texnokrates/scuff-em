@@ -168,7 +168,7 @@ bool GTransformation::Parse(const char *TransformString, char **ErrMsg) {
   
   strncpy(Line,TransformString,MAXSTR);
   NumTokens=Tokenize(Line, Tokens, MAXTOK);
-  return Parse(Tokens, NumTokens, ErrMsg, NULL);
+  return Parse(Tokens, NumTokens, ErrMsg, nullptr);
 }
 
 bool GTransformation::Parse(char **Tokens, int NumTokens, 
@@ -201,7 +201,7 @@ bool GTransformation::Parse(char **Tokens, int NumTokens,
         return false;
       };
 
-     if (ErrMsg) *ErrMsg=0;
+     if (ErrMsg) *ErrMsg=nullptr;
      if (TokensConsumed) *TokensConsumed=4;
      Displace(dx);
    }
@@ -229,7 +229,7 @@ bool GTransformation::Parse(char **Tokens, int NumTokens,
         return false;
       };
 
-     if (ErrMsg) *ErrMsg=0;
+     if (ErrMsg) *ErrMsg=nullptr;
      if (TokensConsumed) *TokensConsumed=6;
      Rotate(ZHat, Theta);
    }
@@ -383,7 +383,7 @@ GTComplex *ParseTRANSLine(sVec Tokens, char **ErrMsg)
   /* initialize a bare GTComplex *********************************/
   /***************************************************************/
   GTComplex *GTC = CreateGTComplex(Tokens[1]);
-  GTransformation *CurrentGT=0;
+  GTransformation *CurrentGT=nullptr;
 
   /***************************************************************/
   /* parse sections of the token string one at at time.          */
@@ -397,7 +397,7 @@ GTComplex *ParseTRANSLine(sVec Tokens, char **ErrMsg)
       { 
         if ( nt+1 == NumTokens )
          { *ErrMsg = vstrdup("empty %s statement",Tokens[nt]);
-           return 0;
+           return nullptr;
          }
 
         CurrentGT = new GTransformation();
@@ -410,24 +410,24 @@ GTComplex *ParseTRANSLine(sVec Tokens, char **ErrMsg)
              )
       { 
         // allow transformations with no specified surface
-        if ( CurrentGT==0 )
+        if ( CurrentGT==nullptr )
          { CurrentGT = new GTransformation();
            GTC->GTs.push_back(CurrentGT);
-           GTC->SurfaceLabels.push_back(0);
+           GTC->SurfaceLabels.push_back(nullptr);
          }
 
         int TokensConsumed;
 	CurrentGT->Parse( &(Tokens[0])+nt, NumTokens-nt, ErrMsg, &TokensConsumed);
-        if (*ErrMsg) return 0;
+        if (*ErrMsg) return nullptr;
         nt += TokensConsumed;
       }
      else
       { *ErrMsg = vstrdup("unknown keyword %s %i",Tokens[nt],nt);
-        return 0;
+        return nullptr;
       }
    }
 
-  *ErrMsg=0;
+  *ErrMsg=nullptr;
   return GTC;
 }
 
@@ -446,7 +446,7 @@ GTComplex *ParseTRANSFORMATIONSection(char *Tag, FILE *f, int *pLineNum, char **
   /* initialize a bare GTComplex *********************************/
   /***************************************************************/
   GTComplex *GTC = CreateGTComplex(Tag);
-  GTransformation *CurrentGT=0;
+  GTransformation *CurrentGT=nullptr;
 
   /***************************************************************/
   /* parse each line in the TRANSFORMATION...ENDTRANSFORMATION   */
@@ -471,7 +471,7 @@ GTComplex *ParseTRANSFORMATIONSection(char *Tag, FILE *f, int *pLineNum, char **
         /*--------------------------------------------------------------*/
         if (NumTokens!=2) 
          { *ErrMsg=strdupEC("OBJECT/SURFACE keyword requires one argument");
-            return 0;
+            return nullptr;
          }
 
         // save the label of the affected surface and initialize the corresponding 
@@ -482,7 +482,7 @@ GTComplex *ParseTRANSFORMATIONSection(char *Tag, FILE *f, int *pLineNum, char **
         GTC->SurfaceLabels.push_back(strdupEC(Tokens[1]));
       }
      else if ( !StrCaseCmp(Tokens[0],"ENDTRANSFORMATION") )
-      { *ErrMsg=0;
+      { *ErrMsg=nullptr;
         return GTC;
       }
      else 
@@ -490,18 +490,18 @@ GTComplex *ParseTRANSFORMATIONSection(char *Tag, FILE *f, int *pLineNum, char **
         /*-- try to process the line as DISPLACED ... or ROTATED ... ---*/
         /*--------------------------------------------------------------*/
         // allow transformations with no specified surface
-        if ( CurrentGT==0 )
+        if ( CurrentGT==nullptr )
          { CurrentGT = new GTransformation();
            GTC->GTs.push_back(CurrentGT);
-           GTC->SurfaceLabels.push_back(0);
+           GTC->SurfaceLabels.push_back(nullptr);
          }
 
         int TokensConsumed;
 	CurrentGT->Parse( &(Tokens[0]), NumTokens, ErrMsg, &TokensConsumed);
-        if (*ErrMsg) return 0;
+        if (*ErrMsg) return nullptr;
         if (TokensConsumed!=NumTokens)
          { *ErrMsg = strdupEC("junk at end of line");
-           return 0;
+           return nullptr;
          }
       }
 
@@ -510,7 +510,7 @@ GTComplex *ParseTRANSFORMATIONSection(char *Tag, FILE *f, int *pLineNum, char **
   // if we made it here, the file ended before the TRANSFORMATION
   // section was properly terminated
   *ErrMsg = strdupEC("unexpected end of file");
-  return 0;
+  return nullptr;
 }
 
 /***************************************************************/
@@ -535,7 +535,7 @@ GTCList ReadTransFile(const char *FileName)
   /***************************************************************/
   /***************************************************************/
   /***************************************************************/
-  if (FileName==0 || strlen(FileName)==0 )
+  if (FileName==nullptr || strlen(FileName)==0 )
    { 
      GTCs.push_back( CreateGTComplex() );
      Log("Using a single (empty) geometrical transformation with label %s.",GTCs[0]->Tag);
@@ -543,7 +543,7 @@ GTCList ReadTransFile(const char *FileName)
    }
 
   FILE *f=fopen(FileName,"r");
-  if (f==0)
+  if (f==nullptr)
    ErrExit("could not open file %s",FileName);
 
   int LineNum=0;
@@ -560,8 +560,8 @@ GTCList ReadTransFile(const char *FileName)
      // separately handle the two possible ways to specify complices:
      //  (a) TRANSFORMATION ... ENDTRANSFORMATION sections
      //  (b) single-line transformations (TRANS ... )
-     char *ErrMsg=0;
-     GTComplex *GTC=0;
+     char *ErrMsg=nullptr;
+     GTComplex *GTC=nullptr;
      if ( !StrCaseCmp(Tokens[0], "TRANSFORMATION") )
       GTC=ParseTRANSFORMATIONSection(Tokens[1], f, &LineNum, &ErrMsg);
      else if ( !StrCaseCmp(Tokens[0], "TRANS") )

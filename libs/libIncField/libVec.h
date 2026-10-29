@@ -56,12 +56,12 @@
 
 // some helper templates that allow for partial specialization of the routines below
 // depending on whether the type is a normal type or an extension of <complex>
-template <bool val> struct bool_type { typedef bool_type<val> type; };
-typedef bool_type<false> lv_false_type;
-typedef bool_type<true>  lv_true_type;
+template <bool val> struct bool_type { using type = bool_type<val>; };
+using lv_false_type = bool_type<false>;
+using lv_true_type = bool_type<true>;
 
-template <typename T> struct is_complex                   : lv_false_type { typedef T norm_type; };
-template <typename U> struct is_complex<std::complex<U> > : lv_true_type { typedef U norm_type; };
+template <typename T> struct is_complex                   : lv_false_type { using norm_type = T; };
+template <typename U> struct is_complex<std::complex<U> > : lv_true_type { using norm_type = U; };
 
 template <typename T> class Vec {
 private:
@@ -97,8 +97,8 @@ public:
   inline void zero() { memset(v,0,3*sizeof(T)); } // caution!! this only works with "primitive" types.
 
   // functions where we need to distinguish between complex / not complex
-  typedef typename is_complex<T>::type      is_complex_type;
-  typedef typename is_complex<T>::norm_type norm_type;
+  using is_complex_type = typename is_complex<T>::type;
+  using norm_type = typename is_complex<T>::norm_type;
 
   inline norm_type norm2() const { return norm2_( is_complex_type() ); }
   inline norm_type norm()  const { return sqrt(norm2()); }
@@ -139,8 +139,8 @@ private:
 
 // 20180325 renaming the following to avoid name collision with libhrutil
 //typedef Vec<double> dVec; 
-typedef Vec<double> dVector; 
-typedef Vec<std::complex<double> > zVector;
+using dVector = Vec<double>; 
+using zVector = Vec<std::complex<double> >;
 
 // cross product with complex conjugation of first argument
 template<typename T> inline Vec<T> const crossC(Vec<T> const& lhs, Vec<T> const& rhs) { return cross(conj(lhs),rhs); }

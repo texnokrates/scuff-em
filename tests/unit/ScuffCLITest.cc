@@ -260,7 +260,9 @@ void TestParseErrors()
 
     std::optional<int> Result = scuff::cli::Parse(App, 5, Argv);
     CHECK(Result.has_value());
-    CHECK(*Result == 1);
+    if (!Result)
+     return;
+    CHECK(Result.value() == 1);
   }
 
   {
@@ -274,7 +276,9 @@ void TestParseErrors()
     /* --geometry is required and no stdin value is supplied. */
     std::optional<int> Result = scuff::cli::Parse(App, 1, Argv);
     CHECK(Result.has_value());
-    CHECK(*Result == 1);
+    if (!Result)
+     return;
+    CHECK(Result.value() == 1);
   }
 
   {
@@ -290,7 +294,9 @@ void TestParseErrors()
 
     std::optional<int> Result = scuff::cli::Parse(App, 4, Argv);
     CHECK(Result.has_value());
-    CHECK(*Result == 1);
+    if (!Result)
+     return;
+    CHECK(Result.value() == 1);
   }
 
   {
@@ -307,7 +313,9 @@ void TestParseErrors()
 
     std::optional<int> Result = scuff::cli::Parse(App, 5, Argv);
     CHECK(Result.has_value());
-    CHECK(*Result == 1);
+    if (!Result)
+     return;
+    CHECK(Result.value() == 1);
   }
 }
 
@@ -326,7 +334,9 @@ void TestHelp()
 
   std::optional<int> Result = scuff::cli::Parse(App, 2, Argv);
   CHECK(Result.has_value());
-  CHECK(*Result == 0);
+  if (!Result)
+   return;
+  CHECK(Result.value() == 0);
 }
 
 /***************************************************************/
@@ -343,7 +353,9 @@ void TestUnknownStdinOption()
 
   std::optional<int> Result = scuff::cli::Parse(App, 1, Argv);
   CHECK(Result.has_value());
-  CHECK(*Result == 1);
+  if (!Result)
+   return;
+  CHECK(Result.value() == 1);
 }
 
 /***************************************************************/
@@ -421,7 +433,9 @@ void TestComplexVectorOption()
 
     std::optional<int> Result = scuff::cli::Parse(App, 5, Argv);
     CHECK(Result.has_value());
-    CHECK(*Result == 1);
+    if (!Result)
+     return;
+    CHECK(Result.value() == 1);
   }
 }
 

@@ -56,7 +56,7 @@ HVector::HVector(int pN, cdouble *data)
 { InitHVector(pN, LHM_COMPLEX, (void *)data); }
 
 /* copy constructor  */
-HVector::HVector(const HVector &V)
+HVector::HVector(const HVector &V) // NOLINT(cppcoreguidelines-pro-type-member-init) -- InitHVector below initializes every member
  {
    InitHVector(V.N, V.RealComplex);
    if (RealComplex==LHM_REAL)
@@ -69,15 +69,15 @@ void HVector::InitHVector(int pN, int pRealComplex, void *data)
 { 
    N=pN;
    RealComplex=pRealComplex;
-   ErrMsg=0;
+   ErrMsg=nullptr;
 
-   ownsV = data == NULL;
+   ownsV = data == nullptr;
    if (RealComplex==LHM_REAL)
    { DV=(double *)(data ? data : mallocEC(N*sizeof(double))); 
-      ZV=0;
+      ZV=nullptr;
     }
    else
-    { DV=0;
+    { DV=nullptr;
       ZV=(cdouble *)(data ? data : mallocEC(N*sizeof(cdouble)));
     };
  
@@ -107,11 +107,11 @@ HVector::HVector(const char *FileName, int FileType, const char *Options)
 
 void HVector::ReadFromFile(const char *FileName, int FileType, const char *Options)
 {
-  DV=0;
-  ZV=0;
-  ErrMsg=0;
+  DV=nullptr;
+  ZV=nullptr;
+  ErrMsg=nullptr;
 
-  if (FileName==0)
+  if (FileName==nullptr)
    { ErrMsg=strdup("no filename specified for vector import");
      if (HMatrix::AbortOnIOError) 
       ErrExit(ErrMsg);
@@ -276,13 +276,13 @@ HVector *LogSpace(double Min, double Max, int Num)
 /***************************************************************/
 HVector *Concat(HVector *V1, HVector *V2)
 {  
-  if ( V1==0 && V2==0 )
-   return 0;
+  if ( V1==nullptr && V2==nullptr )
+   return nullptr;
   
-  if ( V1==0 && V2!=0 )
+  if ( V1==nullptr && V2!=nullptr )
    return new HVector(*V2); // invoke copy constructor
 
-  if ( V1!=0 && V2==0 )
+  if ( V1!=nullptr && V2==nullptr )
    return new HVector(*V1); // invoke copy constructor
 
   int RealComplex = (V1->RealComplex==LHM_REAL && V2->RealComplex==LHM_REAL ) ? LHM_REAL : LHM_COMPLEX;
@@ -334,10 +334,10 @@ cdouble HVector::Min()
 HVector *GetOmegaList(const char *OmegaFile,  cdouble *OmegaVals,  int nOmegaVals,
                       const char *LambdaFile, cdouble *LambdaVals, int nLambdaVals)
 {
-  HVector *OmegaList=0;
+  HVector *OmegaList=nullptr;
   int TotalFreqs=0;
 
-  HVector *OmegaList1=0, *OmegaList2=0, *LambdaList1=0, *LambdaList2=0;
+  HVector *OmegaList1=nullptr, *OmegaList2=nullptr, *LambdaList1=nullptr, *LambdaList2=nullptr;
   if (OmegaFile) // process --OmegaFile option if present
    { 
      OmegaList1=new HVector(OmegaFile,LHM_TEXT);
@@ -368,7 +368,7 @@ HVector *GetOmegaList(const char *OmegaFile,  cdouble *OmegaVals,  int nOmegaVal
    };
 
   if (TotalFreqs==0)
-   return 0;
+   return nullptr;
 
   OmegaList = new HVector(TotalFreqs, LHM_COMPLEX);
   int nOmega=0;

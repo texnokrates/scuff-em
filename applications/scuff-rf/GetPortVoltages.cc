@@ -47,7 +47,7 @@ using namespace scuff;
 int AICheck(const char *FileName, int LineNum, 
             double *I, double *E, double AbsTol, double RelTol, int Length);
 int WriteLogFile=0;
-FILE *LogFile=0;
+FILE *LogFile=nullptr;
 
 /***************************************************************/
 /***************************************************************/
@@ -91,7 +91,7 @@ void GetEdgeiwA_Multipole(RWGSurface *S, int ne, cdouble IK, double X[3], cdoubl
 /* iwA \cdot dl from X1 to X2                                  */
 /* x[0] = Tau where X = X_1 + Tau(X_2-X_1)                     */
 /***************************************************************/
-typedef struct iwAIData 
+using iwAIData = struct iwAIData 
  {
    RWGGeometry *G;
    HVector *KN;
@@ -100,7 +100,7 @@ typedef struct iwAIData
    cdouble *PortCurrents;
    cdouble IK;
    double *X1, *X2;
- } iwAIData;
+ };
 
 void iwaIntegrand(unsigned ndim, const double *x, void *params, 
                   unsigned fdim, double *fval)
@@ -319,12 +319,14 @@ void GetPortVoltages(RWGGeometry *G, HVector *KN,
   /* the total charge on each panel in the geometry.             */
   /***************************************************************/
   static int NumPanels=0;
-  static cdouble *PanelCharges=0;
+  static cdouble *PanelCharges=nullptr;
 
   if (NumPanels!=G->TotalPanels)
    { NumPanels=G->TotalPanels;
-     if (PanelCharges) free(PanelCharges);
-     PanelCharges=(cdouble *)mallocEC(NumPanels * sizeof(cdouble));
+     /* PanelCharges is a function-static growable cache; converting it
+        to a container is tracked in the ownership-sweep backlog */
+     if (PanelCharges) free(PanelCharges); // NOLINT(cppcoreguidelines-no-malloc)
+     PanelCharges=(cdouble *)mallocEC(NumPanels * sizeof(cdouble)); // NOLINT(cppcoreguidelines-no-malloc)
    };
 
   /***************************************************************/

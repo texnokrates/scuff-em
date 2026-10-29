@@ -59,7 +59,7 @@ namespace scuff {
 #define NSME_G2   1
 #define NSME_IKC  2
 #define NUM_NSMES 3
-typedef struct { float Data[NUM_NSMES]; } EdgePairSignature;
+using EdgePairSignature = struct { float Data[NUM_NSMES]; };
 
 #define EEP_GSIGN 0
 #define EEP_CSIGN 1
@@ -108,7 +108,7 @@ public:
    EdgePair(int _nea=0, int _neb=0); 
    
    void Resolve(int *pnea, int *pneb) const;
-   char *Str(char *s=0) const;
+   char *Str(char *s=nullptr) const;
    bool LessThan(const EdgePair EP) const;
    bool Equal(const EdgePair EP) const;
 //private:
@@ -140,7 +140,7 @@ void EdgePair::Resolve(int *pnea, int *pneb) const
 
 char *EdgePair::Str(char *s) const
 { static char sBuffer[20]; 
-  if (s==0) s=sBuffer;
+  if (s==nullptr) s=sBuffer;
   snprintf(s,20,"%c%c{%i,%i}",PMSign(Signs.Flipped[0]),PMSign(Signs.Flipped[1]),nea,neb);
   return s;
 }
@@ -200,7 +200,7 @@ bool GetCanonicalPairIndices(int neaParent, int neaChild, int nebParent, int neb
 /*  necessary but not sufficient condition for equivalence.      */
 /*****************************************************************/
 #define EDGESIGLEN 3
-typedef struct { float Data[3]; } EdgeSignature;
+using EdgeSignature = struct { float Data[3]; };
 EdgeSignature GetEdgeSignature(RWGSurface *S, int ne)
 { 
    RWGEdge *E = S->Edges[ne];
@@ -263,10 +263,10 @@ void NSMEIntegrand(double x[3], double b[3], double Divb,
 }
 
 void GetNSMEs(RWGSurface *Sa, int nea, RWGSurface *Sb, int neb, int Order, double NSMEs[NUM_NSMES])
-{  GetBFBFCubature2(Sa, nea, Sb, neb, NSMEIntegrand, 0, NUM_NSMES, Order, NSMEs); }
+{  GetBFBFCubature2(Sa, nea, Sb, neb, NSMEIntegrand, nullptr, NUM_NSMES, Order, NSMEs); }
 
 EdgePairSignature GetEdgePairSignature(RWGSurface *Sa, int nea, RWGSurface *Sb, int neb,
-                                       SignPattern *Signs=0, int Order=4)
+                                       SignPattern *Signs=nullptr, int Order=4)
 { 
   double NSMEs[NUM_NSMES];
   GetNSMEs(Sa, nea, Sb, neb, Order, NSMEs);
@@ -281,14 +281,14 @@ EdgePairSignature GetEdgePairSignature(RWGSurface *Sa, int nea, RWGSurface *Sb, 
   return EPSig;
 }
 
-char *ToStr(EdgePairSignature EPSig, char *s=0)
+char *ToStr(EdgePairSignature EPSig, char *s=nullptr)
 { static char sBuffer[100];
-  if (s==0) s=sBuffer;
+  if (s==nullptr) s=sBuffer;
   snprintf(s,100,"{%g %g %g}",(double)(EPSig.Data[0]),(double)(EPSig.Data[1]),(double)(EPSig.Data[2]));
   return s;
 }
 
-char *EdgePairSignatureStr(RWGSurface *Sa, int nea, RWGSurface *Sb, int neb, char *s=0)
+char *EdgePairSignatureStr(RWGSurface *Sa, int nea, RWGSurface *Sb, int neb, char *s=nullptr)
 { return ToStr(GetEdgePairSignature(Sa, nea, Sb, neb), s );
 }
 
@@ -300,8 +300,8 @@ char *EdgePairSignatureStr(RWGSurface *Sa, int nea, RWGSurface *Sb, int neb, cha
 /* An EdgePair is a pair of edge indices.                                        */
 /* An EdgePairSet is a set of EdgePairs, all equivalent to each other.           */
 /*********************************************************************************/
-typedef set<EdgePair, EdgePairCmp> EdgePairSet;
-typedef map<EdgePair, EdgePairSet, EdgePairCmp> ChildPairMap;
+using EdgePairSet = set<EdgePair, EdgePairCmp>;
+using ChildPairMap = map<EdgePair, EdgePairSet, EdgePairCmp>;
 
 struct EPSigHash
   { long operator() (const EdgePairSignature &EPSig) const
@@ -337,19 +337,19 @@ struct EPSigCmp
   typedef tr1::unordered_map <EdgePair, EdgePair, EdgePairHash, EdgePairEq > ParentPairMap;
   typedef tr1::unordered_map <EdgePairSignature, EdgePair, EPSigHash, EPSigEqual> EPSigMap;
 #elif defined(HAVE_CXX11)
-  typedef unordered_map <EdgePair, EdgePair, EdgePairHash, EdgePairEq> ParentPairMap;
-  typedef unordered_map <EdgePairSignature, EdgePair, EPSigHash, EPSigEqual> EPSigMap;
+  using ParentPairMap = unordered_map <EdgePair, EdgePair, EdgePairHash, EdgePairEq>;
+  using EPSigMap = unordered_map <EdgePairSignature, EdgePair, EPSigHash, EPSigEqual>;
 #else
   typedef map<EdgePair, EdgePair, EdgePairCmp> ParentPairMap;
   typedef map<EdgePairSignature, EdgePair , EPSigCmp> EPSigMap;
 #endif
 
-typedef struct EquivalentEdgePairSubTable
+using EquivalentEdgePairSubTable = struct EquivalentEdgePairSubTable
  { RWGSurface *Sa, *Sb;
    ChildPairMap   Children;
    ParentPairMap  Parents;
    EPSigMap       EPRepresentatives;
- } EquivalentEdgePairSubTable;
+ };
 
 void ExportEEPSubTable(EquivalentEdgePairSubTable *Table, const char *FileName)
 {
@@ -378,7 +378,7 @@ void ExportEEPSubTable(EquivalentEdgePairSubTable *Table, const char *FileName)
   if (f!=stdout) fclose(f); 
 }
 
-bool ParentInTable(EquivalentEdgePairSubTable *Table, EdgePair ParentPair, EdgePairSet **Children=0)
+bool ParentInTable(EquivalentEdgePairSubTable *Table, EdgePair ParentPair, EdgePairSet **Children=nullptr)
 { 
   ChildPairMap::iterator it = Table->Children.find(ParentPair);
   if (it==Table->Children.end()) return false;
@@ -387,7 +387,7 @@ bool ParentInTable(EquivalentEdgePairSubTable *Table, EdgePair ParentPair, EdgeP
 }
 
 bool ChildInTable(EquivalentEdgePairSubTable *Table, EdgePair ChildPair,
-                  int *neaParent=0, int *nebParent=0, SignPattern *Signs=0)
+                  int *neaParent=nullptr, int *nebParent=nullptr, SignPattern *Signs=nullptr)
 {
   ParentPairMap::iterator it=Table->Parents.find(ChildPair);
   if (it==Table->Parents.end()) return false;
@@ -397,9 +397,9 @@ bool ChildInTable(EquivalentEdgePairSubTable *Table, EdgePair ChildPair,
 }
 
 bool PairInTable(EquivalentEdgePairSubTable *Table, EdgePair Pair,
-                 EdgePairSet **ChildPairs=0, EdgePair *ParentPair=0)
+                 EdgePairSet **ChildPairs=nullptr, EdgePair *ParentPair=nullptr)
 {
-  if (ChildPairs) *ChildPairs=0;
+  if (ChildPairs) *ChildPairs=nullptr;
 
   ChildPairMap::iterator it1 = Table->Children.find(Pair);
   if (it1!=Table->Children.end())
@@ -414,9 +414,9 @@ bool PairInTable(EquivalentEdgePairSubTable *Table, EdgePair Pair,
   return false;
 }
 
-void AddChildPair(EquivalentEdgePairSubTable *Table, EdgePair ParentPair, EdgePair ChildPair, EdgePairSet *ChildPairs=0)
+void AddChildPair(EquivalentEdgePairSubTable *Table, EdgePair ParentPair, EdgePair ChildPair, EdgePairSet *ChildPairs=nullptr)
 { 
-  if (ChildPairs==0) ChildPairs = &(Table->Children[ParentPair]);
+  if (ChildPairs==nullptr) ChildPairs = &(Table->Children[ParentPair]);
   ChildPairs->insert(ChildPair);
   Table->Parents[ChildPair]=ParentPair;
 }
@@ -442,13 +442,13 @@ bool AddEquivalentPair(EquivalentEdgePairSubTable *Table, EdgePair ParentPair, E
   EdgePairSet *ChildrenOfParentInTable;
   EdgePair ParentOfParentInTable;
   bool ParentInTable=PairInTable(Table, ParentPair, &ChildrenOfParentInTable, &ParentOfParentInTable);
-  bool ParentInTableAsParent = ParentInTable && (ChildrenOfParentInTable != 0);
+  bool ParentInTableAsParent = ParentInTable && (ChildrenOfParentInTable != nullptr);
   bool ParentInTableAsChild  = ParentInTable && !ParentInTableAsParent;
 
   EdgePairSet *ChildrenOfChildInTable;
   EdgePair ParentOfChildInTable;
   bool ChildInTable=PairInTable(Table, ChildPair, &ChildrenOfChildInTable, &ParentOfChildInTable);
-  bool ChildInTableAsParent = ChildInTable && (ChildrenOfChildInTable != 0);
+  bool ChildInTableAsParent = ChildInTable && (ChildrenOfChildInTable != nullptr);
 
   if (ParentInTable && ChildInTable)
    return false;
@@ -655,7 +655,7 @@ char *GetStandardEEPTFilePath(RWGSurface *Sa, RWGSurface *Sb)
   char PWD[2]=".";
 
   char *Dir = Sa->MeshFileDir;
-  if (Dir==0) Dir=PWD;
+  if (Dir==nullptr) Dir=PWD;
   if ( !strcmp(Sa->MeshFileName, Sb->MeshFileName) )
    snprintf(Path,1000,"%s/%s.EEPTable",Dir,GetFileBase(Sa->MeshFileName));
   else
@@ -667,7 +667,7 @@ char *GetStandardEEPTFilePath(RWGSurface *Sa, RWGSurface *Sb)
 /***************************************************************/
 /***************************************************************/
 void EquivalentEdgePairTable::Export(const char *FileName)
-{ if (FileName==0) FileName=GetStandardEEPTFilePath(G->Surfaces[nsa], G->Surfaces[nsb]);
+{ if (FileName==nullptr) FileName=GetStandardEEPTFilePath(G->Surfaces[nsa], G->Surfaces[nsb]);
   ExportEEPSubTable( (EquivalentEdgePairSubTable *)MasterTable, FileName); 
   Log("Exported EEPTable(%i,%i) to file %s.\n",nsa,nsb,FileName);
 }

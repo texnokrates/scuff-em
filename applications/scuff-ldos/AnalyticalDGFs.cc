@@ -35,13 +35,13 @@
 #define II cdouble (0.0,1.0)
 
 using namespace scuff;
-FILE *LogFile=0;
+FILE *LogFile=nullptr;
 
 /***************************************************************/
 /* data structure containing everything needed to evaluate the */
 /* integrand of the half-space DGF integral                    */
 /***************************************************************/
-typedef struct HalfSpaceData
+using HalfSpaceData = struct HalfSpaceData
  {
    HMatrix *XMatrix;
    cdouble Omega;     // angular frequency
@@ -57,7 +57,7 @@ typedef struct HalfSpaceData
 
    int nCalls;
 
- } HalfSpaceData;
+ };
 
 /***************************************************************/
 /* Integrand[ 18*nx + 0*9 + 3*Mu + Nu ] = G^{E}_{Mu,Nu}        */
@@ -249,7 +249,7 @@ void GetHalfSpaceDGFs_BZ(HMatrix *XMatrix,
 { 
   int IDim = 18*XMatrix->NR;
   static int IDimSave=0;
-  static cdouble *Sum=0;
+  static cdouble *Sum=nullptr;
   if (IDimSave<IDim)
    { IDimSave=IDim;
      Sum = (cdouble *)reallocEC(Sum, IDim*sizeof(cdouble));
@@ -304,7 +304,7 @@ void GetHalfSpaceDGFs_Polar(HMatrix *XMatrix, cdouble Omega,
   int NX = XMatrix->NR;
   int IDim = 18*NX;
   static int IDimSave=0;
-  static cdouble *Integral1=0, *Integral2=0, *Error=0;
+  static cdouble *Integral1=nullptr, *Integral2=nullptr, *Error=nullptr;
   if (IDimSave!=IDim)
    { IDimSave = IDim;
      Integral1 = (cdouble *)reallocEC(Integral1, IDim * sizeof(cdouble));
@@ -456,7 +456,7 @@ void ProcessHalfSpaceDGFs(HVector *OmegaPoints,
                           double RelTol, double AbsTol, int MaxEvals)
 {
   MatProp::SetLengthUnit(1.0e-6);
-  MatProp *MP = HalfSpace ? new MatProp(HalfSpace) : 0;
+  MatProp *MP = HalfSpace ? new MatProp(HalfSpace) : nullptr;
   const char *Label = HalfSpace ? HalfSpace : "GroundPlane";
 
   for(int nep=0; nep<nEPFiles; nep++)
@@ -503,7 +503,7 @@ LogFile=fopen("/tmp/ADGFs.log","w");
          GetHalfSpaceDGFs_Polar(XMatrix, Omega, MP,
                                 RelTol, AbsTol, MaxEvals, GMatrix);
         else
-         GetGroundPlaneDGFs(XMatrix, Omega, 0, 0, GMatrix);
+         GetGroundPlaneDGFs(XMatrix, Omega, nullptr, nullptr, GMatrix);
 fclose(LogFile);
 
         double PreFac = abs(Omega)/M_PI;

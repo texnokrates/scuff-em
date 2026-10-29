@@ -97,3 +97,63 @@ jobs:
             --FileBase "$RUNNER_TEMP/asan-smoke" \
             --Cache "$RUNNER_TEMP/asan-smoke.cache" \
             --LogLevel terse
+
+  clang-tidy:
+    # G4 ratchet (ai_notes/core-guidelines-survey-2026-10-27.md Section 7):
+    # gate *changed lines* against the curated .clang-tidy check set.
+    # Non-blocking per the plan's step 1; flip to blocking (drop
+    # continue-on-error) once the changed-lines diagnostics are zero.
+    name: clang-tidy (changed lines)
+    runs-on: ubuntu-24.04
+    continue-on-error: true
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            clang-tidy ninja-build g++ gfortran \
+            libopenblas-dev liblapack-dev libhdf5-dev \
+            libgsl-dev libreadline-dev
+
+      - name: Configure (export compile_commands.json)
+        run: cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Debug
+
+      - name: Run clang-tidy on changed lines
+        run: |
+          set -o pipefail
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            BASE="origin/${{ github.base_ref }}"
+          else
+            BASE="origin/mmn_master"
+          fi
+          git fetch origin mmn_master 2>/dev/null || true
+          BASE_SHA=$(git merge-base "$BASE" HEAD)
+          GXX_INC="$(g++ -print-file-name=include)"
+          DIFF_SCRIPT=$(ls /usr/bin/clang-tidy-diff-*.py \
+                             /usr/lib/llvm-*/share/clang/clang-tidy-diff.py 2>/dev/null \
+                        | sort -V | tail -1)
+          # Gate project sources only; vendored/generated trees (third_party,
+          # cmatheval, f2c output, SGJ cubature) are excluded.
+          git diff -U0 "$BASE_SHA"...HEAD -- \
+            '*.cc' '*.h' '*.hh' \
+            ':(exclude)third_party' \
+            ':(exclude)libs/libMatProp/cmatheval' \
+            ':(exclude)libs/libSGJC/hcubature.c' \
+            ':(exclude)libs/libSGJC/pcubature.c' \
+            ':(exclude)libs/libSpherical/zbsubs.c' \
+            ':(exclude)libs/libSpherical/machcon.c' \
+            ':(exclude)libs/libSpherical/drc3jm.c' \
+            | "$DIFF_SCRIPT" -p1 -path build \
+                -clang-tidy-binary clang-tidy \
+                -extra-arg="-isystem$GXX_INC" -quiet \
+            | tee clang-tidy-diff.log
+          if grep -q 'warning:' clang-tidy-diff.log; then
+            N=$(grep -c 'warning:' clang-tidy-diff.log)
+            echo "::notice title=clang-tidy ratchet::$N warnings on changed lines (non-blocking; see .clang-tidy and ai_notes/core-guidelines-survey-2026-10-27.md)"
+            exit 1
+          fi

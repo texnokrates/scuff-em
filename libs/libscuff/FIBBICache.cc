@@ -83,10 +83,10 @@ static long HashFunction(const float *Key)
 /*--------------------------------------------------------------*/
 /*--------------------------------------------------------------*/
 /*--------------------------------------------------------------*/
-typedef struct { float  Key[KEYLEN];    } KeyStruct;
-typedef struct { double Data[DATALEN];  } DataStruct;
+using KeyStruct = struct { float  Key[KEYLEN];    };
+using DataStruct = struct { double Data[DATALEN];  };
 
-typedef std::pair<KeyStruct, DataStruct> KDPair;
+using KDPair = std::pair<KeyStruct, DataStruct>;
 
 struct FIBBIKeyHash
  {
@@ -94,7 +94,7 @@ struct FIBBIKeyHash
     { return HashFunction(K.Key); }
  };
 
-typedef struct 
+using FIBBIKeyCmp = struct 
  { 
    bool operator()(const KeyStruct &K1, const KeyStruct &K2) const
     { 
@@ -104,13 +104,13 @@ typedef struct
                     );
     };
 
- } FIBBIKeyCmp;
+ };
 
 #ifdef HAVE_CXX11
-typedef std::unordered_map< KeyStruct,
+using KDMap = std::unordered_map< KeyStruct,
                             DataStruct,
                             FIBBIKeyHash,
-                            FIBBIKeyCmp> KDMap;
+                            FIBBIKeyCmp>;
 #elif defined(HAVE_TR1)
 typedef std::tr1::unordered_map< KeyStruct,
                                  DataStruct,
@@ -156,7 +156,7 @@ FIBBICache::FIBBICache(char *MeshFileName)
   /*--------------------------------------------------------------*/
   /*- attempt to preload cache                                   -*/
   /*--------------------------------------------------------------*/
-  LastFileName=0;
+  LastFileName=nullptr;
   NumRecordsInFile=0;
   if (MeshFileName)
    { 
@@ -416,7 +416,7 @@ int FIBBICache::PreLoad(const char *FileName)
   /*- run through some sanity checks to make sure we have a valid */
   /*- cache file                                                  */
   /*--------------------------------------------------------------*/
-  const char *ErrMsg=0;
+  const char *ErrMsg=nullptr;
   struct stat fileStats;
   off_t FileSize;
   if ( fstat(fileno(f), &fileStats) )

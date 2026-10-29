@@ -215,20 +215,20 @@ int main(int argc, char *argv[])
   /*******************************************************************/
   SNEQData *SNEQD=CreateSNEQData(GeoFile.c_str(), TransFile.c_str(),
                                  PFTMethods.data(), (int)PFTMethods.size(),
-                                 EPFile.empty() ? 0 : EPFile.c_str(),
+                                 EPFile.empty() ? nullptr : EPFile.c_str(),
                                  FileBase.c_str());
   RWGGeometry *G=SNEQD->G;
   SNEQD->PlotFlux                = PlotFlux;
   SNEQD->OmitSelfTerms           = OmitSelfTerms;
-  SNEQD->PFTOpts.DSIMesh         = DSIMesh.empty() ? 0 : DSIMesh.c_str();
+  SNEQD->PFTOpts.DSIMesh         = DSIMesh.empty() ? nullptr : DSIMesh.c_str();
   SNEQD->PFTOpts.DSIRadius       = DSIRadius;
   SNEQD->PFTOpts.DSIFarField     = DSIFarField;
-  SNEQD->DSIOmegaPoints          = DSIOmegaFile.empty() ? 0
+  SNEQD->DSIOmegaPoints          = DSIOmegaFile.empty() ? nullptr
                                   : new HVector(DSIOmegaFile.c_str());
 
-  if (OmegaKBPoints.get()!=0 && !G->LBasis)
+  if (OmegaKBPoints.get()!=nullptr && !G->LBasis)
    ErrExit("--OmegaKBPoints may only be used with extended geometries");
-  else if (G->LBasis && OmegaKBPoints.get()==0)
+  else if (G->LBasis && OmegaKBPoints.get()==nullptr)
    ErrExit("--OmegaKBPoints is required for extended geometries");
 
   SNEQD->SourceOnly=-1;
@@ -256,13 +256,13 @@ int main(int argc, char *argv[])
    PreloadCache( Cache.c_str() );
 
   if (!Cache.empty()) WriteCache=Cache;
-  SNEQD->WriteCache = WriteCache.empty() ? 0 : WriteCache.c_str();
+  SNEQD->WriteCache = WriteCache.empty() ? nullptr : WriteCache.c_str();
 
   /*******************************************************************/
   /* now switch off based on the requested frequency behavior to     */
   /* perform the actual calculations.                                */
   /*******************************************************************/
-  if (OmegaKBPoints.get()!=0)
+  if (OmegaKBPoints.get()!=nullptr)
    { for (int nok=0; nok<OmegaKBPoints->NR; nok++)
       {
         cdouble Omega;

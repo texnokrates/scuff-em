@@ -73,7 +73,7 @@ void GetReducedFields_Nearby(RWGSurface *S, const int ne,
                              const double X0[3], const cdouble k,
                              cdouble e[3], cdouble h[3],
                              cdouble de[3][3], cdouble dh[3][3],
-                             bool *IncludeTerm=0);
+                             bool *IncludeTerm=nullptr);
 
 inline cdouble RCVecDot(double *V1, cdouble *V2)
  { return V1[0]*V2[0] + V1[1]*V2[1] + V1[2]*V2[2]; }
@@ -81,7 +81,7 @@ inline cdouble RCVecDot(double *V1, cdouble *V2)
 /***************************************************************/
 /***************************************************************/
 /***************************************************************/
-typedef struct PFTIData
+using PFTIData = struct PFTIData
  {
    cdouble Omega, k, EpsRel, MuRel;
    IncField *IF;
@@ -91,7 +91,7 @@ typedef struct PFTIData
    int nsb, neb;
    bool SameSurface;
 
- } PFTIData;
+ };
 
 /***************************************************************/
 /***************************************************************/
@@ -342,7 +342,7 @@ void GetScatteredPFTIntegrals(RWGGeometry *G,
      Args->NumRegions = 1;
      Args->k[0] = k;
      Args->NeedGC=Args->NeedForce=Args->NeedTorque=true;
-     Args->FIBBICache = (nsa==nsb) ? G->FIBBICaches[nsa] : 0;
+     Args->FIBBICache = (nsa==nsb) ? G->FIBBICaches[nsa] : nullptr;
      cdouble GabArray[2][NUMGCMES];
      cdouble ikCabArray[2][NUMGCMES];
      GetGCMatrixElements(G, Args, nea, neb, GabArray, ikCabArray);
@@ -461,7 +461,7 @@ void GetExtinctionPFTIntegrals(RWGGeometry *G, int ns, int ne,
   int fDim=4*NUMPFTT;
   int MaxEvals=21;
   GetBFCubature(G, ns, ne, ExtinctionPFTIntegrand, (void *)Data,
-                fDim, MaxEvals, 0, 0, 0, 0, (double *)QKQN);
+                fDim, MaxEvals, 0, 0, 0, nullptr, (double *)QKQN);
 }
 
 /***************************************************************/
@@ -557,7 +557,7 @@ HMatrix *GetEMTPFTMatrix(RWGGeometry *G, cdouble Omega, IncField *IF,
   /***************************************************************/
   /***************************************************************/
   int NS = G->NumSurfaces;
-  if (    (PFTMatrix==0)
+  if (    (PFTMatrix==nullptr)
        || (PFTMatrix->NR != NS)
        || (PFTMatrix->NC != NUMPFT)
      )

@@ -40,9 +40,9 @@ namespace scuff {
 /***************************************************************/
 /***************************************************************/
 /***************************************************************/
-char *ToStr(cdouble Omega, double *kBloch, int LDim, char *s=0)
+char *ToStr(cdouble Omega, double *kBloch, int LDim, char *s=nullptr)
 { static char sBuffer[50];
-  if (s==0) s=sBuffer;
+  if (s==nullptr) s=sBuffer;
   if (LDim==0) snprintf(s,50,"Omega=%s",z2s(Omega));
   if (LDim==1) snprintf(s,50,"Omega,kx={%s,%g}",z2s(Omega),kBloch[0]);
   if (LDim==2) snprintf(s,50,"Omega,kx,ky={%s,%g,%g}",z2s(Omega),kBloch[0],kBloch[1]);
@@ -113,9 +113,9 @@ void AssembleBEMMatrixBlock2018(RWGGeometry *G, int nsa, int nsb,
   /***************************************************************/
   /***************************************************************/
   /***************************************************************/
-  EquivalentEdgePairTable *EEPTable=0;
+  EquivalentEdgePairTable *EEPTable=nullptr;
   if ( G->EEPTables.size()>0 && !CheckEnv("SCUFF_IGNORE_EEPS") )
-   { if (G->EEPTables[nsa][nsb]==0)
+   { if (G->EEPTables[nsa][nsb]==nullptr)
       G->EEPTables[nsa][nsb] = std::unique_ptr<EquivalentEdgePairTable>(new EquivalentEdgePairTable(G,nsa,nsb));
      EEPTable = G->EEPTables[nsa][nsb].get();
    }
@@ -148,7 +148,7 @@ void AssembleBEMMatrixBlock2018(RWGGeometry *G, int nsa, int nsb,
   if (NumCommonRegions==2)
    Args.k[1]       = sqrt(Eps[1]*Mu[1])*Omega;
   Args.NeedGC      = true;
-  Args.FIBBICache = (nsa==nsb) ? G->FIBBICaches[nsa] : 0;
+  Args.FIBBICache = (nsa==nsb) ? G->FIBBICaches[nsa] : nullptr;
 
   /***************************************************************/
   /***************************************************************/
@@ -217,17 +217,17 @@ HMatrix *AssembleBEMMatrix2018(RWGGeometry *G, cdouble Omega, double *kBloch, HM
   /***************************************************************/
   /***************************************************************/
   /***************************************************************/
-  if ( G->LBasis==0 && kBloch!=0 && (kBloch[0]!=0.0 || kBloch[1]!=0.0) )
+  if ( G->LBasis==nullptr && kBloch!=nullptr && (kBloch[0]!=0.0 || kBloch[1]!=0.0) )
    ErrExit("%s:%i: Bloch wavevector is undefined for compact geometries",
            __FILE__,__LINE__);
-  if ( G->LBasis!=0 && kBloch==0 )
+  if ( G->LBasis!=nullptr && kBloch==nullptr )
    ErrExit("%s:%i: Bloch wavevector must be specified for PBC geometries",
            __FILE__,__LINE__);
 
   /***************************************************************/
   /***************************************************************/
   /***************************************************************/
-  if (M==NULL)
+  if (M==nullptr)
    M=G->AllocateBEMMatrix();
   else if ( M->NR != G->TotalBFs || M->NC != G->TotalBFs )
    { Warn("wrong-size matrix passed to AssembleBEMMatrix; reallocating...");

@@ -50,9 +50,9 @@ namespace scuff {
 /***********************************************************************/
 StaticSolver::StaticSolver(const char *GeoFileName, const char *SubstrateFile, int LogLevel)
 {
-  Substrate=0;
-  TransformLabel=0;
-  ExcitationLabel=0;
+  Substrate=nullptr;
+  TransformLabel=nullptr;
+  ExcitationLabel=nullptr;
   SeparateOutputFiles=false;
 
   G=new RWGGeometry(GeoFileName, LogLevel);
@@ -64,7 +64,7 @@ StaticSolver::StaticSolver(const char *GeoFileName, const char *SubstrateFile, i
      if (Substrate)
       delete Substrate;
 
-     char *ErrMsg=0;
+     char *ErrMsg=nullptr;
      Substrate=new LayeredSubstrate(SubstrateFile);
      if (Substrate->ErrMsg)
       ErrExit("%s",Substrate->ErrMsg);
@@ -101,7 +101,7 @@ HMatrix *StaticSolver::AssembleBEMMatrix(HMatrix *M)
   if ( M && ((M->NR!=Dim) || (M->NC!=Dim)) )
    { Warn("wrong-size M matrix passed to AssembleBEMMatrix (resizing...)");
      delete M;
-     M=0;
+     M=nullptr;
    };
   if (!M)
    M = new HMatrix(Dim, Dim);
@@ -275,7 +275,7 @@ HVector *StaticSolver::AssembleRHSVector(StaticExcitation *SE,
   if ( (RHS->N!=Dim) )
    { Warn("wrong-size vector passed to AssembleRHSVector (resizing...)");
      delete RHS;
-     RHS=0;
+     RHS=nullptr;
    };
   if (!RHS)
    RHS = new HVector(Dim);
@@ -347,7 +347,7 @@ HVector *StaticSolver::AssembleRHSVector(StaticExcitation *SE,
 }
 
 HVector *StaticSolver::AssembleRHSVector(double *Potentials, HVector *RHS)
- { StaticExcitation SE={0, Potentials, 0, 0, 0};
+ { StaticExcitation SE={nullptr, Potentials, nullptr, nullptr, 0};
    return AssembleRHSVector(&SE, RHS);
  }
 
@@ -365,9 +365,9 @@ HMatrix *StaticSolver::GetCartesianMoments(HVector *Sigma, HMatrix *Moments)
   if (Moments && (Moments->NR != NS || Moments->NC < NM ) )
    { Warn("invalid matrix passed to GetCartesianMoments (reallocating)");
      delete Moments;
-     Moments=0;
+     Moments=nullptr;
    };
-  if (Moments==0) 
+  if (Moments==nullptr) 
    Moments = new HMatrix(NS, NM);
 
   /*--------------------------------------------------------------*/
@@ -415,7 +415,7 @@ HVector *StaticSolver::GetSphericalMoments(HVector *Sigma, int WhichSurface,
   if (Moments && Moments->N != NAlpha)
    { Warn("incorrect Moments matrix passed to GetSphericalMoments (reallocating...)");
      delete Moments;
-     Moments=0;
+     Moments=nullptr;
    };
   if (!Moments)
    Moments=new HVector(NAlpha);
@@ -467,7 +467,7 @@ HVector *StaticSolver::GetSphericalMoments(HVector *Sigma,
   if (Moments && Moments->N != NAlpha)
    { Warn("incorrect Moments matrix passed to GetSphericalMoments (reallocating...)");
      delete Moments;
-     Moments=0;
+     Moments=nullptr;
    };
   if (!Moments)
    Moments=new HVector(NAlpha);
@@ -500,9 +500,9 @@ HMatrix *StaticSolver::GetFields(StaticExcitation *SE, HVector *Sigma,
   if ( PhiE && (PhiE->NR!=NX || PhiE->NC!=4) )
    { Warn("GetFields() called with incorrect PhiE matrix (reallocating)");
      delete PhiE;
-     PhiE=0;
+     PhiE=nullptr;
    };
-  if (PhiE==0)
+  if (PhiE==nullptr)
    PhiE = new HMatrix(NX, 4);
   
   /*--------------------------------------------------------------*/
@@ -554,17 +554,17 @@ HMatrix *StaticSolver::GetFields(StaticExcitation *SE, HVector *Sigma,
 }
 
 HMatrix *StaticSolver::GetFields(HVector *Sigma, HMatrix *X, HMatrix *PhiE)
-{ return GetFields(0, Sigma, X, PhiE);
+{ return GetFields(nullptr, Sigma, X, PhiE);
 }
 
 /***************************************************************/
 /***************************************************************/
 /***************************************************************/
-typedef struct SPEIntegrandData
+using SPEIntegrandData = struct SPEIntegrandData
  {
    LayeredSubstrate *Substrate;
    double *XDest;
- } SPEIntegrandData;
+ };
 
 void SubstratePhiEIntegrand(double XS[3], void *UserData,
                             double Weight, double *Integral)

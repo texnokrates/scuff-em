@@ -208,6 +208,17 @@ double LargeXiCoefficient_DPB_Francium =  8.04767e-5;
 /***************************************************************/
 PolModel::PolModel(const char *String, int Which)
 {
+  /* the Init* helpers assign every member; initialize here as well so
+     that an early error return leaves the object in a known state */
+  Name     = 0;
+  ErrMsg   = 0;
+  MP       = 0;
+  NumPoints= 0;
+  XiPoints = 0;
+  PolPoints= 0;
+  PolInterp= 0;
+  LargeXiCoefficient = 0;
+
   if (Which==PM_BUILTIN)
    InitPolModel_BI(String);
   else
@@ -220,7 +231,7 @@ PolModel::PolModel(const char *String, int Which)
 /***************************************************************/
 void PolModel::InitPolModel_BI(const char *Atom)
 {
-  ErrMsg=0;
+  ErrMsg=nullptr;
 
   Name  = strdup(Atom);
 
@@ -267,7 +278,7 @@ void PolModel::InitPolModel_BI(const char *Atom)
    };
 
    // initialize MP, otherwise will be used in PolModel::GetPolarizability w/o assignment
-   MP = 0;
+   MP = nullptr;
    // initialize the interpolator
    PolInterp = new Interp1D(XiPoints, PolPoints, NumPoints, 1);
 
@@ -278,19 +289,19 @@ void PolModel::InitPolModel_BI(const char *Atom)
 /***************************************************************/
 void PolModel::InitPolModel_UD(const char *FileName)
 {
-  ErrMsg=0;
+  ErrMsg=nullptr;
   LargeXiCoefficient = 0.0;
   Name = strdup(GetFileBase(FileName));
 
   MP=new MatProp(FileName);
-  if (MP->ErrMsg==0)
-   { PolInterp=0;
+  if (MP->ErrMsg==nullptr)
+   { PolInterp=nullptr;
      MatProp::SetLengthUnit(1.0e-6);
      return;
    }
   else
    { delete MP;
-     MP=0;
+     MP=nullptr;
    };
 
   HMatrix *PolData = new HMatrix(FileName,LHM_TEXT,"--ncol 2 --strict");

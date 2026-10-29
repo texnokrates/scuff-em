@@ -388,7 +388,7 @@ bool InterpND::PointInGrid(double *X0Vec, int *nCell, double *XBarVec)
     }
    else
     { 
-      double *XGrid = (XGrids.size() > 0 ? &(XGrids[d][0]) : 0);
+      double *XGrid = (XGrids.size() > 0 ? &(XGrids[d][0]) : nullptr);
       double xMin   = (XGrids.size() > 0 ? 0.0: XMin[d]);
       double Delta  = (XGrids.size() > 0 ? 0.0: DX[d]);
       int nc;
@@ -701,7 +701,7 @@ double GetInterpolationError(PhiVDFunc UserFunc, void *UserData, int NF,
   double *PhiExact  = new double[NF];
   double *PhiInterp = new double[NF];
 
-  FILE *LogFile = LogFileName ? fopen(LogFileName,"a") : 0;
+  FILE *LogFile = LogFileName ? fopen(LogFileName,"a") : nullptr;
 
   iVec TauMax(D0);
   for(int d0=0; d0<D0; d0++)

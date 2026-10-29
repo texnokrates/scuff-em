@@ -101,7 +101,7 @@ SLDData *CreateSLDData(const char *GeoFile, const char *TransFile,
   Data->RelTol      = 1.0e-2;
   Data->AbsTol      = 1.0e-8;
   Data->MaxEvals    = 100000;
-  Data->HalfSpaceMP = 0;
+  Data->HalfSpaceMP = nullptr;
   Data->GroundPlane = false;
 
   /***************************************************************/
@@ -118,9 +118,9 @@ SLDData *CreateSLDData(const char *GeoFile, const char *TransFile,
   char *ErrMsg=G->CheckGTCList(Data->GTCs);
   if (ErrMsg)
    ErrExit("file %s: %s",TransFile,ErrMsg);
-  bool HaveGTCList = (TransFile!=0);
+  bool HaveGTCList = (TransFile!=nullptr);
 
-  Data->TBlocks=Data->UBlocks=0;
+  Data->TBlocks=Data->UBlocks=nullptr;
   if (HaveGTCList)
    { int NS=G->NumSurfaces;
      int NADB = NS*(NS-1)/2; // number of above-diagonal blocks
@@ -147,8 +147,8 @@ SLDData *CreateSLDData(const char *GeoFile, const char *TransFile,
   /***************************************************************/
   /* read in lists of evaluation points **************************/
   /***************************************************************/
-  HMatrix **XMatrices=0;
-  char **EPFileBases=0;
+  HMatrix **XMatrices=nullptr;
+  char **EPFileBases=nullptr;
   int NumXMatrices=0, TotalEvalPoints=0;
   for(int n=0; n<nEPFiles; n++)
    { 
@@ -197,7 +197,7 @@ SLDData *CreateSLDData(const char *GeoFile, const char *TransFile,
   /***************************************************************/
   /* For PBC geometries we need to do some preliminary setup     */
   /***************************************************************/
-  Data->ABMBCache=0;
+  Data->ABMBCache=nullptr;
   if (G->LDim>0)
    { 
      int NS = G->NumSurfaces;

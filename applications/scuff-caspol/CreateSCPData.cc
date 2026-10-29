@@ -48,9 +48,9 @@ SCPData *CreateSCPData(const char *GeoFileIn,
      SCPD->KN = SCPD->G->AllocateRHSVector(SCUFF_PUREIMAGFREQ);
    }
   else
-   { SCPD->G  = 0; // in this case we take the
-     SCPD->M  = 0; // geometry to be a PEC plate in the xy plane
-     SCPD->KN = 0;
+   { SCPD->G  = nullptr; // in this case we take the
+     SCPD->M  = nullptr; // geometry to be a PEC plate in the xy plane
+     SCPD->KN = nullptr;
    };
 
   /*******************************************************************/
@@ -84,16 +84,16 @@ SCPData *CreateSCPData(const char *GeoFileIn,
   /*******************************************************************/
   /*******************************************************************/
   /*******************************************************************/
-  if (FileBase==0)
+  if (FileBase==nullptr)
    FileBase=vstrdup("%s",GetFileBase(GeoFile));
   SCPD->ByXiFileName=vstrdup("%s.byXi",FileBase);
 
   /***************************************************************/
   /* For PBC geometries we need to do some preliminary setup     */
   /***************************************************************/
-  SCPD->ABMBCache=0;
-  SCPD->ByXikFileName=0;
-  SCPD->BZIArgs=0;
+  SCPD->ABMBCache=nullptr;
+  SCPD->ByXikFileName=nullptr;
+  SCPD->BZIArgs=nullptr;
   RWGGeometry *G=SCPD->G;
   if (G && G->LDim>0)
    { 

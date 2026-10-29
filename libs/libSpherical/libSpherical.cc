@@ -316,7 +316,7 @@ cdouble GetYlm(int l, int m, double Theta, double Phi)
 /*--------------------------------------------------------------*/
 void GetYlmArray(int lMax, double Theta, double Phi, cdouble *Ylm)
 {
-  GetYlmDerivArray(lMax, Theta, Phi, Ylm, 0);
+  GetYlmDerivArray(lMax, Theta, Phi, Ylm, nullptr);
 }
 
 /*--------------------------------------------------------------*/
@@ -330,7 +330,7 @@ void GetRealYlmArray(int lMax, double Theta, double Phi, double *RealYlm)
 {
   int NAlpha=(lMax+1)*(lMax+1);
   cdouble *Ylm = new cdouble[NAlpha];
-  GetYlmDerivArray(lMax, Theta, Phi, Ylm, 0);
+  GetYlmDerivArray(lMax, Theta, Phi, Ylm, nullptr);
   for(int l=0; l<=lMax; l++)
    { 
      int Alpha = LM2ALPHA(l,0); 
@@ -515,7 +515,7 @@ void GetRadialFunctions(int lMax, cdouble k, double r, int WaveType,
       AmosBessel('t',kr,0.0,lMax+2,false,R,Workspace);
    };
 
-  if (dRdr==0) 
+  if (dRdr==nullptr) 
    return;
 
   /* get derivatives using d/dx f_L(x) = (L/x)f_L(x) - f_{L+1}(x)) */
@@ -601,7 +601,7 @@ void GetScalarHelmholtzSolutions(int lMax, cdouble k,
   /***************************************************************/
   /* get radial functions ****************************************/
   /***************************************************************/
-  GetRadialFunctions(lMax, k, r, WaveType, R, 0);
+  GetRadialFunctions(lMax, k, r, WaveType, R, nullptr);
   
   /***************************************************************/
   /* get angular functions ***************************************/

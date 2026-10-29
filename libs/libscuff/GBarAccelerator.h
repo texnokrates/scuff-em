@@ -42,7 +42,7 @@ void GBarVDEwald(double *R, cdouble k, double *kBloch,
 /***************************************************************/
 /* interpolation-based acceleration of periodic GF evaluation  */
 /***************************************************************/
-typedef struct GBarAccelerator
+using GBarAccelerator = struct GBarAccelerator
  {
    cdouble k;
    double *kBloch;
@@ -58,7 +58,7 @@ typedef struct GBarAccelerator
    Interp3D *I3D;
    InterpND *Interp;
 
- } GBarAccelerator;
+ };
 
 /***************************************************************/
 /***************************************************************/
@@ -72,7 +72,7 @@ GBarAccelerator *CreateGBarAccelerator(HMatrix *LBasis,
 void DestroyGBarAccelerator(GBarAccelerator *GBA);
 
 cdouble GetGBar(double R[3], GBarAccelerator *GBA,
-                cdouble *dGBar=0, cdouble *ddGBar=0,
+                cdouble *dGBar=nullptr, cdouble *ddGBar=nullptr,
                 bool ForceFullEwald=false);
 
 } // namespace scuff 

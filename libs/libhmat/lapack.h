@@ -30,6 +30,9 @@ extern "C" {
 #ifndef __CLAPACK_H
 #define __CLAPACK_H
 
+
+/* NOLINTBEGIN(modernize-use-using): vendored F77 prototypes; do not
+   convert the typedefs, and keep edits to this file minimal. */
 #include "lapack_names.h"
 
 typedef int logical;
@@ -5152,4 +5155,6 @@ void zgemv_(const char *TRANS, int *M, int *N, cdouble *Alpha,
 
 #ifdef __cplusplus
 }
+/* NOLINTEND(modernize-use-using) */
+
 #endif

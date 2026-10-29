@@ -50,7 +50,7 @@ int IntegrateCliffFunction(CliffFunction fCliff, void *UserData, int nFun,
                            double xMin, double xMax, double xCliff,
                            double AbsTol, double RelTol,
                            double *Integral, double *Error,
-                           char *LogFileName=0);
+                           char *LogFileName=nullptr);
 
 /* accessors for the generated Lebedev tables (LebedevRules.cc, C++) */
 double *GetLebedevRule(int NumPts);
@@ -74,7 +74,7 @@ int DCUTRI(void *opW, double **Vertices, TriIntFun func,
 /* and not                                                     */
 /*  Sum[ns] = f_{ns}[U].                                       */
 /***************************************************************/
-typedef void (*SummandFunction)(double *L, void *UserData, double *Sum);
+using SummandFunction = void (*)(double *L, void *UserData, double *Sum);
 
 int GetLatticeSum(SummandFunction Summand, void *UserData, int nSum,
                   HMatrix *LBasis, double *Sum,

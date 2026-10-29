@@ -173,7 +173,7 @@ void StaticSolver::VisualizeFields(HVector *Sigma,
   for(int nt=0; nt<NT; nt++)
    {
      GTComplex *GTC=GTCs[nt];
-     GTransformation *GT=GTC->GTs.size() > 0 ? GTC->GTs[0] : 0;
+     GTransformation *GT=GTC->GTs.size() > 0 ? GTC->GTs[0] : nullptr;
      char *Tag = GTC->Tag;
      std::string PPFileName;
      if (NT>1)
@@ -222,25 +222,25 @@ HMatrix *StaticSolver::GetCapacitanceMatrix(HMatrix *M,
     NCS++;
   if (NCS==0)
    { Warn("No conducting surfaces! Aborting capacitance calculation.");
-     return 0;
+     return nullptr;
    };
-  if (CMatrix==0 || CMatrix->NR!=NCS || CMatrix->NC!=NCS )
+  if (CMatrix==nullptr || CMatrix->NR!=NCS || CMatrix->NC!=NCS )
    { if (CMatrix) delete CMatrix;
-     CMatrix=0;
+     CMatrix=nullptr;
    };
-  if (CMatrix==0)
+  if (CMatrix==nullptr)
    CMatrix = new HMatrix(NCS, NCS);
 
   /*--------------------------------------------------------------*/
   /*- allocate BEM matrix and RHS vector if necessary             */
   /*--------------------------------------------------------------*/
-  bool OwnsM = (M==0);
+  bool OwnsM = (M==nullptr);
   if (OwnsM)
    { M=AssembleBEMMatrix();
      M->LUFactorize();
    };
 
-  bool OwnsSigma = (Sigma==0);
+  bool OwnsSigma = (Sigma==nullptr);
   if (OwnsSigma)
    Sigma=AllocateRHSVector();
 

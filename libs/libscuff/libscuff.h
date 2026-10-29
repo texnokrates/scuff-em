@@ -98,7 +98,7 @@ namespace scuff {
 /* ith vertex (i=0,1,2) of the npth panel in surface O.        */
 /*                                                             */
 /***************************************************************/
-typedef struct RWGPanel
+using RWGPanel = struct RWGPanel
  { 
    int VI[3];                /* indices of vertices in Vertices array */
    int EI[3];                /* indices of edges in Edges array */
@@ -109,7 +109,7 @@ typedef struct RWGPanel
    double Area;              /* panel area */
    int Index;                /* index of this panel within RWGSurface (0..NumPanelsP-1)*/
 
-} RWGPanel;
+};
 
 /***************************************************************/
 /* RWGEdge is a structure containing data on a single edge     */
@@ -129,7 +129,7 @@ typedef struct RWGPanel
 /* we have that QP[0..2] are the cartesian coordinates of the  */
 /* QP vertex in the basis function corresponding to edge E.    */
 /***************************************************************/
-typedef struct RWGEdge 
+using RWGEdge = struct RWGEdge 
  { 
    int iV1, iV2, iQP, iQM;	/* indices of panel vertices (iV1<iV2) */
    double Centroid[3];          /* edge centroid */
@@ -144,12 +144,12 @@ typedef struct RWGEdge
 
    RWGEdge *Next;               /* pointer to next edge in linked list */
 
-} RWGEdge;
+};
 
 /***************************************************************/
 /* fast kd-tree based point-in-object calculations             */
 /***************************************************************/
-typedef struct kdtri_s *kdtri;
+using kdtri = struct kdtri_s *;
 void kdtri_destroy(kdtri t); // destructor
 
 // some tree statistics for informational purposes:
@@ -165,7 +165,7 @@ double kdtri_meanleaf(kdtri t);
 /* NX x 3 matrix XMatrix) and returns a new NX x ND HMatrix    */
 /* whose columns are the ND data quantities.                   */
 /***************************************************************/
-typedef HMatrix *(*MeshDataFunc)(void *UserData, HMatrix *XMatrix, const char ***DataNames);
+using MeshDataFunc = HMatrix *(*)(void *UserData, HMatrix *XMatrix, const char ***DataNames);
 
 /***************************************************************/
 /* RWGSurface is a class describing a single contiguous surface*/
@@ -193,8 +193,8 @@ class RWGSurface
    /* low-level computations at the level of individual panels/edges. */
    /*-----------------------------------------------------------------*/
    RWGSurface(const char *MeshFile, int MeshTag=-1);
-   RWGSurface(dVec VertexCoordinates, iVec PanelVertexIndices, char *pLabel=0);
-   RWGSurface(dVec X0, dVec L1, dVec L2, int N1, int N2=0, char *pLabel=0);
+   RWGSurface(dVec VertexCoordinates, iVec PanelVertexIndices, char *pLabel=nullptr);
+   RWGSurface(dVec X0, dVec L1, dVec L2, int N1, int N2=0, char *pLabel=nullptr);
 
    /* destructor */
    ~RWGSurface();
@@ -205,7 +205,7 @@ class RWGSurface
    RWGSurface &operator=(const RWGSurface &) = delete;
 
    /* get overlap integrals between two basis functions */
-   double GetOverlap(int neAlpha, int neBeta, double *pOTimes = NULL);
+   double GetOverlap(int neAlpha, int neBeta, double *pOTimes = nullptr);
    void GetOverlaps(int neAlpha, int neBeta, double *Overlaps);
 
    /* apply a general transformation (rotation+displacement) to the surface */
@@ -237,8 +237,8 @@ class RWGSurface
                             const char *ViewNameFormat, ...);
    double PlotVectorDensity(int PlotType, HMatrix *M, int WhichColumn,
                             const char *FileName, const char *ViewNameFormat, ...);
-   HVector *MakeMeshPlot(MeshDataFunc MDFunc, void *UserData=0,
-                         const char *OutFileBase=0, const char *PPOptions=0,
+   HVector *MakeMeshPlot(MeshDataFunc MDFunc, void *UserData=nullptr,
+                         const char *OutFileBase=nullptr, const char *PPOptions=nullptr,
                          bool UseCentroids=true);
 
 //  private:
@@ -340,10 +340,10 @@ class RWGSurface
 /*--------------------------------------------------------------*/
 /*--------------------------------------------------------------*/
 /*--------------------------------------------------------------*/
-typedef struct MMJData
+using MMJData = struct MMJData
  { int NumEdges;
    int *SurfaceIndices, *EdgeIndices;
- } MMJData;
+ };
 
 class EquivalentEdgePairTable; // forward declaration
 
@@ -372,23 +372,23 @@ class RWGGeometry
    /*- assembling the BEM matrix and RHS vector                    */
    /*--------------------------------------------------------------*/
    HMatrix *AllocateBEMMatrix(bool PureImagFreq = false, bool Packed = false);
-   HMatrix *AssembleBEMMatrix(cdouble Omega, double *kBloch, HMatrix *M = NULL);
-   HMatrix *AssembleBEMMatrix(cdouble Omega, HMatrix *M = NULL);
+   HMatrix *AssembleBEMMatrix(cdouble Omega, double *kBloch, HMatrix *M = nullptr);
+   HMatrix *AssembleBEMMatrix(cdouble Omega, HMatrix *M = nullptr);
 
    HVector *AllocateRHSVector(bool PureImagFreq = false );
    HVector *AssembleRHSVector(cdouble Omega, double *kBloch,
-                              IncField *IF, HVector *RHS = NULL);
-   HVector *AssembleRHSVector(cdouble Omega, IncField *IF, HVector *RHS = NULL);
+                              IncField *IF, HVector *RHS = nullptr);
+   HVector *AssembleRHSVector(cdouble Omega, IncField *IF, HVector *RHS = nullptr);
 
    /*--------------------------------------------------------------*/
    /*- post-processing routines for computing fields               */
    /*--------------------------------------------------------------*/
-   int UpdateIncFields(IncField *IF, cdouble Omega, double *kBloch=0);
+   int UpdateIncFields(IncField *IF, cdouble Omega, double *kBloch=nullptr);
 
    HMatrix *GetFields(IncField *IF, HVector *KN, cdouble Omega, 
-                      double *kBloch, HMatrix *XMatrix, HMatrix *FMatrix=NULL);
+                      double *kBloch, HMatrix *XMatrix, HMatrix *FMatrix=nullptr);
    HMatrix *GetFields(IncField *IF, HVector *KN, cdouble Omega,
-                      HMatrix *XMatrix, HMatrix *FMatrix=NULL);
+                      HMatrix *XMatrix, HMatrix *FMatrix=nullptr);
 
    void GetFields(IncField *IF, HVector *KN, cdouble Omega,
                   double *kBloch, double *X, cdouble *EH);
@@ -400,7 +400,7 @@ class RWGGeometry
    /*--------------------------------------------------------------*/
    HMatrix *GetDyadicGFs(cdouble Omega, double *kBloch,
                          HMatrix *XMatrix, HMatrix *M,
-                         HMatrix *GMatrix=0, 
+                         HMatrix *GMatrix=nullptr, 
                          bool ScatteringOnly=false);
 
    // these next two are legacy interfaces which will be
@@ -419,27 +419,27 @@ class RWGGeometry
    /* post-processing routines for power, force, and torque (PFT)  */
    /*--------------------------------------------------------------*/
    void GetPFT(int SurfaceIndex, HVector *KN, cdouble Omega,
-               double PFT[NUMPFT], PFTOptions *Options=0);
+               double PFT[NUMPFT], PFTOptions *Options=nullptr);
    HMatrix *GetPFTMatrix(HVector *KN, cdouble Omega,
-                         PFTOptions *Options=0, HMatrix *PFTMatrix=0);
+                         PFTOptions *Options=nullptr, HMatrix *PFTMatrix=nullptr);
 
    /*--------------------------------------------------------------*/
    /*- post-processing routines for various other quantities      -*/
    /*--------------------------------------------------------------*/
    /* charge and current densities at panel centroids */
-   HMatrix *GetPanelSourceDensities(cdouble Omega, double *kBloch, HVector *KN, HMatrix *PSD=0);
-   HMatrix *GetPanelSourceDensities(cdouble Omega, HVector *KN, HMatrix *PSD=0);
+   HMatrix *GetPanelSourceDensities(cdouble Omega, double *kBloch, HVector *KN, HMatrix *PSD=nullptr);
+   HMatrix *GetPanelSourceDensities(cdouble Omega, HVector *KN, HMatrix *PSD=nullptr);
 
    /* scattering amplitudes */
-   cdouble GetPlaneWaveAmplitude(cdouble Omega, double *kBloch, HVector *KNVector, PlaneWave *PW, cdouble *Terms=0);
-   cdouble GetPlaneWaveAmplitude(cdouble Omega, HVector *KNVector, PlaneWave *PW, cdouble *Terms=0);
+   cdouble GetPlaneWaveAmplitude(cdouble Omega, double *kBloch, HVector *KNVector, PlaneWave *PW, cdouble *Terms=nullptr);
+   cdouble GetPlaneWaveAmplitude(cdouble Omega, HVector *KNVector, PlaneWave *PW, cdouble *Terms=nullptr);
    cdouble GetPlaneWaveAmplitude(cdouble Omega, double *kBloch, HVector *KNVector,
-                                 cdouble E0[3], double nHat[3], char *RegionLabel=0, cdouble *Terms=0);
+                                 cdouble E0[3], double nHat[3], char *RegionLabel=nullptr, cdouble *Terms=nullptr);
    cdouble GetPlaneWaveAmplitude(cdouble Omega, HVector *KNVector,
-                                 cdouble E0[3], double nHat[3], char *RegionLabel=0, cdouble *Terms=0);
+                                 cdouble E0[3], double nHat[3], char *RegionLabel=nullptr, cdouble *Terms=nullptr);
 
    /* electric and magnetic dipole moments */
-   HMatrix *GetDipoleMoments(cdouble Omega, HVector *KN, HMatrix *PM=0, HMatrix *KNResolved=0);
+   HMatrix *GetDipoleMoments(cdouble Omega, HVector *KN, HMatrix *PM=nullptr, HMatrix *KNResolved=nullptr);
 
    /* expansion coefficients in the RWG expansion of an arbitrary */
    /* user-supplied surface-tangential vector field               */
@@ -449,10 +449,10 @@ class RWGGeometry
    /* iw{Sigma,Tau} = \nabla \cdot {K, N}  = i\omega * {electric, magnetic} surface charge     */
    void EvalSourceDistribution(const double X[3], HVector *KNVector, double *kBloch,
                                cdouble KN[6], cdouble iwSigmaTau[2],
-                               int *WhichSurface=0, int *WhichPanel=0);
+                               int *WhichSurface=nullptr, int *WhichPanel=nullptr);
    void EvalSourceDistribution(const double X[3], HVector *KNVector,
                                cdouble KN[6], cdouble iwSigmaTau[2],
-                               int *WhichSurface=0, int *WhichPanel=0);
+                               int *WhichSurface=nullptr, int *WhichPanel=nullptr);
   
    void EvalCurrentDistribution(const double X[3], HVector *KNVector, double *kBloch, cdouble KN[6]);
    void EvalCurrentDistribution(const double X[3], HVector *KNVector, cdouble KN[6]);
@@ -485,7 +485,7 @@ class RWGGeometry
    /* some simple utility functions */
    int GetDimension();
    int GetRegionByLabel(const char *Label);
-   RWGSurface *GetSurfaceByLabel(const char *Label, int *pns=NULL);
+   RWGSurface *GetSurfaceByLabel(const char *Label, int *pns=nullptr);
    int GetRegionIndex(const double X[3]); // index of region containing X
    int PointInRegion(int RegionIndex, const double X[3]); 
 
@@ -509,11 +509,11 @@ class RWGGeometry
    // helper functions for AssembleBEMMatrix
    void UpdateCachedEpsMuValues(cdouble Omega);
    void AssembleBEMMatrixBlock(int nsa, int nsb, cdouble Omega, double *kBloch,
-                               HMatrix *M, HMatrix **GradM=0,
+                               HMatrix *M, HMatrix **GradM=nullptr,
                                int RowOffset=0, int ColOffset=0,
-                               void *ABMBCache=0, bool CacheTranspose=false,
-                               int NumTorqueAxes=0, HMatrix **dMdT=0,
-                               double *GammaMatrix=0);
+                               void *ABMBCache=nullptr, bool CacheTranspose=false,
+                               int NumTorqueAxes=0, HMatrix **dMdT=nullptr,
+                               double *GammaMatrix=nullptr);
    void *CreateABMBAccelerator(int nsa, int nsb, bool PureImagFreq=false,
                                bool NeedZDerivative=false);
    void DestroyABMBAccelerator(void *Accelerator);
@@ -521,7 +521,7 @@ class RWGGeometry
 
    // helper function for GetFields, GetDyadicGFs, GetSRFluxTrace
    HMatrix *GetRFMatrix(cdouble Omega, double *kBloch, HMatrix *XMatrix,
-                        HMatrix *RFMatrix=0, bool MinuskBloch=false,
+                        HMatrix *RFMatrix=nullptr, bool MinuskBloch=false,
                         int ColumnOffset=0);
 
    // helper function for accelerating periodic GF calculations
@@ -540,10 +540,10 @@ class RWGGeometry
                                   bool WignerSeitz=false);
 
    void GetKNCoefficients(HVector *KN, int ns, int ne,
-                          cdouble *KAlpha, cdouble *NAlpha=0);
-   RWGSurface *ResolveEdge(int neFull, int *pns=0, int *pne=0, int *pKNIndex=0);
+                          cdouble *KAlpha, cdouble *NAlpha=nullptr);
+   RWGSurface *ResolveEdge(int neFull, int *pns=nullptr, int *pne=nullptr, int *pKNIndex=nullptr);
    int UnResolveEdge(int ns, int ne);
-   RWGSurface *ResolveBF(int nbfFull, int *pns=0, int *pne=0, bool *pIsMagnetic=0);
+   RWGSurface *ResolveBF(int nbfFull, int *pns=nullptr, int *pne=nullptr, bool *pIsMagnetic=nullptr);
 
    /*--------------------------------------------------------------*/
    /*- private data fields  ---------------------------------------*/ 
@@ -675,13 +675,13 @@ void StoreCache(const char *FileName);
 void CheckLattice(HMatrix *LBasis);
 
 HMatrix *MakeMeshPlot(MeshDataFunc MDFunc, void *UserData,
-                      const char *MeshFile, const char *TransFile=0,
-                      const char *OutFileBase=0, const char *PPOptions=0,
+                      const char *MeshFile, const char *TransFile=nullptr,
+                      const char *OutFileBase=nullptr, const char *PPOptions=nullptr,
                       bool UseCentroids=true);
 
 HVector *MakeMeshPlot(MeshDataFunc MDFunc, void *UserData,
                       dVec X0, dVec L1, dVec L2, iVec NVec,
-                      const char *FileBase, const char *PPOptions=0, bool UseCentroids=false);
+                      const char *FileBase, const char *PPOptions=nullptr, bool UseCentroids=false);
                   
 } // namespace scuff
 

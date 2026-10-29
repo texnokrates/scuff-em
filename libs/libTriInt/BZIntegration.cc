@@ -47,7 +47,7 @@ void *CreateDCUTRIWorkspace(int numfun, int maxpts)
 { (void) numfun;
   (void) maxpts;
   ErrExit("SCUFF-EM was not compiled with DCUTRI; configure --with-dcutri");
-  return 0;
+  return nullptr;
 }
 
 int DCUTRI(void *opW, double **Vertices, TriIntFun func,
@@ -263,7 +263,7 @@ void GetBZIntegral_TC(GetBZIArgStruct *Args, cdouble Omega,
   /*--------------------------------------------------------------*/
   /*--------------------------------------------------------------*/
   static int FDimSave=0, MaxEvalsSave=0;
-  static void *Workspace=0;
+  static void *Workspace=nullptr;
   if (Order==0)
    {
      if (FDimSave!=FDim || MaxEvalsSave!=Args->MaxEvals )
@@ -673,10 +673,10 @@ GetBZIArgStruct *InitBZIArgs(int argc, char **argv)
   /***************************************************************/
   GetBZIArgStruct *BZIArgs = (GetBZIArgStruct *)mallocEC(sizeof(*BZIArgs));
 
-  BZIArgs->BZIFunc=0;
-  BZIArgs->UserData=0;
+  BZIArgs->BZIFunc=nullptr;
+  BZIArgs->UserData=nullptr;
   BZIArgs->FDim=0;
-  BZIArgs->RLBasis=0;
+  BZIArgs->RLBasis=nullptr;
   BZIArgs->BZVolume=0.0;
 
   BZIArgs->BZIMethod      = BZI_DEFAULT;
@@ -694,15 +694,15 @@ GetBZIArgStruct *InitBZIArgs(int argc, char **argv)
   /***************************************************************/
   for(int narg=1; narg<argc; narg++)
    { 
-     if (argv[narg]==0) 
+     if (argv[narg]==nullptr) 
       continue;
 
      char *Arg    = argv[narg];
-     char *Option = ( narg == (argc-1) ? 0 : argv[narg+1]);
+     char *Option = ( narg == (argc-1) ? nullptr : argv[narg+1]);
 
      if ( !strcasecmp(Arg,"--BZSymmetryFactor") )
       { 
-        if (Option==0) 
+        if (Option==nullptr) 
          ErrExit("--BZSymmetryFactor requires an argument");
         if ( 1!=sscanf(Option,"%i",&(BZIArgs->SymmetryFactor))
             ||  (    (BZIArgs->SymmetryFactor != 1)
@@ -712,14 +712,14 @@ GetBZIArgStruct *InitBZIArgs(int argc, char **argv)
                 )
            ) 
          ErrExit("invalid BZSymmetryFactor %s",Option);
-        argv[narg]=argv[narg+1]=0;
+        argv[narg]=argv[narg+1]=nullptr;
         continue;
-        argv[narg]=0;
+        argv[narg]=nullptr;
         continue;
       };
 
      if ( !strcasecmp(Arg,"--BZIMethod") )
-      { if (Option==0) 
+      { if (Option==nullptr) 
          ErrExit("--BZIMethod requires an argument");
         if (!strcasecmp(Option,"TC")) 
          BZIArgs->BZIMethod = BZI_TC;
@@ -731,43 +731,43 @@ GetBZIArgStruct *InitBZIArgs(int argc, char **argv)
          BZIArgs->BZIMethod = BZI_POLAR2;
         else
          ErrExit("unknown BZIMethod %s",Option);
-        argv[narg]=argv[narg+1]=0;
+        argv[narg]=argv[narg+1]=nullptr;
         continue;
       };
 
      if ( !strcasecmp(Arg,"--BZIOrder") )
-      { if (Option==0) 
+      { if (Option==nullptr) 
          ErrExit("--BZIOrder requires an argument");
         if (1!=sscanf(Option,"%i",&(BZIArgs->Order)))
          ErrExit("invalid BZIOrder %s",Option);
-        argv[narg]=argv[narg+1]=0;
+        argv[narg]=argv[narg+1]=nullptr;
         continue;
       };
 
      if ( !strcasecmp(Arg,"--BZIRelTol") )
-      { if (Option==0) 
+      { if (Option==nullptr) 
          ErrExit("--BZIRelTol requires an argument");
         if (1!=sscanf(Option,"%le",&(BZIArgs->RelTol)))
          ErrExit("invalid BZIRelTol %s",Option);
-        argv[narg]=argv[narg+1]=0;
+        argv[narg]=argv[narg+1]=nullptr;
         continue;
       };
 
      if ( !strcasecmp(Arg,"--BZIAbsTol") )
-      { if (Option==0) 
+      { if (Option==nullptr) 
          ErrExit("--BZIAbsTol requires an argument");
         if (1!=sscanf(Option,"%le",&(BZIArgs->AbsTol)))
          ErrExit("invalid BZIAbsTol %s",Option);
-        argv[narg]=argv[narg+1]=0;
+        argv[narg]=argv[narg+1]=nullptr;
         continue;
       };
 
      if ( !strcasecmp(Arg,"--BZIMaxEvals") )
-      { if (Option==0)
+      { if (Option==nullptr)
          ErrExit("--BZIMaxEvals requires an argument");
         if (1!=sscanf(Option,"%i",&(BZIArgs->MaxEvals)))
          ErrExit("invalid BZIRelTol %s",Option);
-        argv[narg]=argv[narg+1]=0;
+        argv[narg]=argv[narg+1]=nullptr;
         continue;
       };
 
@@ -787,9 +787,10 @@ GetBZIArgStruct *InitBZIArgs(int argc, char **argv)
 /***************************************************************/
 void DestroyBZIArgs(GetBZIArgStruct *BZIArgs)
 {
-  if (BZIArgs==0) return;
-  free(BZIArgs->DataBuffer[0]);
-  free(BZIArgs);
+  if (BZIArgs==nullptr) return;
+  /* Destroy* frees what Init* allocated: the ownership implementation */
+  free(BZIArgs->DataBuffer[0]); // NOLINT(cppcoreguidelines-no-malloc)
+  free(BZIArgs);                // NOLINT(cppcoreguidelines-no-malloc)
 }
 
 /***************************************************************/

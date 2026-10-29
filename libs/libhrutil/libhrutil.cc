@@ -74,7 +74,7 @@ static unsigned long tictocMem=0;
 double Secs()
 { 
   struct timeval tv;
-  gettimeofday(&tv, 0);
+  gettimeofday(&tv, nullptr);
   return (double)(tv.tv_sec) + 1.0e-6*((double)(tv.tv_usec));
 }
 void Tic(bool MeasureBytesAllocated)
@@ -98,7 +98,7 @@ double Toc(unsigned long *BytesAllocated)
 /* given "/home/homer/work/MyFile.dat", return "MyFile.dat" */
 char *RemoveDirectories(const char *s)
 { static thread_local char buffer[MAXSTR];
-  const char *p;
+  const char *p = nullptr;
 
   if (!s)
    { buffer[0]=0;
@@ -114,7 +114,7 @@ char *RemoveDirectories(const char *s)
 /* given "/home/homer/work/MyFile.dat", return "/home/homer/work/MyFile" */
 char *RemoveExtension(const char *s)
 { static thread_local char buffer[MAXSTR];
-  char *p, *dot;
+  char *p = nullptr, *dot = nullptr;
 
   if (!s)
    { buffer[0]=0;
@@ -137,7 +137,7 @@ char *RemoveExtension(const char *s)
 char *GetFileExtension(const char *s)
 {
   static thread_local char buffer[MAXSTR];
-  const char *base, *dot;
+  const char *base = nullptr, *dot = nullptr;
 
   if (!s)
    { buffer[0]=0;
@@ -186,7 +186,7 @@ char* strtok_r_PublicDomain(
 {
     char *ret;
 
-    if (str == NULL)
+    if (str == nullptr)
     {
         str = *nextp;
     }
@@ -195,7 +195,7 @@ char* strtok_r_PublicDomain(
 
     if (*str == '\0')
     {
-        return NULL;
+        return nullptr;
     }
 
     ret = str;
@@ -238,10 +238,10 @@ int StrCaseCmp(const char *s1, const char *s2)
 sVec Tokenize(char *s, const char *Separators)
 { 
   sVec Tokens;
-  char *saveptr=0, *Token=strtok_r(s, Separators, &saveptr);
+  char *saveptr=nullptr, *Token=strtok_r(s, Separators, &saveptr);
   while (Token)
    { Tokens.push_back(Token);
-     Token=strtok_r(0, Separators, &saveptr);
+     Token=strtok_r(nullptr, Separators, &saveptr);
    }
   return Tokens;
 }
@@ -252,7 +252,7 @@ int Tokenize(char *s, char **Tokens, int MaxTokens, const char *Separators,
 { 
   if (Truncated) *Truncated=false;
 
-  if (MaxTokens<=0 || Tokens==0)
+  if (MaxTokens<=0 || Tokens==nullptr)
    { if (Truncated && s && *s) *Truncated=true;
      return 0;
    };
@@ -308,7 +308,7 @@ FILE *fopenPath(const char *Path, const char *FileName,
      return f;
    }
 
-  if (!Path || !*Path) return 0;
+  if (!Path || !*Path) return nullptr;
 
   std::string SearchPath(Path);
   size_t Start=0;
@@ -325,7 +325,7 @@ FILE *fopenPath(const char *Path, const char *FileName,
      if (Colon==std::string::npos) break;
      Start=Colon+1;
    }
-  return 0;
+  return nullptr;
 }
 
 /***************************************************************/
@@ -372,7 +372,7 @@ void vstrncat(char *s, size_t n, const char *format, ...)
 
 char *vstrappend(char *s, const char *format, ...)
 { COMPLETE_VARARGS(format,buffer);
-  if (s==0) 
+  if (s==nullptr) 
    s=strdupEC(buffer);
   else
    { int NS=strlen(s), NB=strlen(buffer);
@@ -420,7 +420,7 @@ void Warn(const char *format, ...)
 /***************************************************************/
 /* Simple general-purpose status logging (not thread-safe) *****/
 /***************************************************************/
-static char *LogFileName=0;
+static char *LogFileName=nullptr;
 static int LogToConsole=0;
 
 void SetConsoleLogging()
@@ -435,14 +435,14 @@ void SetLogFileName(const char *format, ...)
 
 void DoLog(bool ByThread, bool WriteCR, const char *Message)
 {
-  FILE *f=0;
+  FILE *f=nullptr;
   if (LogToConsole) 
    f=stdout;
-  else if (LogFileName==0) 
+  else if (LogFileName==nullptr) 
    return;
   else
    f = (ByThread ? vfopen("%s.%i","a",LogFileName,GetThreadNum()) : fopen(LogFileName,"a")); 
-  if (f==0) return;
+  if (f==nullptr) return;
   fprintf(f,"%s: %s%s",GetTimeString(),Message,WriteCR ? "\n" : "");
   if (!LogToConsole) fclose(f);
 }
@@ -464,7 +464,7 @@ void LogThread(const char *format, ...)
 
 void InitializeLog(char *argv0, const char *Path)
 { char *CodeName=GetFileBase(argv0);
-  if (LogFileName==0)
+  if (LogFileName==nullptr)
    Path ? SetLogFileName("%s/%s.log",Path,CodeName)
         : SetLogFileName("%s.log",CodeName);
   Log("%s running on %s:%d (%s)",CodeName, GetHostName(), getpid(), GetTimeString());
@@ -598,7 +598,7 @@ unsigned long GetMemoryUsage(unsigned long *MemoryUsage)
      char Line[MAXSTR];
      char *result=fgets(Line,MAXSTR,f);
      fclose(f);
-     if (result==0) return 0;
+     if (result==nullptr) return 0;
 
      unsigned long Mem[7];
      sscanf(Line,"%lu %lu %lu %lu %lu %lu %lu",
@@ -683,9 +683,9 @@ double RD(cdouble x, cdouble y)
 void *mallocEC(size_t size)
 {
   if (size==0)
-   return 0;
+   return nullptr;
   void *v=malloc(size);
-  if (size && v==0)
+  if (size && v==nullptr)
    ErrExit("out of memory");
   memset(v,0,size); 
   return v;
@@ -694,7 +694,7 @@ void *mallocEC(size_t size)
 void *reallocEC(void *v, size_t size)
 {
   v=realloc(v, size);
-  if (size && v==0)
+  if (size && v==nullptr)
    ErrExit("out of memory");
   return v;
 }
@@ -713,8 +713,8 @@ char *strdupEC(const char *s)
 /* strdup for general pointers *********************************/
 /***************************************************************/
 void *memdup(void *v, size_t size)
-{ if (v==0 || size==0)
-   return 0;
+{ if (v==nullptr || size==0)
+   return nullptr;
   void *vv=mallocEC(size);
   if (vv) memcpy(vv,v,size);
   return vv;
@@ -747,7 +747,7 @@ int S2CD(const char *str, cdouble *pZ)
   if (!str || !pZ) return 1;
 
   const char *p=str;
-  char *End=0;
+  char *End=nullptr;
   double X=strtod(p,&End);
   if (End==p) return 1;
   p=End;
@@ -771,7 +771,7 @@ int S2CD(const char *str, cdouble *pZ)
   p++;
   while (isspace((unsigned char)*p)) p++;
 
-  char *EndY=0;
+  char *EndY=nullptr;
   double Y=strtod(p,&EndY);
   if (EndY==p) return 1;
   p=EndY;
@@ -846,7 +846,7 @@ void SetDefaultCD2SFormat(const char *format)
 
 char *z2s(cdouble z)
 { 
-  return CD2S(z,0);
+  return CD2S(z,nullptr);
 }
 
 void z2s(cdouble z, char *zStr, size_t Size)
@@ -886,12 +886,12 @@ FILE *CreateUniqueFile(const char *Base, int ConsoleMessage, char *FileName)
        snprintf(NewFileName,sizeof(NewFileName)-10,"%s.%i",Base,N);
 
       f=fopen(NewFileName,"r");
-      if (f==0) break;
+      if (f==nullptr) break;
       fclose(f);
 
     };
-   if (f!=0)
-    return 0;
+   if (f!=nullptr)
+    return nullptr;
 
    f=fopen(NewFileName,"w");
 
@@ -911,9 +911,9 @@ FILE *CreateUniqueFile(const char *Base, int ConsoleMessage, char *FileName)
 char *GetTimeString(char *s)
 {
   static thread_local char TimeStr[30];
-  if (s==0) s=TimeStr;
+  if (s==nullptr) s=TimeStr;
   s[0]=0;
-  time_t MyTime=time(0);
+  time_t MyTime=time(nullptr);
   struct tm TimeStruct;
 #if defined(_WIN32)
   localtime_s(&TimeStruct,&MyTime);
@@ -941,10 +941,10 @@ char *GetHostName()
   
 
 FILE *CreateUniqueFile(const char *Base, int ConsoleMessage) 
- { return CreateUniqueFile(Base,ConsoleMessage,0); }
+ { return CreateUniqueFile(Base,ConsoleMessage,nullptr); }
 
 FILE *CreateUniqueFile(const char *Base) 
- { return CreateUniqueFile(Base,0,0); }
+ { return CreateUniqueFile(Base,0,nullptr); }
 
 /***************************************************************/
 /***************************************************************/
@@ -964,7 +964,7 @@ static void SignalHandler(int WhichSignal)
      on the way to exit.) */
   bool OpenedHere=false;
   FILE *f = (LogFileName ? fopen(LogFileName,"a") : stderr );
-  if (f==0)
+  if (f==nullptr)
    f=stderr;
   else
    OpenedHere=true;
@@ -1004,12 +1004,12 @@ void InstallHRSignalHandler()
   sigemptyset(&sa.sa_mask);
   sa.sa_flags=0;
   //sigaction(SIGKILL, &sa, 0); //can't mask this one 
-  sigaction(SIGSEGV, &sa, 0);
-  sigaction(SIGPIPE, &sa, 0);
-  sigaction(SIGALRM, &sa, 0);
-  sigaction(SIGFPE,  &sa, 0);
-  sigaction(SIGTRAP, &sa, 0);
-  sigaction(SIGABRT, &sa, 0);
+  sigaction(SIGSEGV, &sa, nullptr);
+  sigaction(SIGPIPE, &sa, nullptr);
+  sigaction(SIGALRM, &sa, nullptr);
+  sigaction(SIGFPE,  &sa, nullptr);
+  sigaction(SIGTRAP, &sa, nullptr);
+  sigaction(SIGABRT, &sa, nullptr);
   //sigaction(SIGCHLD, &sa, 0);
 
   CodeMarker[0]=0;

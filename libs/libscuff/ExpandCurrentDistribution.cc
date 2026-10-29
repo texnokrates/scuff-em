@@ -98,7 +98,7 @@ void RWGGeometry::ExpandCurrentDistribution(IncField *IF,
                                             cdouble Omega,
                                             bool IsEHField)
 { 
-  if (KNVector->ZV==0)
+  if (KNVector->ZV==nullptr)
    ErrExit("%s:%i: internal error",__FILE__,__LINE__);
 
   /***************************************************************/
@@ -122,7 +122,7 @@ void RWGGeometry::ExpandCurrentDistribution(IncField *IF,
      GetBFCubature(this, ns, ne,
                    EHProjectionIntegrand, (void *)IF, IDim,
                    MaxEvals, 0.0, 0.0, Omega,
-                   0, (double *)KNProjections);
+                   nullptr, (double *)KNProjections);
                    
     else
      GetBFCubature2(this, ns, ne,
@@ -203,14 +203,14 @@ void RWGGeometry::ExpandCurrentDistribution(IncField *IF,
 #define IT_INTERIOR 3
 int InsideTriangle(const double *X,
                    const double *V1, const double *V2, const double *V3,
-                   const double *L=0)
+                   const double *L=nullptr)
 {
   /***************************************************************/
   /***************************************************************/
   /***************************************************************/
   const double *XX; 
   double XXBuffer[3];
-  if (L==0)
+  if (L==nullptr)
    XX=X;
   else
    { XXBuffer[0] = X[0]-L[0];
@@ -347,7 +347,7 @@ void RWGGeometry::EvalSourceDistribution(const double X[3], HVector *KNVector,
         double *QP    = S->Vertices + 3*E->iQP;
         double *V1    = S->Vertices + 3*E->iV1;
         double *V2    = S->Vertices + 3*E->iV2;
-        double *QM    = (E->iQM==-1) ? 0 : S->Vertices + 3*E->iQM;
+        double *QM    = (E->iQM==-1) ? nullptr : S->Vertices + 3*E->iQM;
 
         /***************************************************************/
         /* Note: If the point lies on an RWG edge, it will be deemed   */
@@ -408,7 +408,7 @@ void RWGGeometry::EvalSourceDistribution(const double X[3], HVector *KNVector,
 void RWGGeometry::EvalSourceDistribution(const double X[3], HVector *KNVector,
                                          cdouble KN[6], cdouble iwSigmaTau[2],
                                          int *WhichSurface, int *WhichPanel)
-{ EvalSourceDistribution(X, KNVector, 0, KN, iwSigmaTau, WhichSurface, WhichPanel); }
+{ EvalSourceDistribution(X, KNVector, nullptr, KN, iwSigmaTau, WhichSurface, WhichPanel); }
 
 /***************************************************************/
 /***************************************************************/
@@ -430,7 +430,7 @@ void RWGGeometry::EvalCurrentDistribution(const double X[3],
                                           cdouble KN[6])
 {
   cdouble iwSigmaTau[2];
-  EvalSourceDistribution(X, KNVector, 0, KN, iwSigmaTau);
+  EvalSourceDistribution(X, KNVector, nullptr, KN, iwSigmaTau);
 }
 
 } // namespace scuff

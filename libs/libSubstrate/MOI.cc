@@ -60,7 +60,7 @@ cdouble AddSGFTerm_MOI(const ScalarGFOptions *Options,
                        cdouble k, double Rho, double z, double h,
                        cdouble Eta, int n, cdouble EtaFac, cdouble *VVector)
 { 
-  if (Options==0) Options = &DefaultSGFOptions;
+  if (Options==nullptr) Options = &DefaultSGFOptions;
   bool PPIsOnly = Options->PPIsOnly;
   int NumSGFs   = (PPIsOnly ? 2 : NUMSGFS_MOI);
   int dRhoMax   = (Options->NeedDerivatives & NEED_DRHO) ? 1 : 0;
@@ -178,7 +178,7 @@ int GetSGFCorrection_MOI(cdouble Omega, double Rho, double z,
 /***************************************************************/
 void GetVTwiddle_MOI(cdouble q, cdouble u0, cdouble u,
                      double Rho, double z, cdouble Eps, double h,
-                     cdouble *VTVector, const ScalarGFOptions *Options=0)
+                     cdouble *VTVector, const ScalarGFOptions *Options=nullptr)
 {
   if (!Options) Options  = &DefaultSGFOptions;
   bool PPIsOnly          = Options->PPIsOnly;
@@ -271,7 +271,7 @@ void GetVTwiddle_MOI(cdouble q, cdouble u0, cdouble u,
 /***************************************************************/
 /***************************************************************/
 /***************************************************************/
-typedef struct MOIData
+using MOIData = struct MOIData
  { 
    LayeredSubstrate *S;
    cdouble Omega;
@@ -282,7 +282,7 @@ typedef struct MOIData
    FILE *byqFile;
    int NumCalls;
 
- } MOIData;
+ };
 
 int qIntegrand_MOISGFs(unsigned ndim, const double *x, void *UserData,
                        unsigned fdim, double *fval)
@@ -398,7 +398,7 @@ int LayeredSubstrate::GetScalarGFs_MOI(cdouble Omega,
   int MaxEvalA = qMaxEvalA, MaxEvalB = qMaxEvalB;
   
   char *s=getenv("SOMMERFELD_BYQFILE");
-  FILE *byqFile = (s ? fopen(s,"w") : 0);
+  FILE *byqFile = (s ? fopen(s,"w") : nullptr);
   int xNu = 0;
   s=getenv("SOMMERFELD_INTEGRATOR_XNU");
   if (s)
@@ -551,7 +551,7 @@ int LayeredSubstrate::GetScalarGFs_MOI(cdouble Omega, double Rho,
 /* wrapper around ScalarGF routines for passage to libMDInterp */
 /* constructor                                                 */
 /***************************************************************/
-typedef struct PhiVDFuncData
+using PhiVDFuncData = struct PhiVDFuncData
  { 
    LayeredSubstrate *S;
    cdouble Omega;
@@ -559,7 +559,7 @@ typedef struct PhiVDFuncData
    double zFixed;
    ScalarGFOptions Options;
 
- } PhiVDFuncData;
+ };
 
 void PhiVDFunc_ScalarGFs(dVec RhoZ, void *UserData, double *PhiVD, iVec dRhoZMax)
 {
@@ -651,7 +651,7 @@ InterpND *LayeredSubstrate::InitScalarGFInterpolator(cdouble Omega,
                                                      bool Verbose)
 {
   UpdateCachedEpsMu(Omega);
-  if (EpsLayer[1]==1.0 && std::isinf(zGP)) return 0; // substrate is trivial
+  if (EpsLayer[1]==1.0 && std::isinf(zGP)) return nullptr; // substrate is trivial
 
   if (CheckScalarGFInterpolator(Omega,RhoMin,RhoMax,ZMin,ZMax,PPIsOnly,Subtract,RetainSingularTerms))
    return ScalarGFInterpolator.get();
@@ -686,7 +686,7 @@ InterpND *LayeredSubstrate::InitScalarGFInterpolator(cdouble Omega,
   double Tolerance = 1.0e-3;
   CheckEnv("SCUFF_SUBSTRATE_INTERPOLATION_TOLERANCE", &Tolerance);
   Log("Optimizing ScalarGF interpolation grids to achieve tolerance %e",Tolerance);
-  if (Tolerance==0.0) return 0;
+  if (Tolerance==0.0) return nullptr;
   Verbose &= CheckEnv("SCUFF_SUBSTRATE_INTERPOLATION_VERBOSE");
 
  // dVec RZ0Vec(1, RhoMin);

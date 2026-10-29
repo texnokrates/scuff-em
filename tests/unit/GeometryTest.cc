@@ -36,10 +36,10 @@ void Check(bool Condition, const char *Expression, const char *File, int Line)
 void TestSingleSurfaceDestructor()
 {
   RWGGeometry *G = new RWGGeometry("LossySphere_327.scuffgeo");
-  CHECK(G != 0);
+  CHECK(G != nullptr);
   CHECK(G->NumSurfaces == 1);
   CHECK(G->Mate[0] == -1);
-  CHECK(G->FIBBICaches[0] != 0);
+  CHECK(G->FIBBICaches[0] != nullptr);
 
   /* ~RWGGeometry must not read the Mate array after freeing it, and
      must destroy the single FIBBI cache exactly once. */
@@ -55,7 +55,7 @@ void TestMatedSurfacesDestructor()
   CHECK(G->NumSurfaces == 2);
   CHECK(G->Mate[0] == -1);
   CHECK(G->Mate[1] == 0);
-  CHECK(G->FIBBICaches[0] != 0);
+  CHECK(G->FIBBICaches[0] != nullptr);
   CHECK(G->FIBBICaches[1] == G->FIBBICaches[0]);
 
   delete G;

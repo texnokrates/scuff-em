@@ -40,7 +40,7 @@ using namespace scuff;
 // prototype for non-class method in libscuff for fetching
 // spherical moments
 HVector *GetSphericalMoments(RWGGeometry *G, cdouble Omega, int lMax,
-                             HVector *KN, HVector *MomentVector=0);
+                             HVector *KN, HVector *MomentVector=nullptr);
 
 /***************************************************************/
 /* postprocessing of eigenvector data, part 1: write eigenmode */
@@ -59,7 +59,7 @@ void ProcessEPFile(RWGGeometry *G, HVector *KN, cdouble Omega, double *kBloch,
      return;
    };
   Log("Evaluating fields at points in file %s...",EPFileName);
-  HMatrix *FMatrix = G->GetFields( 0, KN, Omega, kBloch, XMatrix);
+  HMatrix *FMatrix = G->GetFields( nullptr, KN, Omega, kBloch, XMatrix);
 
   /*--------------------------------------------------------------*/
   /*- get components of fields radiated by eigenmode currents    -*/
@@ -100,7 +100,7 @@ void ProcessEPFile(RWGGeometry *G, HVector *KN, cdouble Omega, double *kBloch,
 /***************************************************************/
 /***************************************************************/
 /***************************************************************/
-double GetFieldFunction(cdouble *EH, int nff, double *nHat=0)
+double GetFieldFunction(cdouble *EH, int nff, double *nHat=nullptr)
 {
   switch(nff)
    { case 0:  return real(EH[0]);
@@ -117,7 +117,7 @@ double GetFieldFunction(cdouble *EH, int nff, double *nHat=0)
      case 11: return real(EH[5]);
      case 12: return imag(EH[5]);
      case 13: return sqrt(norm(EH[3]) + norm(EH[4]) + norm(EH[5]));
-     case 14: if (nHat==0) return 0.0;
+     case 14: if (nHat==nullptr) return 0.0;
               cdouble *E=EH+0, *H=EH+3;
               return real(  nHat[0]*(E[1]*H[2] - E[2]*H[1])
                            +nHat[1]*(E[2]*H[0] - E[0]*H[2])
@@ -176,7 +176,7 @@ void WriteFVMesh(RWGGeometry *G, HVector *KN, cdouble Omega, double *kBloch,
   /*--------------------------------------------------------------*/
   /*- get the total fields at the panel vertices                 -*/
   /*--------------------------------------------------------------*/
-  HMatrix *FMatrix=G->GetFields(0, KN, Omega, kBloch, XMatrix);
+  HMatrix *FMatrix=G->GetFields(nullptr, KN, Omega, kBloch, XMatrix);
   for(int nff=0; nff<NUMFIELDFUNCS; nff++)
    { 
      fprintf(f,"View \"%s (Omega%s)",FieldFunctionNames[nff],z2s(Omega));
@@ -304,7 +304,7 @@ void VisualizeSurfaceFields(RWGGeometry *G, HVector *KN, cdouble Omega, double *
   for(int ns=0, ntp=0; ns<G->NumSurfaces; ns++)
    for(int np=0; np<G->Surfaces[ns]->NumPanels; np++, ntp++)
     XMatrix->SetEntriesD(ntp,":",G->Surfaces[ns]->Panels[np]->Centroid);
-  HMatrix *FMatrix=G->GetFields(0, KN, Omega, kBloch, XMatrix);
+  HMatrix *FMatrix=G->GetFields(nullptr, KN, Omega, kBloch, XMatrix);
 
   int PlotType=0, AveragingMethod=1;
   CheckEnv("SCUFF_AVERAGING_METHOD", &AveragingMethod);

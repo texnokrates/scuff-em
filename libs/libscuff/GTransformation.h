@@ -39,9 +39,9 @@ public:
      GTransformation();
      GTransformation(const double dx[3]); // displacement
      GTransformation(const double ZHat[3], double ThetaDegrees); // rotation
-     GTransformation(const char *TransformString, char **ErrMsg = 0); // parse
-     GTransformation(char **Tokens, int NumTokens, char **ErrMsg = 0,
-		     int *TokensConsumed = 0); // parse
+     GTransformation(const char *TransformString, char **ErrMsg = nullptr); // parse
+     GTransformation(char **Tokens, int NumTokens, char **ErrMsg = nullptr,
+		     int *TokensConsumed = nullptr); // parse
 
      // copy constructors
      GTransformation(const GTransformation &G);
@@ -63,9 +63,9 @@ public:
      void Invert(); // invert
      GTransformation Inverse() const; // return inverse
 
-     bool Parse(const char *TransformString, char **ErrMsg = 0);
-     bool Parse(char **Tokens, int NumTokens, char **ErrMsg = 0, 
-		int *TokensConsumed = 0);
+     bool Parse(const char *TransformString, char **ErrMsg = nullptr);
+     bool Parse(char **Tokens, int NumTokens, char **ErrMsg = nullptr, 
+		int *TokensConsumed = nullptr);
 
      // compose this with G or inverse(G)
      GTransformation operator+(const GTransformation &G) const;
@@ -102,23 +102,23 @@ public:
      double M[3][3]; // rotation matrix
 };
 
-typedef std::vector<GTransformation *> GTList;
+using GTList = std::vector<GTransformation *>;
 
 /***************************************************************/
 /* a GTComplex is collection of GTransformations, each of      */
 /* which is carried out on a specific surface in a geometry.   */
 /***************************************************************/
-typedef struct GTComplex
+using GTComplex = struct GTComplex
  {
    char *Tag;          // a label for this entire complex
    GTList GTs;         // GTs[i] is the transformation applied to the ith surface
    sVec SurfaceLabels; // SurfaceLabel[i] is the label of the ith transformed surface
- } GTComplex;
+ };
 
 // create a GTComplex that doesn't do anything
-GTComplex *CreateGTComplex(const char *Tag=0);
+GTComplex *CreateGTComplex(const char *Tag=nullptr);
 
-typedef std::vector<GTComplex*> GTCList;
+using GTCList = std::vector<GTComplex*>;
 
 // this routine reads a SCUFF-EM transformation (.trans) file
 // and returns an array of GTComplex structures.

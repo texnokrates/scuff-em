@@ -36,8 +36,8 @@
 #include <libhrutil.h>
 #include "libhmat.h"
 
-typedef std::vector<int>  ivec;
-typedef std::vector<char> cvec;
+using ivec = std::vector<int>;
+using cvec = std::vector<char>;
 
 /***************************************************************/
 /* row-sorting class passed to std::sort.                      */

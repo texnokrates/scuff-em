@@ -64,7 +64,7 @@ bool GetSourceDestRegions(RWGGeometry *G, bool FromAbove,
   int   DestRegionIndex=G->GetRegionIndex(XDest);
 
   if (    SourceRegionIndex==-1
-       || G->RegionMPs[SourceRegionIndex]==0
+       || G->RegionMPs[SourceRegionIndex]==nullptr
        || G->RegionMPs[SourceRegionIndex]->IsPEC()
      ) 
    ErrExit("wave cannot emanate from a PEC region");
@@ -74,7 +74,7 @@ bool GetSourceDestRegions(RWGGeometry *G, bool FromAbove,
 
   bool DestIsPEC=false;
   if (    DestRegionIndex==-1
-       || G->RegionMPs[DestRegionIndex]==0 
+       || G->RegionMPs[DestRegionIndex]==nullptr 
        || G->RegionMPs[DestRegionIndex]->IsPEC() 
      ) 
    DestIsPEC=true;
@@ -267,18 +267,18 @@ int main(int argc, char *argv[])
   int  UpperRegionIndex = (FromAbove) ? SourceRegionIndex : DestRegionIndex;
   int  LowerRegionIndex = (FromAbove) ?   DestRegionIndex : SourceRegionIndex;
   MatProp     *SourceMP = G->RegionMPs[ SourceRegionIndex ];
-  MatProp       *DestMP = (DestIsPEC ? 0 : G->RegionMPs[ DestRegionIndex ]);
+  MatProp       *DestMP = (DestIsPEC ? nullptr : G->RegionMPs[ DestRegionIndex ]);
 
   /*******************************************************************/
   /* process frequency/wavelength options to construct a list of     */
   /* frequencies at which to run calculations.                       */
   /*******************************************************************/
   std::unique_ptr<HVector> OmegaVector(
-    GetOmegaList(OmegaFile.empty() ? 0 : OmegaFile.c_str(),
+    GetOmegaList(OmegaFile.empty() ? nullptr : OmegaFile.c_str(),
                  OmegaVals.data(), (int)OmegaVals.size(),
-                 LambdaFile.empty() ? 0 : LambdaFile.c_str(),
+                 LambdaFile.empty() ? nullptr : LambdaFile.c_str(),
                  LambdaVals.data(), (int)LambdaVals.size()) );
-  if ( OmegaVector.get()==0 || OmegaVector->N==0)
+  if ( OmegaVector.get()==nullptr || OmegaVector->N==0)
    { CLI::ValidationError Error("scuff-transmission",
         "you must specify at least one frequency");
      App.exit(Error);

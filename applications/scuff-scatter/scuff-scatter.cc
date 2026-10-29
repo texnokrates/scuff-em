@@ -69,16 +69,19 @@ struct IncFieldListDeleter
 {
   void operator()(IncFieldList *List) const
   {
-    if (List==0)
+    if (List==nullptr)
      return;
-    for(int n=0; n<List->NumIFs; n++)
+    /* this is the custom deleter for the malloc'd IncFieldList record:
+       the free calls here are the ownership implementation, not legacy
+       manual memory management */
+    for(int n=0; n<List->NumIFs; n++) // NOLINT(cppcoreguidelines-owning-memory)
      { DeleteIncFieldChain(List->IFs[n]);
        if (List->Labels[n])
-        free(List->Labels[n]);
+        free(List->Labels[n]); // NOLINT(cppcoreguidelines-no-malloc)
      };
-    free(List->IFs);
-    free(List->Labels);
-    free(List);
+    free(List->IFs);    // NOLINT(cppcoreguidelines-no-malloc,bugprone-multi-level-implicit-pointer-conversion)
+    free(List->Labels); // NOLINT(cppcoreguidelines-no-malloc)
+    free(List);         // NOLINT(cppcoreguidelines-no-malloc)
   }
 };
 
@@ -248,11 +251,11 @@ int main(int argc, char *argv[])
   /* process frequency-related options                               */
   /*******************************************************************/
   std::unique_ptr<HVector> OmegaList(
-    GetOmegaList(OmegaFile.empty() ? 0 : OmegaFile.c_str(),
+    GetOmegaList(OmegaFile.empty() ? nullptr : OmegaFile.c_str(),
                  OmegaVals.data(), (int)OmegaVals.size(),
-                 LambdaFile.empty() ? 0 : LambdaFile.c_str(),
+                 LambdaFile.empty() ? nullptr : LambdaFile.c_str(),
                  LambdaVals.data(), (int)LambdaVals.size()));
-  if (OmegaList.get()==0)
+  if (OmegaList.get()==nullptr)
    { CLI::ValidationError Error("scuff-scatter",
         "you must specify at least one frequency");
      App.exit(Error);
@@ -276,7 +279,7 @@ int main(int argc, char *argv[])
   if ( psLocation.size() != psStrength.size() )
    ErrExit("numbers of --psLocation and --psStrength options must agree");
 
-  IncField *IF=0;
+  IncField *IF=nullptr;
   for(size_t npw=0; npw<pwPolarization.size()/3; npw++)
    { PlaneWave *PW=new PlaneWave(pwPolarization.data() + 3*npw,
                                  pwDirection.data() + 3*npw);
@@ -299,11 +302,11 @@ int main(int argc, char *argv[])
    };
 
   std::unique_ptr<IncFieldList, IncFieldListDeleter> IFListOwner;
-  if ( !IFFile.empty() && IF!=0 )
+  if ( !IFFile.empty() && IF!=nullptr )
    ErrExit("--IFFile is incompatible with other incident-field specifications");
   else if ( !IFFile.empty() )
    IFListOwner.reset( ReadIncFieldList(IFFile.c_str()) );
-  else if ( IF!=0 )
+  else if ( IF!=nullptr )
    IFListOwner.reset( AddIncFieldToList(IF,"Default") );
   IncFieldList *IFList=IFListOwner.get();
 
@@ -330,7 +333,7 @@ int main(int argc, char *argv[])
                              || FVMeshes.size()>0
                              || PlotSurfaceCurrents
                            );
-  if ( NeedIncidentField && IFList==0 )
+  if ( NeedIncidentField && IFList==nullptr )
    ErrExit("you must specify at least one incident field source");
 
   /*******************************************************************/
@@ -346,7 +349,7 @@ int main(int argc, char *argv[])
   /*******************************************************************/
   PFTOptions MyPFTOpts, *PFTOpts=&MyPFTOpts;
   InitPFTOptions(PFTOpts);
-  PFTOpts->DSIMesh       = DSIMesh.empty() ? 0 : DSIMesh.c_str();
+  PFTOpts->DSIMesh       = DSIMesh.empty() ? nullptr : DSIMesh.c_str();
   PFTOpts->DSIRadius     = DSIRadius;
   PFTOpts->DSIPoints     = DSIPoints;
   PFTOpts->DSIFarField   = DSIFarField;
@@ -372,11 +375,11 @@ int main(int argc, char *argv[])
   SSD->RHS = RHS.get();
   SSD->KN  = KN.get();
   std::array<double,3> kBlochBuffer{0.0, 0.0, 0.0};
-  double *kBloch = 0;
-  SSD->kBloch         = 0;
-  SSD->IF             = 0;
-  SSD->TransformLabel = 0;
-  SSD->IFLabel        = 0;
+  double *kBloch = nullptr;
+  SSD->kBloch         = nullptr;
+  SSD->IF             = nullptr;
+  SSD->TransformLabel = nullptr;
+  SSD->IFLabel        = nullptr;
   if ( FileBase.empty() )
    FileBase=GetFileBase(GeoFile.c_str());
   SSD->FileBase       = FileBase.c_str();
@@ -391,7 +394,7 @@ int main(int argc, char *argv[])
   /*- this case the list of GTComplices is initialized to contain */
   /*- a single empty GTComplex and the check automatically passes.*/
   /*--------------------------------------------------------------*/
-  GTCList GTCs=ReadTransFile(TransFile.empty() ? 0 : TransFile.c_str());
+  GTCList GTCs=ReadTransFile(TransFile.empty() ? nullptr : TransFile.c_str());
   int NumTransformations=GTCs.size();
   char *ErrMsg=G->CheckGTCList(GTCs);
   if (ErrMsg)
@@ -425,7 +428,7 @@ int main(int argc, char *argv[])
   /*******************************************************************/
   /*******************************************************************/
   /*******************************************************************/
-  void *HDF5Context=0;
+  void *HDF5Context=nullptr;
   if ( !HDF5File.empty() )
    HDF5Context=HMatrix::OpenHDF5Context(HDF5File.c_str());
 
@@ -441,8 +444,8 @@ int main(int argc, char *argv[])
   int NS=G->NumSurfaces;
   if (NumTransformations>1)
    { int NADB = NS*(NS-1)/2; // number of above-diagonal blocks
-     TBlocks.resize(NS, 0);
-     UBlocks.resize(NADB, 0);
+     TBlocks.resize(NS, nullptr);
+     UBlocks.resize(NADB, nullptr);
      for(int ns=0, nb=0; ns<NS; ns++)
       {
         int nsMate = G->Mate[ns];
@@ -571,7 +574,7 @@ int main(int argc, char *argv[])
         for(int nIF=0; nIF<IFList->NumIFs; nIF++)
          {
            IF = SSD->IF = IFList->IFs[nIF];
-           SSD->IFLabel = !IFFile.empty() ? IFList->Labels[nIF] : 0;
+           SSD->IFLabel = !IFFile.empty() ? IFList->Labels[nIF] : nullptr;
            if (SSD->IFLabel)
             Log("  Processing incident field %s...",SSD->IFLabel);
 
@@ -648,8 +651,8 @@ int main(int argc, char *argv[])
            /*--------------------------------------------------------------*/
            for(size_t nfm=0; nfm<FVMeshes.size(); nfm++)
             VisualizeFields(SSD, FVMeshes[nfm].c_str(),
-                            FVMeshTransFiles.size() ? FVMeshTransFiles[nfm].c_str() : 0,
-                            FVFuncs.size() ? FVFuncs[nfm].c_str() : 0);
+                            FVMeshTransFiles.size() ? FVMeshTransFiles[nfm].c_str() : nullptr,
+                            FVFuncs.size() ? FVFuncs[nfm].c_str() : nullptr);
 
          }; // for(int nIF=0; nIF<IFList->NumIFs; nIF++
 

@@ -152,6 +152,7 @@ differential Green's functions of a compact or periodic object"};
    FileBase = FileBase + ".GroundPlane";
 
   std::vector<const char *> EPFilePtrs;
+  EPFilePtrs.reserve(EPFiles.size());
   for(const std::string &EPFile : EPFiles)
    EPFilePtrs.push_back(EPFile.c_str());
 
@@ -167,11 +168,11 @@ differential Green's functions of a compact or periodic object"};
    }
   else
    { OmegaPoints.reset(
-      GetOmegaList(OmegaFile.empty() ? 0 : OmegaFile.c_str(),
+      GetOmegaList(OmegaFile.empty() ? nullptr : OmegaFile.c_str(),
                    OmegaVals.data(), (int)OmegaVals.size(),
-                   LambdaFile.empty() ? 0 : LambdaFile.c_str(),
+                   LambdaFile.empty() ? nullptr : LambdaFile.c_str(),
                    LambdaVals.data(), (int)LambdaVals.size()) );
-     if (OmegaPoints.get()==0)
+     if (OmegaPoints.get()==nullptr)
       ErrExit("you must specify at least one frequency");
    };
 
@@ -179,12 +180,12 @@ differential Green's functions of a compact or periodic object"};
   /***************************************************************/
   /***************************************************************/
   if (SkipBZIntegration)
-   { if (OkBPoints.get()!=0)
+   { if (OkBPoints.get()!=nullptr)
       ErrExit("--SkipBZIntegration is incompatible with --OmegakBlochFile");
      if ( !GroundPlane && HalfSpace.empty() )
       ErrExit("--SkipBZIntegration requires either --HalfSpace or --GroundPlane");
      ProcessHalfSpaceDGFs(OmegaPoints.get(), EPFilePtrs.data(), (int)EPFiles.size(),
-                          HalfSpace.empty() ? 0 : HalfSpace.c_str(),
+                          HalfSpace.empty() ? nullptr : HalfSpace.c_str(),
                           RelTol, AbsTol, MaxEvals);
      return 0;   /* was exit(1), reporting failure on the success path */
    };
@@ -194,7 +195,7 @@ differential Green's functions of a compact or periodic object"};
   /* computational routines                                      */
   /***************************************************************/
   SLDData *Data     = CreateSLDData(GeoFile.c_str(),
-                                    TransFile.empty() ? 0 : TransFile.c_str(),
+                                    TransFile.empty() ? nullptr : TransFile.c_str(),
                                     EPFilePtrs.data(), (int)EPFiles.size());
   Data->RelTol      = RelTol;
   Data->AbsTol      = AbsTol;
@@ -203,7 +204,7 @@ differential Green's functions of a compact or periodic object"};
   Data->LDOSOnly    = LDOSOnly;
   Data->ScatteringOnly = !FullTPDGF;
   Data->GroundPlane = GroundPlane;
-  Data->HalfSpaceMP = HalfSpace.empty() ? 0 : new MatProp(HalfSpace.c_str());
+  Data->HalfSpaceMP = HalfSpace.empty() ? nullptr : new MatProp(HalfSpace.c_str());
 
   // set LDOSOnly = false if any EPFiles have 6 coordinates
   // (for two-point DGF calculations)
@@ -246,13 +247,13 @@ differential Green's functions of a compact or periodic object"};
   if (LDim==0)
    {
      for(int no=0; no<OmegaPoints->N; no++)
-      GetLDOS( (void *)Data, OmegaPoints->GetEntry(no), 0, Result.data());
+      GetLDOS( (void *)Data, OmegaPoints->GetEntry(no), nullptr, Result.data());
    }
   /*--------------------------------------------------------------*/
   /*- PBC structure with specified kBloch points: do a periodic   */
   /*- DGF calculation at each (Omega, kBloch) point               */
   /*--------------------------------------------------------------*/
-  else if (OkBPoints.get()!=0)
+  else if (OkBPoints.get()!=nullptr)
    {
      for(int nokb=0; nokb<OkBPoints->NR; nokb++)
       {
@@ -287,7 +288,7 @@ differential Green's functions of a compact or periodic object"};
       { cdouble Omega=OmegaPoints->GetEntry(no);
         Log("Evaluating Brillouin-zone integral at omega=%s",z2s(Omega));
         GetBZIntegral(BZIArgs, Omega, Result.data());
-        WriteData(Data, Omega, 0, FILETYPE_LDOS, Result.data(), BZIArgs->BZIError);
+        WriteData(Data, Omega, nullptr, FILETYPE_LDOS, Result.data(), BZIArgs->BZIError);
       };
    };
 

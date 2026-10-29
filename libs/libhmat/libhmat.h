@@ -37,10 +37,10 @@
 /***************************************************************/
 /***************************************************************/
 #ifndef cdouble
-typedef std::complex<double> cdouble;
+using cdouble = std::complex<double>;
 #endif 
 #ifndef ivec
-typedef std::vector <int> ivec;
+using ivec = std::vector <int>;
 #endif
 
 /***************************************************************/
@@ -74,10 +74,10 @@ class HVector
 
    /* constructor entry points to create vectors of known length */
    /* and data type (optionally with user-specified payload)     */
-   HVector(int N, int RealComplex = LHM_REAL, void *data = NULL);
+   HVector(int N, int RealComplex = LHM_REAL, void *data = nullptr);
    HVector(int N, double *data);
    HVector(int N, cdouble *data);
-   void InitHVector(int N, int RealComplex = LHM_REAL, void *data = NULL);
+   void InitHVector(int N, int RealComplex = LHM_REAL, void *data = nullptr);
 
    /* constructors that attempt to read vector in from a data file */
    HVector(const char *FileName, int FileType = LHM_AUTO, const char *Options = "");
@@ -172,7 +172,7 @@ class HMatrix
    /* constructors that initialize the matrix with known sizes and */
    /* storage parameters                                           */
    HMatrix(int NRows, int NCols, int RealComplex = LHM_REAL,
-	   int StorageType = LHM_NORMAL, void *data = NULL);
+	   int StorageType = LHM_NORMAL, void *data = nullptr);
    HMatrix(int NRows, int NCols, int pRealComplex, void *data);
    HMatrix(int NRows, int NCols, cdouble *data);
    HMatrix(int NRows, int NCols, double *data);
@@ -184,7 +184,7 @@ class HMatrix
    HMatrix(const HMatrix &M);
    HMatrix &operator=(const HMatrix &) = delete;
    void InitHMatrix(int NRows, int NCols, int RealComplex = LHM_REAL,
-		    int StorageType = LHM_NORMAL, void *data = NULL);
+		    int StorageType = LHM_NORMAL, void *data = nullptr);
 
    /* constructors that attempt to read matrix in from a data file */
    HMatrix(const char *FileName, int FileType = LHM_AUTO, const char *Options = "");
@@ -223,11 +223,11 @@ class HMatrix
    void *GetColumnPointer(size_t nc);
 
    /* matlab-style fetching or setting of swaths of a matrix */
-   double *GetEntriesD(const char *RowString, int Col, double *Entries=0);
-   cdouble *GetEntries(const char *RowString, int Col, cdouble *Entries=0);
-   double *GetEntriesD(int Row, const char *ColString, double *Entries=0);
-   cdouble *GetEntries(int Row, const char *ColString, cdouble *Entries=0);
-   HMatrix *ExtractEntries(const char *RowColString, HMatrix *B=0);
+   double *GetEntriesD(const char *RowString, int Col, double *Entries=nullptr);
+   cdouble *GetEntries(const char *RowString, int Col, cdouble *Entries=nullptr);
+   double *GetEntriesD(int Row, const char *ColString, double *Entries=nullptr);
+   cdouble *GetEntries(int Row, const char *ColString, cdouble *Entries=nullptr);
+   HMatrix *ExtractEntries(const char *RowColString, HMatrix *B=nullptr);
    HMatrix *DoGetEntries(int RowStart, int RowStop, int RowInc, int RowLen,
                          int ColStart, int ColStop, int ColInc, int ColLen,
                          HMatrix *B, int RowOffset, int ColOffset);
@@ -241,13 +241,13 @@ class HMatrix
    void SetEntries(int Row, const char *ColString, 
                    cdouble *Entries, cdouble Entry=0.0);
    void SetEntriesD(const char *RowString, int Col, double Entry)
-    { SetEntriesD(RowString, Col, 0, Entry); }
+    { SetEntriesD(RowString, Col, nullptr, Entry); }
    void SetEntries(const char *RowString, int Col, cdouble Entry)
-    { SetEntries(RowString, Col, 0, Entry); }
+    { SetEntries(RowString, Col, nullptr, Entry); }
    void SetEntriesD(int Row, const char *ColString, double Entry)
-    { SetEntriesD(Row, ColString, 0, Entry); }
+    { SetEntriesD(Row, ColString, nullptr, Entry); }
    void SetEntries(int Row, const char *ColString, cdouble Entry)
-    { SetEntries(Row, ColString, 0, Entry); }
+    { SetEntries(Row, ColString, nullptr, Entry); }
    void DoSetEntries(int RowStart, int RowStop, int RowInc, int RowLen,
                      int ColStart, int ColStop, int ColInc, int ColLen,
                      HMatrix *B, cdouble Entry=0.0);
@@ -291,11 +291,11 @@ class HMatrix
    void Sort(std::vector<int> SortColumns,
              std::vector<char> SortType);
    void Sort(std::vector<int> SortColumns);
-   void Sort(int SortColumn, const char *Options=0);
+   void Sort(int SortColumn, const char *Options=nullptr);
 
    // compute vector-matrix-vector product X'*this*Y
-   cdouble BilinearProduct(HVector *X, HVector *Y=0);
-   double BilinearProductD(HVector *X, HVector *Y=0);
+   cdouble BilinearProduct(HVector *X, HVector *Y=nullptr);
+   double BilinearProductD(HVector *X, HVector *Y=nullptr);
 
    /*--------------------------------------------------------------*/
    /*- the following routines are wrappers around LAPACK or BLAS   */
@@ -304,7 +304,7 @@ class HMatrix
    // matrix-matrix multiply, this * B -> C (xgemm)
    // options example: "--transA T" or "--transA T --transB C"
    //  (to use non-hermitian transpose of A and hermitian adjoint of B)
-   void Multiply(HMatrix *B, HMatrix *C, const char *Options=0); 
+   void Multiply(HMatrix *B, HMatrix *C, const char *Options=nullptr); 
 
    /* matrix-matrix multiply with only the diagonal elements */
    /* of the product matrix computed (using ddot or zdotu)   */
@@ -337,14 +337,14 @@ class HMatrix
 
    /* routine for eigenvalues and optionally vectors of */
    /* symmetric/hermitian matrices (dsyevr / zheevr)    */
-   HVector *Eig(HVector *Lambda=0, HMatrix *U=0);
+   HVector *Eig(HVector *Lambda=nullptr, HMatrix *U=nullptr);
 
    /* routine for eigenvalues and optionally vectors of */
    /* non-symmetric matrices (dgeevx / zgeevx )         */
-   HVector *NSEig(HVector *Lambda=0, HMatrix *U=0);
+   HVector *NSEig(HVector *Lambda=nullptr, HMatrix *U=nullptr);
 
    /* singular-value decomposition */
-   HVector *SVD(HVector *Sigma=0, HMatrix *U=0, HMatrix *VT=0);
+   HVector *SVD(HVector *Sigma=nullptr, HMatrix *U=nullptr, HMatrix *VT=nullptr);
 
    /* matrix norm*/
    double GetNorm(bool UseInfinityNorm=false);
@@ -414,8 +414,8 @@ HMatrix *SortHMatrix(HMatrix *M, std::vector<int> SortColumns,
 // return a matrix with given properties, using an optional
 // user-supplied candidate if it matches, or allocating a new one
 // if not (in which case the candidate is deallocated if non-null)
-HMatrix *CheckHMatrix(HMatrix *M, int NR, int NC, int RealComplex, const char *Context=0);
-HMatrix *CheckHMatrix(HMatrix *M, HMatrix *M0, const char *Context=0);
+HMatrix *CheckHMatrix(HMatrix *M, int NR, int NC, int RealComplex, const char *Context=nullptr);
+HMatrix *CheckHMatrix(HMatrix *M, HMatrix *M0, const char *Context=nullptr);
 
 /***************************************************************/
 /* SMatrix class definition ************************************/
@@ -461,8 +461,8 @@ class SMatrix
     HMatrix *Apply(HMatrix *X); // return new MX
 
     // compute vector-matrix-vector product X'*this*Y
-    cdouble BilinearProduct(HVector *X, HVector *Y=0);
-    double BilinearProductD(HVector *X, HVector *Y=0);
+    cdouble BilinearProduct(HVector *X, HVector *Y=nullptr);
+    double BilinearProductD(HVector *X, HVector *Y=nullptr);
 
     // matrix assembly:
     //     BeginAssembly(estimate of # nonzero entries)

@@ -105,8 +105,8 @@ void WritePolarizabilities(StaticSolver *SS, HMatrix *M, HVector *Sigma, const c
   void *SFData [1]   = {(void *)&Data};
 
   StaticExcitation SE;
-  SE.Label=0;
-  SE.Potentials=0;
+  SE.Label=nullptr;
+  SE.Potentials=nullptr;
   SE.SFs    = SFs;
   SE.SFData = SFData;
   SE.NumSFs=1;
@@ -185,7 +185,7 @@ void WriteCapacitanceMatrix(StaticSolver *SS, HMatrix *M,
   /*--------------------------------------------------------------*/
   /*--------------------------------------------------------------*/
   /*--------------------------------------------------------------*/
-  HMatrix *CapMatrix=SS->GetCapacitanceMatrix(M, Sigma, 0);
+  HMatrix *CapMatrix=SS->GetCapacitanceMatrix(M, Sigma, nullptr);
   if (!CapMatrix) return;
 
   /*--------------------------------------------------------------*/
@@ -249,7 +249,7 @@ void WriteCMatrix(StaticSolver *SS, HMatrix *M, HVector *Sigma,
       Data->l = l;
       Data->m = m;
       StaticField SFs[1]={SphericalStaticField};
-      StaticExcitation SE={0,0,SFs,(void **)(&Data),1};
+      StaticExcitation SE={nullptr,nullptr,SFs,(void **)(&Data),1};
       SS->AssembleRHSVector(&SE, Sigma);
       M->LUSolve(Sigma);
 

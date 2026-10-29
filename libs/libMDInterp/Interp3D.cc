@@ -71,7 +71,7 @@ static int GetCTableOffset(int nf, int nFun, int n1, int N1,
 /* thread routine used to compute values and derivatives of     */
 /* user's function at grid points                               */
 /****************************************************************/
-typedef struct ThreadData
+using ThreadData = struct ThreadData
  {
    double *X1Points, *X2Points, *X3Points;
    int N1, N2, N3;
@@ -86,7 +86,7 @@ typedef struct ThreadData
 
    int nt, nThread;
 
- } ThreadData;
+ };
 
 static void *GetPhiVD_Thread(void *data)
 {
@@ -179,7 +179,7 @@ static void *GetPhiVD_Thread(void *data)
   //delete[] PhiVD;
   free(PhiVD);
 
-  return 0;
+  return nullptr;
   
 }
 
@@ -196,7 +196,7 @@ Interp3D::Interp3D(double *pX1Points, int pN1,
    InitInterp3D(0.0, 0.0, pX1Points, pN1,
                 0.0, 0.0, pX2Points, pN2,
                 0.0, 0.0, pX3Points, pN3,
-                pnFun, PhiFunc, UserData, 0, pLogLevel);
+                pnFun, PhiFunc, UserData, nullptr, pLogLevel);
 }
 
 /****************************************************************/
@@ -212,7 +212,7 @@ Interp3D::Interp3D(double *PhiVDTable,
   InitInterp3D(0.0, 0.0, pX1Points, pN1,
                0.0, 0.0, pX2Points, pN2,
                0.0, 0.0, pX3Points, pN3,
-               pnFun, 0, 0, PhiVDTable, pLogLevel);
+               pnFun, nullptr, nullptr, PhiVDTable, pLogLevel);
 }
 
 /****************************************************************/
@@ -225,10 +225,10 @@ Interp3D::Interp3D(double pX1Min, double X1Max, int pN1,
                    int pnFun, Phi3D PhiFunc, void *UserData,
                    int pLogLevel)
 {
-  InitInterp3D( pX1Min, X1Max, 0, pN1,
-                pX2Min, X2Max, 0, pN2,
-                pX3Min, X3Max, 0, pN3,
-                pnFun, PhiFunc, UserData, 0, pLogLevel);
+  InitInterp3D( pX1Min, X1Max, nullptr, pN1,
+                pX2Min, X2Max, nullptr, pN2,
+                pX3Min, X3Max, nullptr, pN3,
+                pnFun, PhiFunc, UserData, nullptr, pLogLevel);
 }
 
 Interp3D::Interp3D(double *PhiVDTable,
@@ -237,10 +237,10 @@ Interp3D::Interp3D(double *PhiVDTable,
                    double pX3Min, double X3Max, int pN3,
                    int pnFun, int pLogLevel)
 {
-  InitInterp3D( pX1Min, X1Max, 0, pN1,
-                pX2Min, X2Max, 0, pN2,
-                pX3Min, X3Max, 0, pN3,
-                pnFun, 0, 0, PhiVDTable, pLogLevel);
+  InitInterp3D( pX1Min, X1Max, nullptr, pN1,
+                pX2Min, X2Max, nullptr, pN2,
+                pX3Min, X3Max, nullptr, pN3,
+                pnFun, nullptr, nullptr, PhiVDTable, pLogLevel);
 }
 
 /****************************************************************/
@@ -307,7 +307,7 @@ void Interp3D::InitInterp3D(
    if (!CTable)
     ErrExit("%s:%i:out of memory",__FILE__,__LINE__);
 
-   if (PhiFunc==0 && PhiVDTable==0)
+   if (PhiFunc==nullptr && PhiVDTable==nullptr)
     return;
 
    ReInitialize(PhiFunc, UserData, PhiVDTable);
@@ -336,7 +336,7 @@ void Interp3D::ReInitialize(Phi3D PhiFunc, void *UserData, double *PhiVDTable)
    /*- (n1,n2,n3).                                                 */
    /*--------------------------------------------------------------*/
    bool OwnsPhiVDTable = false;
-   if (PhiVDTable==0)
+   if (PhiVDTable==nullptr)
     { OwnsPhiVDTable=true;
       PhiVDTable=(double *)mallocEC(N1*N2*N3*nFun*NDATA*sizeof(double));
 
@@ -532,7 +532,7 @@ Interp3D::Interp3D(const char *FileName)
       freadEC(X3Points, sizeof(double), N3, f, FileName);
     }
    else
-    { X1Points=X2Points=X3Points=0;
+    { X1Points=X2Points=X3Points=nullptr;
       freadEC(&X1Min, sizeof(double), 1, f, FileName);
       freadEC(&DX1,   sizeof(double), 1, f, FileName);
       freadEC(&X2Min, sizeof(double), 1, f, FileName);

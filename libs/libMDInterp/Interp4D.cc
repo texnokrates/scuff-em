@@ -73,7 +73,7 @@ static int GetCTableOffset(int nf, int nFun, int n1, int N1,
 /* thread routine used to compute values and derivatives of     */
 /* user's function at grid points                               */
 /****************************************************************/
-typedef struct ThreadData
+using ThreadData = struct ThreadData
  {
    double *X1Points, *X2Points, *X3Points, *X4Points;
    int N1, N2, N3, N4;
@@ -88,7 +88,7 @@ typedef struct ThreadData
 
    int nt, nThread;
 
- } ThreadData;
+ };
 
 static void *GetPhiVD_Thread(void *data)
 {
@@ -186,7 +186,7 @@ static void *GetPhiVD_Thread(void *data)
 
   delete[] PhiVD;
 
-  return 0;
+  return nullptr;
   
 }
 
@@ -261,22 +261,22 @@ Interp4D::Interp4D(double pX1Min, double X1Max, int pN1,
     ErrExit("Interp4D: grid must have 2 or more points in every dimension");
 
    N1=pN1; 
-   X1Points=0;
+   X1Points=nullptr;
    X1Min=pX1Min;
    DX1 = (X1Max - X1Min) / ((double)(N1-1));
 
    N2=pN2; 
-   X2Points=0;
+   X2Points=nullptr;
    X2Min=pX2Min;
    DX2 = (X2Max - X2Min) / ((double)(N2-1));
 
    N3=pN3; 
-   X3Points=0;
+   X3Points=nullptr;
    X3Min=pX3Min;
    DX3 = (X3Max - X3Min) / ((double)(N3-1));
 
    N4=pN4; 
-   X4Points=0;
+   X4Points=nullptr;
    X4Min=pX4Min;
    DX4 = (X4Max - X4Min) / ((double)(N4-1));
 
@@ -577,7 +577,7 @@ Interp4D::Interp4D(const char *FileName)
       freadEC(X4Points, sizeof(double), N4, f, FileName);
     }
    else
-    { X1Points=X2Points=X3Points=X4Points=0;
+    { X1Points=X2Points=X3Points=X4Points=nullptr;
       freadEC(&X1Min, sizeof(double), 1, f, FileName);
       freadEC(&DX1,   sizeof(double), 1, f, FileName);
       freadEC(&X2Min, sizeof(double), 1, f, FileName);

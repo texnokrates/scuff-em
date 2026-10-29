@@ -74,7 +74,7 @@ HMatrix *RWGGeometry::GetDyadicGFs(cdouble Omega, double *kBloch,
   /* integrations                                                 */
   /*--------------------------------------------------------------*/
   static std::unique_ptr<HMatrix> RFSource, RFDest;
-  if ( RFSource==0 || RFSource->NR!=NBF || RFSource->NC!=(6*NX) )
+  if ( RFSource==nullptr || RFSource->NR!=NBF || RFSource->NC!=(6*NX) )
    { 
      RFSource = std::make_unique<HMatrix>(NBF, 6*NX, LHM_COMPLEX);
      RFDest   = std::make_unique<HMatrix>(NBF, 6*NX, LHM_COMPLEX);
@@ -83,7 +83,7 @@ HMatrix *RWGGeometry::GetDyadicGFs(cdouble Omega, double *kBloch,
   /*--------------------------------------------------------------*/
   /*- allocate an output matrix of the right size if necessary   -*/
   /*--------------------------------------------------------------*/
-  if (GMatrix==0 || GMatrix->NR!=NX || GMatrix->NC!=18)
+  if (GMatrix==nullptr || GMatrix->NR!=NX || GMatrix->NC!=18)
    { 
      if (GMatrix) 
       { Warn("wrong-size GMatrix passed to GetDyadicGFs (reallocating)");
@@ -98,7 +98,7 @@ HMatrix *RWGGeometry::GetDyadicGFs(cdouble Omega, double *kBloch,
   /*--------------------------------------------------------------*/
   bool TwoPointDGF = (XMatrix->NC >= 6);
   bool AddDirectContribution = TwoPointDGF && !ScatteringOnly;
-  PointSource PSBuffer, *PS = (AddDirectContribution ? &PSBuffer : 0);
+  PointSource PSBuffer, *PS = (AddDirectContribution ? &PSBuffer : nullptr);
 
   /*--------------------------------------------------------------*/
   /*- precompute 'reduced-field' vectors -------------------------*/

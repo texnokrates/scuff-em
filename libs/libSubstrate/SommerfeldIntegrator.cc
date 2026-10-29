@@ -48,9 +48,9 @@
 
 #define KMAX 20
 
-typedef std::vector<int> ivector;
-typedef std::vector<double> dvector;
-typedef std::vector<cdouble> zvector;
+using ivector = std::vector<int>;
+using dvector = std::vector<double>;
+using zvector = std::vector<cdouble>;
 
 #define II cdouble(0.0,1.0)
 
@@ -99,12 +99,12 @@ cdouble GetOmega(int k, cdouble *uValues, int Stride, int Offset,
 /***************************************************************/
 cdouble MosigMichalski(int K, double *xValues, cdouble *uValues,
                        int Stride=1, int Offset=0, double Mu=2,
-                       cdouble *Workspace=0, cdouble *OmegaValues=0, 
+                       cdouble *Workspace=nullptr, cdouble *OmegaValues=nullptr, 
                        char tuv='u')
 {
   if (K==0) return uValues[0*Stride + Offset];
 
-  bool OwnsWorkspace = (Workspace==0);
+  bool OwnsWorkspace = (Workspace==nullptr);
   if (OwnsWorkspace)
    Workspace = new cdouble[K*K];
 
@@ -137,14 +137,14 @@ cdouble MosigMichalski(int K, double *xValues, cdouble *uValues,
 /* evaluate contour-integral contribution to Sommerfeld intgrl.*/
 /* the contour is z = q0*t - i*qR*sin(pi*t) for t=[0,1]        */
 /***************************************************************/
-typedef struct SommerfeldIntegralData
+using SommerfeldIntegralData = struct SommerfeldIntegralData
  { integrand UserIntegrand;
    void *UserData;
    double q0, qR;
    bool uTransform;
    int NumPoints;
    FILE *LogFile;
- } SommerfeldIntegralData;
+ };
 
 int ContourIntegrand(unsigned ndim, const double *x, void *UserData,
                      unsigned fdim, double *fval)
@@ -204,7 +204,7 @@ void SommerfeldIntegrate(integrand f, void *fdata, unsigned zfdim,
   SommerfeldIntegralData SIData;
   SIData.UserIntegrand = f;
   SIData.UserData      = fdata;
-  SIData.LogFile       = SILogFileName ? fopen(SILogFileName,"a") : 0;
+  SIData.LogFile       = SILogFileName ? fopen(SILogFileName,"a") : nullptr;
 
   /***************************************************************/
   /* evaluate contour integral to compute \int_0^{q0}            */

@@ -48,11 +48,11 @@ namespace scuff {
 /***************************************************************/
 bool scuffSolver::ReadyToPostprocess()
 {
-  if (M==0 || G->StoredOmega!=OmegaSIE)
+  if (M==nullptr || G->StoredOmega!=OmegaSIE)
    { Warn("AssembleSystemMatrix() must be called before postprocessing");
      return false;
    }
-  if (KN==0)
+  if (KN==nullptr)
    { Warn("Solve() must be called before postprocessing");
      return false;
    }
@@ -93,8 +93,8 @@ zVec scuffSolver::GetFields(dVec X, const char *WhichFields)
   for(int nx=0; nx<NX; nx++)
    XMatrix.SetEntriesD(nx, ":", &(X[3*nx]));
 
-  HMatrix *FMatrix=G->GetFields(RetainIncident  ? CachedIF : 0,
-                                RetainScattered ? KN : 0, OmegaSIE, &XMatrix);
+  HMatrix *FMatrix=G->GetFields(RetainIncident  ? CachedIF : nullptr,
+                                RetainScattered ? KN : nullptr, OmegaSIE, &XMatrix);
 
   for(int nfc=0; nfc<6*NX; nfc++)
    Fields.push_back(FMatrix->ZM[nfc]);
@@ -150,9 +150,9 @@ dVec scuffSolver::GetPFT(char *SurfaceLabel, char *Method)
 
 HMatrix *scuffSolver::GetPFTMatrix(char *Method)
 {
-  if (!ReadyToPostprocess()) return 0;
+  if (!ReadyToPostprocess()) return nullptr;
   PFTOptions Options;
-  if (!ParsePFTString(&Options, Method)) return 0;
+  if (!ParsePFTString(&Options, Method)) return nullptr;
   Options.IF = CachedIF;
   return G->GetPFTMatrix(KN, OmegaSIE, &Options);
 }
@@ -192,7 +192,7 @@ void scuffSolver::ProcessEPFile(char *EPFile, char *OutFileName)
    }
 
   char TimeString[200];
-  time_t MyTime=time(0);
+  time_t MyTime=time(nullptr);
   struct tm *MyTm=localtime(&MyTime);
   strftime(TimeString,30,"%D::%T",MyTm);
   fprintf(f,"# scuffSolver::ProcessEPFile ran on %s (%s)\n",getenv("HOST"),TimeString);
@@ -236,9 +236,9 @@ void scuffSolver::ProcessEPFile(char *EPFile, char *OutFileName)
 /***************************************************************/
 static const char *DataNames[]=
    { "#RS_re Phi",       "#IS_im Phi",   "#MS_|Phi|",
-     "#RV_re E",0,0,     "#IV_im E",0,0, "#MS_|E|",
+     "#RV_re E",nullptr,nullptr,     "#IV_im E",nullptr,nullptr, "#MS_|E|",
      "#RS_re Sigma",     "#IS_im Sigma",
-     "#RV_re K",0,0,     "#IV_im K",0,0,
+     "#RV_re K",nullptr,nullptr,     "#IV_im K",nullptr,nullptr,
      "#RS_re K dot iwA", "#IS_im K dot iwA",
      "#RS_re SigmaPhi",  "#IS_im SigmaPhi",
      "#RS_re Kdot E",    "#RS_im Kdot E"
@@ -386,9 +386,9 @@ HVector *scuffSolver::PlotRFFields(dVec X0, dVec L1, dVec L2, iVec NVec, char *O
 
 HMatrix *scuffSolver::PlotRFFields()
 { 
-  HMatrix *Integrals=0;
+  HMatrix *Integrals=nullptr;
   for(int ns=0; ns<G->NumSurfaces; ns++)
-   Integrals=ProcessFVMesh(G->Surfaces[ns]->MeshFileName,0,G->Surfaces[ns]->Label);
+   Integrals=ProcessFVMesh(G->Surfaces[ns]->MeshFileName,nullptr,G->Surfaces[ns]->Label);
   return Integrals;
 }
 
@@ -424,7 +424,7 @@ void scuffSolver::AddMinusIdVTermsToZMatrix(HMatrix *KMatrix, HMatrix *ZMatrix)
      HVector KNSource(NBF, LHM_COMPLEX, KMatrix->GetColumnPointer(SourcePort));
      if (!KN) KN=G->AllocateRHSVector();
      KN->Copy(&KNSource);
-     if (CachedPortCurrents==0) CachedPortCurrents=new cdouble[NumPorts];
+     if (CachedPortCurrents==nullptr) CachedPortCurrents=new cdouble[NumPorts];
      memset(CachedPortCurrents, 0, NumPorts*sizeof(cdouble));
      CachedPortCurrents[SourcePort]=1.0;
      GetRFFields(XMatrix, PFMatrix);
@@ -531,7 +531,7 @@ HMatrix *scuffSolver::GetZMatrix(HMatrix *ZMatrix, bool AllTerms)
 }
 
 HMatrix *scuffSolver::GetFullZMatrix()
-{ return GetZMatrix(0,true); }
+{ return GetZMatrix(nullptr,true); }
 
 /***************************************************************/
 /* routines for transforming impedance parameters into         */
@@ -549,7 +549,7 @@ HMatrix *scuffSolver::GetFullZMatrix()
 HMatrix *scuffSolver::Z2S(HMatrix *Z, HMatrix *S, double ZCharacteristic)
 { 
   HMatrix *ZpZC = new HMatrix(*Z);
-  if (S==0) 
+  if (S==nullptr) 
    S = new HMatrix(*Z);
   else if (S!=Z)
    S->InsertBlock(Z,0,0);
@@ -576,7 +576,7 @@ HMatrix *scuffSolver::S2Z(HMatrix *S, HMatrix *Z, double ZCharacteristic)
    }
   OmS->LUFactorize();
   OmS->LUInvert();
-  if (Z==0) Z=new HMatrix(*S);
+  if (Z==nullptr) Z=new HMatrix(*S);
   OmS->Multiply(OpS, Z);
   Z->Scale(ZCharacteristic);
 

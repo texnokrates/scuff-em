@@ -62,7 +62,8 @@ HMatrix::HMatrix(int NRows, int NCols, int pRealComplex, int pStorageType,
 		 void *data)
  { InitHMatrix(NRows, NCols, pRealComplex, pStorageType, data); }
 
-HMatrix::HMatrix(const HMatrix &M) {
+HMatrix::HMatrix(const HMatrix &M) // NOLINT(cppcoreguidelines-pro-type-member-init) -- InitHMatrix below initializes every member
+{
   InitHMatrix(M.NR, M.NC, M.RealComplex, M.StorageType);
   Copy(&M);
 }
@@ -75,12 +76,12 @@ void HMatrix::InitHMatrix(int NRows, int NCols, int pRealComplex,
 { 
    RealComplex=pRealComplex;
    StorageType=pStorageType;
-   ipiv=0;
+   ipiv=nullptr;
    lwork=0;
-   work=0;
+   work=nullptr;
    liwork=0;
-   iwork=0;
-   ErrMsg=0;
+   iwork=nullptr;
+   ErrMsg=nullptr;
 
    NR=NRows;
    NC=NCols;
@@ -100,17 +101,17 @@ void HMatrix::InitHMatrix(int NRows, int NCols, int pRealComplex,
       e.g. for the Python wrappers, without incurring a copy.  In this
       case, we do NOT free the data in the destructor. */
 
-   ownsM = data == NULL;
+   ownsM = data == nullptr;
    if (RealComplex==LHM_REAL)
     { DM=(double *)(data ? data : mallocEC(NumEntries() * sizeof(double)));
-      ZM=0;
+      ZM=nullptr;
     }
    else
-    { DM=0;
+    { DM=nullptr;
       ZM=(cdouble *)(data ? data : mallocEC(NumEntries() * sizeof(cdouble)));
     };
 
-  ipiv=0; // this is only allocated when needed 
+  ipiv=nullptr; // this is only allocated when needed 
  
 }
 
@@ -154,16 +155,16 @@ int LHM_AUTO_FileType(const char *FileName)
 
 void HMatrix::ReadFromFile(const char *FileName, int FileType, const char *Options)
 {
-  DM=0;
-  ZM=0;
-  ipiv=0;
+  DM=nullptr;
+  ZM=nullptr;
+  ipiv=nullptr;
   lwork=0;
-  work=0;
+  work=nullptr;
   liwork=0;
-  iwork=0;
-  ErrMsg=0;
+  iwork=nullptr;
+  ErrMsg=nullptr;
 
-  if (FileName==0)
+  if (FileName==nullptr)
    { ErrMsg=strdup("no filename specified for matrix import");
      if (AbortOnIOError) 
       ErrExit(ErrMsg);
@@ -202,12 +203,12 @@ HMatrix::HMatrix(SMatrix *S)
    
    RealComplex=S->RealComplex;
    StorageType=LHM_NORMAL;
-   ipiv=0;
+   ipiv=nullptr;
    lwork=0;
-   work=0;
+   work=nullptr;
    liwork=0;
-   iwork=0;
-   ErrMsg=0;
+   iwork=nullptr;
+   ErrMsg=nullptr;
    ownsM=true;
 
    int *RowStart = S->RowStart;
@@ -217,7 +218,7 @@ HMatrix::HMatrix(SMatrix *S)
 
    if (RealComplex==LHM_REAL)
     { 
-      ZM=0;
+      ZM=nullptr;
       DM=(double *)mallocEC(NR*NC*sizeof(double));
       // memset(DM, 0, NR*NC*sizeof(double)); done by mallocEC
 
@@ -229,7 +230,7 @@ HMatrix::HMatrix(SMatrix *S)
     }
    else
     { 
-      DM=0;
+      DM=nullptr;
       ZM=(cdouble *)mallocEC(NR*NC*sizeof(cdouble));
       // memset(ZM, 0, NR*NC*sizeof(cdouble)); done by mallocEC
 
@@ -752,7 +753,7 @@ void HMatrix::ExtractBlock(int RowOffset, int ColOffset, HMatrix *B)
 /* Make an unpacked copy of the matrix *************************/
 /***************************************************************/
 HMatrix *CopyHMatrixUnpacked(HMatrix *Mpacked) {
-  if (!Mpacked) return NULL;
+  if (!Mpacked) return nullptr;
   HMatrix *M = new HMatrix(Mpacked->NR, Mpacked->NC, Mpacked->RealComplex);
   M->Copy(Mpacked);
   return M;
@@ -804,7 +805,7 @@ HMatrix *Concat(HMatrix *A, HMatrix *B, int How)
 /***************************************************************/
 cdouble HMatrix::BilinearProduct(HVector *X, HVector *Y)
 {
-  if (Y==0) Y=X;
+  if (Y==nullptr) Y=X;
   cdouble Sum=0.0;
   for(int nr=0; nr<NR; nr++)
    for(int nc=0; nc<NC; nc++)
@@ -829,9 +830,9 @@ HMatrix *CheckHMatrix(HMatrix *M, int NR, int NC, int RealComplex, const char *C
            M->NR,M->NC,M->RealComplex, NR,NC,RealComplex,
            Context ? " in " : "", Context ? Context : "");
      delete M;
-     M=0;
+     M=nullptr;
    }
-  if (M==0)
+  if (M==nullptr)
    M=new HMatrix(NR, NC, RealComplex);
   return M;
 }

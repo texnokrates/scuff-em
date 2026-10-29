@@ -43,19 +43,19 @@ void GetReducedPotentials_Nearby(RWGSurface *S, const int ne,
                                  cdouble *p, cdouble a[3],
                                  cdouble dp[3], cdouble da[3][3],
                                  cdouble ddp[3][3], cdouble dcurla[3][3],
-                                 bool *IncludeTerm=0);
+                                 bool *IncludeTerm=nullptr);
 
 using namespace scuff;
 
 int FindEquivalentSurfacePair(RWGGeometry *G, int nsAlpha, int nsBeta,
-                              bool *pFlipped=0, int *pnsA=0, int *pnsB=0);
+                              bool *pFlipped=nullptr, int *pnsA=nullptr, int *pnsB=nullptr);
 
 #define II cdouble(0.0,1.0)
 
 /***************************************************************/
 /***************************************************************/
 /***************************************************************/
-typedef struct MOIIntegrandData
+using MOIIntegrandData = struct MOIIntegrandData
  {
    LayeredSubstrate *S;
    cdouble Omega;
@@ -75,7 +75,7 @@ typedef struct MOIIntegrandData
    // used for diagnostics
    int CubaturePoints, qPoints;
 
- } MOIIntegrandData;
+ };
 
 /***************************************************************/
 /***************************************************************/
@@ -131,10 +131,10 @@ void MOIPFIntegrand(double xS[3], double b[3], double Divb,
 /* subtracted from the Sommerfeld integral for the full         */
 /* substrate GF                                                 */
 /*--------------------------------------------------------------*/
-typedef struct RPIData
+using RPIData = struct RPIData
  { cdouble k;
    double *XDest;
- } RPIData;
+ };
 
 void RPIntegrand(double XSource[3], double b[3], double Divb,
                  void *UserData, double Weight, double *Integral)
@@ -242,7 +242,7 @@ int Get1BFMOIFields(RWGGeometry *G, int ns, int ne,
 
   LayeredSubstrate *Substrate = G->Substrate;
   cdouble Eps                 = Substrate ? Substrate->EpsLayer[1] : 1.0;
-  bool NeedSITerms            = (Substrate==0 || Subtract);
+  bool NeedSITerms            = (Substrate==nullptr || Subtract);
   bool NeedSubstrateTerms     = Substrate && (Eps!=1.0 || !std::isinf(Substrate->zGP));
 
   memset(PFVector, 0, NPFC*sizeof(cdouble));
@@ -387,7 +387,7 @@ int GetMOIMatrixElement(RWGGeometry *G,
   LayeredSubstrate *Substrate = G->Substrate;
   cdouble Eps = (Substrate && Substrate->NumLayers>0 ? Substrate->EpsLayer[1] : 1.0);
 
-  bool NeedSITerms        = (Substrate==0 || Subtract);
+  bool NeedSITerms        = (Substrate==nullptr || Subtract);
   bool NeedSubstrateTerms = (Substrate && (Eps!=1.0 || !std::isinf(Substrate->zGP)));
   int qPoints=0;
 
@@ -399,7 +399,7 @@ int GetMOIMatrixElement(RWGGeometry *G,
      Substrate->UpdateCachedEpsMu(Omega);
      Eps = Substrate->EpsLayer[1];
 
-     bool SeparateTerms = (Terms!=0);
+     bool SeparateTerms = (Terms!=nullptr);
 
      MOIIntegrandData MOIData;
      MOIData.S              = Substrate;
@@ -438,7 +438,7 @@ int GetMOIMatrixElement(RWGGeometry *G,
      Args->NumRegions = 1;
      Args->k[0] = Omega;
      Args->NeedGC=true;
-     Args->FIBBICache = (nsa==nsb) ? G->FIBBICaches[nsa] : 0;
+     Args->FIBBICache = (nsa==nsb) ? G->FIBBICaches[nsa] : nullptr;
      cdouble GabArray[2][NUMGCMES];
      cdouble ikCabArray[2][NUMGCMES];
      cdouble GPhiTerm[2];
@@ -472,7 +472,7 @@ void MOIMEIntegrand_NC(double XDest[3], double b[3], double Divb,
    int neInner                  = OuterData->neInner;
    int InnerOrder               = OuterData->InnerOrder;
 
-   cdouble PFVector[NPFC], STBuffer[NPFC], *SingularTerms = (SeparateTerms ? STBuffer : 0);
+   cdouble PFVector[NPFC], STBuffer[NPFC], *SingularTerms = (SeparateTerms ? STBuffer : nullptr);
    int qPoints = Get1BFMOIFields(G, nsInner, neInner, Omega, XDest, PFVector, InnerOrder, Subtract, SingularTerms);
 
    cdouble *METerms = (cdouble *)Integral;
@@ -518,7 +518,7 @@ int GetMOIMatrixElement_NC(RWGGeometry *G,
 
   if (InnerOrder==-1) InnerOrder=9;
   if (OuterOrder==-1) OuterOrder=9;
-  bool SeparateTerms = (Terms!=0);
+  bool SeparateTerms = (Terms!=nullptr);
 
   MOIIntegrandData MOIData;
   MOIData.S              = Substrate;
@@ -661,9 +661,9 @@ void AssembleMOIMatrixBlock(RWGGeometry *G, int nsa, int nsb,
   /***************************************************************/
   /***************************************************************/
   /***************************************************************/
-  EquivalentEdgePairTable *EEPTable=0;
+  EquivalentEdgePairTable *EEPTable=nullptr;
   if ( G->EEPTables.size()>0 && !CheckEnv("SCUFF_IGNORE_EEPS") )
-   { if (G->EEPTables[nsa][nsb]==0)
+   { if (G->EEPTables[nsa][nsb]==nullptr)
       G->EEPTables[nsa][nsb]=std::unique_ptr<EquivalentEdgePairTable>(new EquivalentEdgePairTable(G,nsa,nsb));
      EEPTable=G->EEPTables[nsa][nsb].get();
    }
@@ -791,8 +791,8 @@ void GetMOIRPFMatrices(RWGGeometry *G, RWGPortList *PortList,
   int NPFCX            = NPFC*NX; // total number of potential/field components at all points
 
   int NBFEdges         = 0;
-  HMatrix *BFRPFMatrix = 0;
-  bool NeedBFRPFMatrix = (pBFRPFMatrix!=0); 
+  HMatrix *BFRPFMatrix = nullptr;
+  bool NeedBFRPFMatrix = (pBFRPFMatrix!=nullptr); 
   if (NeedBFRPFMatrix)
    { NBFEdges = G->TotalBFs;
      BFRPFMatrix = *pBFRPFMatrix = CheckHMatrix(*pBFRPFMatrix, NPFCX, NBFEdges, LHM_COMPLEX);
@@ -801,8 +801,8 @@ void GetMOIRPFMatrices(RWGGeometry *G, RWGPortList *PortList,
   // PERPFMatrix ("PortEdgeRPFMatrix") is a port-edge-resolved version of PortRPFMatrix
   // that is reduced after the loop to obtain PortRPFMatrix[1].
   int NPortEdges         = 0;
-  HMatrix *PERPFMatrix   = 0;
-  bool NeedPortRPFMatrix = (pPortRPFMatrix!=0);
+  HMatrix *PERPFMatrix   = nullptr;
+  bool NeedPortRPFMatrix = (pPortRPFMatrix!=nullptr);
   if (NeedPortRPFMatrix)
    { NPortEdges   = PortList->PortEdges.size();
      PERPFMatrix  = new HMatrix(NPFCX, NPortEdges, LHM_COMPLEX);
@@ -901,9 +901,9 @@ HMatrix *scuffSolver::GetRFFieldsViaRPFMatrices(HMatrix *XMatrix)
 
   // compute reduced potential-field matrices
   Log("Getting RPF matrices for %i points...",NX);
-  HMatrix *BFRPFMatrix = 0, *PortRPFMatrix = 0;
+  HMatrix *BFRPFMatrix = nullptr, *PortRPFMatrix = nullptr;
   GetMOIRPFMatrices( G, PortList, Omega, XMatrix,
-                     OmitBFTerms ? 0 : &BFRPFMatrix, OmitPortTerms ? 0 : &PortRPFMatrix
+                     OmitBFTerms ? nullptr : &BFRPFMatrix, OmitPortTerms ? nullptr : &PortRPFMatrix
                    );
                     
   // create output matrix
@@ -937,7 +937,7 @@ HMatrix *scuffSolver::GetRFFields(HMatrix *XMatrix, HMatrix *PFMatrix)
   int NX           = XMatrix->NC;
 
   bool OmitBFTerms   = CheckEnv("SCUFF_RFFIELDS_PORTONLY");
-  bool OmitPortTerms = CachedPortCurrents==0 || CheckEnv("SCUFF_RFFIELDS_BFONLY");
+  bool OmitPortTerms = CachedPortCurrents==nullptr || CheckEnv("SCUFF_RFFIELDS_BFONLY");
 
   int NBFEdges     = OmitBFTerms   ? 0 : G->TotalBFs;
   int NPortEdges   = OmitPortTerms ? 0 : PortList->PortEdges.size();
@@ -970,7 +970,7 @@ HMatrix *scuffSolver::GetRFFields(HMatrix *XMatrix, HMatrix *PFMatrix)
   int NXNE = NX*NEdges;
   int NumThreads=GetNumThreads();
   bool AllocateThreadBuffers=false, NonCritical=false;
-  HMatrix **PFByThread=0;
+  HMatrix **PFByThread=nullptr;
   Log("Computing MOI fields at %ix%i = %i edge-point pairs (%i threads)",NEdges,NX,NXNE,NumThreads);
 #ifdef USE_OPENMP
   NonCritical = CheckEnv("SCUFF_NONCRITICAL");

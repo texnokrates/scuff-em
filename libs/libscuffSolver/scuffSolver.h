@@ -66,7 +66,7 @@ namespace scuff {
 /***************************************************************/
 /* Data structures used to describe ports on RF devices        */
 /***************************************************************/
-typedef struct RWGPortEdge
+using RWGPortEdge = struct RWGPortEdge
  { 
    int ns;       // RWGSurface on which port edge lies
    int ne;       // (encoded) index of exterior edge
@@ -77,16 +77,16 @@ typedef struct RWGPortEdge
    RWGPortEdge(int _ns, int _ne, int _nPort, int _Pol, double _Sign):
     ns(_ns), ne(_ne), nPort(_nPort), Pol(_Pol), Sign(_Sign) {}
 
- } RWGPortEdge;
+ };
 
-typedef vector<RWGPortEdge *> RWGPortEdgeList;
+using RWGPortEdgeList = vector<RWGPortEdge *>;
 
-typedef struct RWGPort
+using RWGPort = struct RWGPort
  { RWGPortEdgeList PortEdges[NUMPOLARITIES];
    double Perimeter[NUMPOLARITIES];
- } RWGPort;
+ };
 
-typedef struct RWGPortList
+using RWGPortList = struct RWGPortList
  { vector<RWGPort *> Ports;
    RWGPortEdgeList   PortEdges;
    double            RMinMax[6]; // bounding box
@@ -100,7 +100,7 @@ typedef struct RWGPortList
      for(size_t ne=0; ne<PortEdges.size(); ne++)
       delete PortEdges[ne];
    }
- } RWGPortList;
+ };
 
 /***************************************************************/
 /* a "scuffSolver" is a SCUFF-EM geometry, plus a list of ports, */
@@ -114,7 +114,7 @@ public:
     ////////////////////////////////////////////////////
 
     // constructors and geometry-definition routines
-    scuffSolver(const char *Name=0);
+    scuffSolver(const char *Name=nullptr);
 
     //scuffSolver(const char *GDSIIFileName);
     ~scuffSolver();
@@ -127,9 +127,9 @@ public:
     void SetMediumMaterial(char *MediumMaterial);
     void SetMediumPermittivity(double Epsilon);
     void AddObject(const char *MeshFile, const char *Material,
-                   const char *Label=0, const char *Transformation=0);
-    void AddMetalTraceMesh(const char *MeshFile, const char *Label=0,
-                           const char *Transformation=0);
+                   const char *Label=nullptr, const char *Transformation=nullptr);
+    void AddMetalTraceMesh(const char *MeshFile, const char *Label=nullptr,
+                           const char *Transformation=nullptr);
     void SetSubstratePermittivity(cdouble Epsilon);
     void SetSubstrateThickness(double h);
     void AddGroundPlane(double zGP);
@@ -160,31 +160,31 @@ public:
     void PlotGeometry(const char *PPFormat, ...);
     void PlotGeometry();
 
-    void PlotSurfaceCurrents(const char *FileBase=0);
+    void PlotSurfaceCurrents(const char *FileBase=nullptr);
 
     // high-level post-processing
-    dVec GetPFT(char *SurfaceLabel, char *Method=0);
-    HMatrix *GetPFTMatrix(char *Method=0);
-    void ProcessEPFile(char *EPFile, char *OutFileName=0);
+    dVec GetPFT(char *SurfaceLabel, char *Method=nullptr);
+    HMatrix *GetPFTMatrix(char *Method=nullptr);
+    void ProcessEPFile(char *EPFile, char *OutFileName=nullptr);
     HMatrix *PlotRFFields();
     HVector *PlotRFFields(dVec X0, dVec L1, dVec L2, iVec NVec, char *OutFileBase);
-    HMatrix *ProcessFVMesh(char *FVMesh, char *FVMeshTransFile, char *OutFileBase=0);
-    HMatrix *GetZMatrix(HMatrix *ZMatrix=0, bool AllTerms=false);
+    HMatrix *ProcessFVMesh(char *FVMesh, char *FVMeshTransFile, char *OutFileBase=nullptr);
+    HMatrix *GetZMatrix(HMatrix *ZMatrix=nullptr, bool AllTerms=false);
     HMatrix *GetFullZMatrix();
 
     // utility routines for converting Z <--> S parameters
-    HMatrix *Z2S(HMatrix *Z, HMatrix *S=0, double ZCharacteristic=50.0);
-    HMatrix *S2Z(HMatrix *S, HMatrix *Z=0, double ZCharacteristic=50.0);
+    HMatrix *Z2S(HMatrix *Z, HMatrix *S=nullptr, double ZCharacteristic=50.0);
+    HMatrix *S2Z(HMatrix *S, HMatrix *Z=nullptr, double ZCharacteristic=50.0);
 
     // low-level post-processing
-    HMatrix *GetRFFields(HMatrix *XMatrix, HMatrix *PFMatrix=0);
+    HMatrix *GetRFFields(HMatrix *XMatrix, HMatrix *PFMatrix=nullptr);
     void GetRFFields(double X[3], cdouble PF[NPFC]);
     //std::vector< std::complex<double> > GetFields(dVec X, const char *WhichFields=0);
-    zVec GetFields(dVec X, const char *WhichFields=0);
+    zVec GetFields(dVec X, const char *WhichFields=nullptr);
 
     // alternative implementation of GetFields that uses RPF ("reduced potential/field") matrices
     HMatrix *GetRFFieldsViaRPFMatrices(HMatrix *XMatrix);
-    HMatrix *GetPanelSourceDensities(HMatrix *PSDMatrix=0);
+    HMatrix *GetPanelSourceDensities(HMatrix *PSDMatrix=nullptr);
 
 // private:
 
@@ -263,11 +263,11 @@ RWGPortList *ReadGDSIIPorts(RWGGeometry *G, const char *GDSIIFileName, iVec Laye
 int Get1BFMOIFields(RWGGeometry *G, int ns, int ne,
                     cdouble Omega, double *XDest, cdouble *PFVector,
                     int Order=-1, bool Subtract=true, 
-                    cdouble *SingularTerms=0);
+                    cdouble *SingularTerms=nullptr);
 
 int GetMOIMatrixElement(RWGGeometry *G, int nsa, int nea, int nsb, int neb,
                         cdouble Omega, cdouble *ME,
-                        int Order=-1, bool Subtract=true, cdouble *Terms=0);
+                        int Order=-1, bool Subtract=true, cdouble *Terms=nullptr);
 
 void AssembleMOIMatrixBlock(RWGGeometry *G, int nsa, int nsb,
                             cdouble Omega, HMatrix *Block, int OffsetA=0, int OffsetB=0);

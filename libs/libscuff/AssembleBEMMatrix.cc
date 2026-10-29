@@ -82,14 +82,14 @@ void StampInNeighborBlock(HMatrix *B, HMatrix **GradB,
   cdouble BPF=exp( II*(kBloch[0]*L[0] + kBloch[1]*L[1]) );
 
   BList[0] = B;
-  BList[1] = GradB ? GradB[0] : 0;
-  BList[2] = GradB ? GradB[1] : 0;
-  BList[3] = GradB ? GradB[2] : 0;
+  BList[1] = GradB ? GradB[0] : nullptr;
+  BList[2] = GradB ? GradB[1] : nullptr;
+  BList[3] = GradB ? GradB[2] : nullptr;
 
   MList[0] = M;
-  MList[1] = GradM ? GradM[0] : 0;
-  MList[2] = GradM ? GradM[1] : 0;
-  MList[3] = GradM ? GradM[2] : 0;
+  MList[1] = GradM ? GradM[0] : nullptr;
+  MList[2] = GradM ? GradM[1] : nullptr;
+  MList[3] = GradM ? GradM[2] : nullptr;
   
   for(int n=0; n<4; n++)
    { 
@@ -124,7 +124,7 @@ bool TBlockCacheOp(int Op, RWGGeometry *G, int ns,
                    HMatrix *M, int RowOffset, int ColOffset)
 {
   char *Dir = getenv("SCUFF_TBLOCK_PATH");
-  if (Dir==0 && Op==TBCOP_READ)
+  if (Dir==nullptr && Op==TBCOP_READ)
    Dir = getenv("SCUFF_TBLOCK_READPATH");
   if (!Dir) return false;
 
@@ -171,26 +171,26 @@ bool TBlockCacheOp(int Op, RWGGeometry *G, int ns,
   /* M, then we will need to allocate an HMatrix for just that   */
   /* block, but we hold off on doing that until necessary        */
   /***************************************************************/
-  HMatrix *B=0;
+  HMatrix *B=nullptr;
   bool OwnsB=false;
   if ( RowOffset==0 && ColOffset==0 && (M->NR==NBF) && (M->NC==NBF) )
    B=M;
 
   bool Success=false;
-  FILE *f=0;
+  FILE *f=nullptr;
   if (Op==TBCOP_READ)	
    {
      Log("Attempting to read T-block (%s,%s) from file %s...",FileBase,z2s(Omega),FileName);
      struct stat st;
      int Status=stat(FileName, &st);
      f=fopen(FileName,"r");
-     if (Status!=0 || f==0)
+     if (Status!=0 || f==nullptr)
       Log("...could not access file");
      else if (st.st_size!=DataSize)
       Log("...file had incorrect size %lu (should be %lu)",st.st_size,DataSize);
      else 
       { 
-        if (B==0)
+        if (B==nullptr)
          { OwnsB=true;
            B=new HMatrix(NBF,NBF,M->RealComplex);
            if (B->ErrMsg)
@@ -217,7 +217,7 @@ bool TBlockCacheOp(int Op, RWGGeometry *G, int ns,
   else //(Op==TBCOP_WRITE)
    { 
      Log("Attempting to write T-block (%s,%s) to file %s...",FileBase,z2s(Omega),FileName);
-     if (B==0)
+     if (B==nullptr)
       { OwnsB=true;
         B=new HMatrix(NBF,NBF,M->RealComplex);
         if (B->ErrMsg)
@@ -247,7 +247,7 @@ bool TBlockCacheOp(int Op, RWGGeometry *G, int ns,
 /***************************************************************/
 /* KBIMBCache = 'kBloch-independent matrix-block cache.'       */
 /***************************************************************/
-typedef struct KBMIMBCache
+using KBIMBCache = struct KBMIMBCache
  {
    cdouble Omega;
    int NumMatrices;
@@ -255,14 +255,14 @@ typedef struct KBMIMBCache
    void *Storage;
    HMatrix *B[9], *dBdZ[9];
 
- } KBIMBCache;
+ };
 
 void *RWGGeometry::CreateABMBAccelerator(int nsa, int nsb,
                                          bool PureImagFreq,
                                          bool NeedZDerivative)
 {
-  if (LBasis==0)
-   return 0;
+  if (LBasis==nullptr)
+   return nullptr;
 
   /*--------------------------------------------------------------*/
   /*- gather some information about the problem ------------------*/
@@ -288,9 +288,9 @@ void *RWGGeometry::CreateABMBAccelerator(int nsa, int nsb,
   Log("Trying to allocate accelerator for (%i,%i) matrix-block assembly...",nsa,nsb);
   int MatricesNeeded = NeedZDerivative ? 2*NumMatrices : NumMatrices;
   void *Storage = malloc( MatricesNeeded * MatrixSize );
-  if (Storage==0) 
+  if (Storage==nullptr) 
    { Log("...failed! not enough memory.");
-     return 0;
+     return nullptr;
    };
   Log("...success!");
 
@@ -319,7 +319,7 @@ void *RWGGeometry::CreateABMBAccelerator(int nsa, int nsb,
 
 void RWGGeometry::DestroyABMBAccelerator(void *pCache)
 {
-  if (pCache==0) return;
+  if (pCache==nullptr) return;
 
   KBIMBCache *Cache    = (KBIMBCache *)pCache;
   int NumMatrices      = Cache->NumMatrices;
@@ -358,7 +358,7 @@ void RWGGeometry::AssembleBEMMatrixBlock(int nsa, int nsb,
    ErrExit("%s:%i: TransposeAccelerator not implemented",__FILE__,__LINE__);
 
   if (    nsa==nsb
-       && GradM==0
+       && GradM==nullptr
        && TBlockCacheOp(TBCOP_READ, this, nsa, Omega, kBloch, M, RowOffset, ColOffset)
      ) return;
 
@@ -368,7 +368,7 @@ void RWGGeometry::AssembleBEMMatrixBlock(int nsa, int nsb,
   /***************************************************************/
   /* handle the compact-object case first since it is so simple  */
   /***************************************************************/
-  if (LBasis==0)
+  if (LBasis==nullptr)
    {  
      GetSSIArgStruct GetSSIArgs, *Args=&GetSSIArgs;
      InitGetSSIArgs(Args);
@@ -403,7 +403,7 @@ void RWGGeometry::AssembleBEMMatrixBlock(int nsa, int nsb,
    ErrExit("x,y derivatives of BEM matrix not supported for periodic geometries");
 
   KBIMBCache *Cache = (KBIMBCache *)Accelerator;
-  bool HaveCache = (Cache!=0);
+  bool HaveCache = (Cache!=nullptr);
   bool HaveCleanCache = HaveCache && EqualFloat(Cache->Omega, Omega);
   if (HaveCache) Cache->Omega=Omega;
 
@@ -441,8 +441,8 @@ void RWGGeometry::AssembleBEMMatrixBlock(int nsa, int nsb,
   Args->Sa           = Surfaces[nsa];
   Args->Sb           = Surfaces[nsb];
   Args->Omega        = Omega;
-  Args->GBA1         = 0;
-  Args->GBA2         = 0;
+  Args->GBA1         = nullptr;
+  Args->GBA2         = nullptr;
   Args->Accumulate   = false;
   Args->Displacement = L;
 
@@ -450,8 +450,8 @@ void RWGGeometry::AssembleBEMMatrixBlock(int nsa, int nsb,
   /*- If the caller didn't provide a cache, we need temporary     */
   /*- storage for the kBloch-independent matrix blocks.           */
   /*--------------------------------------------------------------*/
-  HMatrix *GradBBuffer[3]={0, 0, 0};
-  Args->GradB = (GradM && GradM[2]) ? GradBBuffer : 0;
+  HMatrix *GradBBuffer[3]={nullptr, nullptr, nullptr};
+  Args->GradB = (GradM && GradM[2]) ? GradBBuffer : nullptr;
   if (!HaveCache)
    { 
      Args->B = new HMatrix(NBFA, NBFB, LHM_COMPLEX);
@@ -525,7 +525,7 @@ done:
   /***************************************************************/
   if (LogLevel>=SCUFF_VERBOSELOGGING)
    Log(" Step 2: Contributions of outer grid cells...");
-  Args->Displacement = 0;
+  Args->Displacement = nullptr;
   Args->Symmetric    = false;
   Args->Accumulate   = true;
   Args->B            = M;
@@ -536,7 +536,7 @@ done:
   Args->OmitRegion2  = (nr2==-1);
 
   Args->GBA1=CreateRegionGBA(nr1, Omega, kBloch, nsa, nsb);
-  if (Args->GBA1==0)
+  if (Args->GBA1==nullptr)
    { if (LogLevel>=SCUFF_VERBOSELOGGING)
       Log("Skipping interpolation table for region %i",nr1);
      Args->OmitRegion1  = true;
@@ -544,14 +544,14 @@ done:
 
   if ( !(Args->OmitRegion2) )
    { Args->GBA2=CreateRegionGBA(nr2, Omega, kBloch, nsa, nsb);
-     if (Args->GBA2==0)
+     if (Args->GBA2==nullptr)
       { if (LogLevel>=SCUFF_VERBOSELOGGING)
          Log("Skipping interpolation table for region %i",nr2);
         Args->OmitRegion2  = true;
       }
    }
   else
-   Args->GBA2=0;
+   Args->GBA2=nullptr;
 
   if ( Args->OmitRegion1==false || Args->OmitRegion2==false )
    GetSurfaceSurfaceInteractions(Args);
@@ -689,17 +689,17 @@ HMatrix *RWGGeometry::AssembleBEMMatrix(cdouble Omega, double *kBloch, HMatrix *
   /***************************************************************/
   /***************************************************************/
   /***************************************************************/
-  if ( LBasis==0 && kBloch!=0 && (kBloch[0]!=0.0 || kBloch[1]!=0.0) )
+  if ( LBasis==nullptr && kBloch!=nullptr && (kBloch[0]!=0.0 || kBloch[1]!=0.0) )
    ErrExit("%s:%i: Bloch wavevector is undefined for compact geometries",
            __FILE__,__LINE__);
-  if ( LBasis!=0 && kBloch==0 )
+  if ( LBasis!=nullptr && kBloch==nullptr )
    ErrExit("%s:%i: Bloch wavevector must be specified for PBC geometries",
            __FILE__,__LINE__);
 
   /***************************************************************/
   /***************************************************************/
   /***************************************************************/
-  if (M==NULL)
+  if (M==nullptr)
    M=AllocateBEMMatrix();
   else if ( M->NR != TotalBFs || M->NC != TotalBFs )
    { Warn("wrong-size matrix passed to AssembleBEMMatrix; reallocating...");
@@ -738,7 +738,7 @@ HMatrix *RWGGeometry::AssembleBEMMatrix(cdouble Omega, double *kBloch, HMatrix *
          M->InsertBlock(M, ThisOffset, ThisOffset, Dim, Dim, MateOffset, MateOffset);
        }
       else
-       AssembleBEMMatrixBlock(ns, nsp, Omega, kBloch, M, 0,
+       AssembleBEMMatrixBlock(ns, nsp, Omega, kBloch, M, nullptr,
                               BFIndexOffset[ns], BFIndexOffset[nsp]);
     }
 
@@ -760,7 +760,7 @@ HMatrix *RWGGeometry::AssembleBEMMatrix(cdouble Omega, double *kBloch, HMatrix *
    };
 
   if (UseHRWGFunctions && NumMMJs>0 )
-   ApplyMMJTransformation(M, 0);
+   ApplyMMJTransformation(M, nullptr);
 
   return M;
 
@@ -771,7 +771,7 @@ HMatrix *RWGGeometry::AssembleBEMMatrix(cdouble Omega, double *kBloch, HMatrix *
 /***************************************************************/
 HMatrix *RWGGeometry::AssembleBEMMatrix(cdouble Omega, HMatrix *M)
 {
-  return AssembleBEMMatrix(Omega, 0, M); 
+  return AssembleBEMMatrix(Omega, nullptr, M); 
 }
 
 /***************************************************************/

@@ -19,7 +19,7 @@
 
 namespace {
 
-typedef std::complex<double> zdouble;
+using zdouble = std::complex<double>;
 
 int NumChecks = 0;
 int NumFailures = 0;

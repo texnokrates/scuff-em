@@ -263,7 +263,7 @@ bool ProcessSpecialSCUFFGeoFileName(const char *GeoFileName)
 void RWGGeometry::DetectMultiMaterialJunctions()
 {
   NumMMJs=0;
-  MultiMaterialJunctions=0;
+  MultiMaterialJunctions=nullptr;
 
   // loop over all edges on all surfaces
   for(int ns=0; ns<NumSurfaces; ns++)
@@ -363,22 +363,22 @@ RWGGeometry::RWGGeometry(const char *pGeoFileName, int pLogLevel)
   LogLevel=pLogLevel;
   NumSurfaces=TotalBFs=TotalEdges=TotalPanels=0;
   GeoFileName=strdupEC(pGeoFileName);
-  Surfaces=0;
+  Surfaces=nullptr;
   AllSurfacesClosed=1;
-  Substrate=0;
+  Substrate=nullptr;
 
   /***************************************************************/
   /* initially assume compact (non-periodic) geometry            */
   /***************************************************************/
   LDim=0;
-  LBasis=RLBasis=0;
+  LBasis=RLBasis=nullptr;
   LVolume=RLVolume=0.0;
   for(int nd=0; nd<MAXLDIM; nd++)
-   { NumStraddlers[nd]=NULL;
-     RegionIsExtended[nd]=NULL;
+   { NumStraddlers[nd]=nullptr;
+     RegionIsExtended[nd]=nullptr;
    }
   tolVecClose=0.0; // to be updated once mesh is read in
-  TBlockCacheNameAddendum=0;
+  TBlockCacheNameAddendum=nullptr;
 
   // we always start with a single Region, for the exterior,
   // taken to be vacuum by default
@@ -494,7 +494,7 @@ RWGGeometry::RWGGeometry(const char *pGeoFileName, int pLogLevel)
       }
      else if ( !StrCaseCmp(Tokens[0],"OBJECT") || !StrCaseCmp(Tokens[0],"SURFACE") )
       { 
-        RWGSurface *S=0;
+        RWGSurface *S=nullptr;
         if ( nTokens==2 )
          S=new RWGSurface(f,Tokens[1],&LineNum,Tokens[0]);
         else if (nTokens!=1)
@@ -792,7 +792,7 @@ RWGGeometry::RWGGeometry(const char *pGeoFileName, int pLogLevel)
   /***************************************************************/
   /***************************************************************/
   NumMMJs=0;
-  MultiMaterialJunctions=0;
+  MultiMaterialJunctions=nullptr;
   if (UseHRWGFunctions)
    DetectMultiMaterialJunctions();
 
@@ -813,6 +813,10 @@ RWGGeometry::RWGGeometry(const char *pGeoFileName, int pLogLevel)
 /***************************************************************/
 RWGGeometry::~RWGGeometry()
 {
+  /* The free/delete calls below are the ownership implementation for the
+     members allocated by the constructor; containerization is part of the
+     containerization backlog (G3.6). */
+  // NOLINTBEGIN(cppcoreguidelines-no-malloc)
   for(int ns=0; ns<NumSurfaces; ns++)
    delete Surfaces[ns];
 
@@ -851,7 +855,7 @@ RWGGeometry::~RWGGeometry()
      free(MultiMaterialJunctions[nMMJ]->EdgeIndices);
      delete MultiMaterialJunctions[nMMJ];
    }
-  free(MultiMaterialJunctions);
+  free((void *)MultiMaterialJunctions);
 
   /* equivalent-edge-pair tables, created lazily during matrix assembly */
   for(size_t nsa=0; nsa<EEPTables.size(); nsa++)
@@ -867,6 +871,7 @@ RWGGeometry::~RWGGeometry()
   free(FIBBICaches);
   free(Mate);
 
+  // NOLINTEND(cppcoreguidelines-no-malloc)
 }
 
 /***************************************************************/
@@ -879,7 +884,7 @@ RWGGeometry::~RWGGeometry()
 /***************************************************************/
 int RWGGeometry::GetRegionByLabel(const char *Label)
 {
-  if (Label==0)
+  if (Label==nullptr)
    return -1;
   
   for(int nr=0; nr<NumRegions; nr++)
@@ -899,15 +904,15 @@ RWGSurface *RWGGeometry::GetSurfaceByLabel(const char *Label, int *pns)
 {
   if (pns) *pns=-1;
  
-  if (Label==0)
-   return NULL;
+  if (Label==nullptr)
+   return nullptr;
   
   for(int ns=0; ns<NumSurfaces; ns++)
    if ( !StrCaseCmp(Label, Surfaces[ns]->Label) ) 
     { if (pns) *pns = ns;
       return Surfaces[ns];
     }
-  return NULL;
+  return nullptr;
 }
 
 /***************************************************************/
@@ -924,7 +929,7 @@ void RWGGeometry::Transform(GTComplex *GTC)
   for(unsigned ns=0; ns<GTC->GTs.size(); ns++)
    { 
      // find the surface corresponding to the label for this transformation
-     RWGSurface *S = 0;
+     RWGSurface *S = nullptr;
      char *Label = GTC->SurfaceLabels[ns];
      if (!Label)
       Warn("no OBJECT/SURFACE label specified for GTransformation %s (ignoring)",GTC->Tag);
@@ -969,7 +974,7 @@ char *RWGGeometry::CheckGTCList(GTCList GTCs)
        return vstrdup("unknown OBJECT/SURFACE %s specified for GTransformation %s",Label,GTCs[nt]->Tag);
     }
 
-  return 0;
+  return nullptr;
 }
 
 /***************************************************************/
@@ -987,7 +992,7 @@ int RWGGeometry::GetDimension()
 void RWGGeometry::GetKNCoefficients(HVector *KN, int ns, int ne,
                                     cdouble *pKAlpha, cdouble *pNAlpha)
 {
-  if (KN==0)
+  if (KN==nullptr)
    { *pKAlpha=0.0;
      if (pNAlpha) *pNAlpha=0.0;
      return;
@@ -1075,7 +1080,7 @@ void RWGGeometry::SetLogLevel(int NewLogLevel)
 
 void RWGGeometry::SetLogLevel(const char *Level)
 {
-  if (Level==0) return;
+  if (Level==nullptr) return;
 
   if ( !strcasecmp(Level, "NONE") ) 
    LogLevel=SCUFF_NOLOGGING;
@@ -1108,13 +1113,13 @@ void RWGGeometry::SetEpsMu(const char *Label, cdouble Eps, cdouble Mu)
 } 
 
 void RWGGeometry::SetEpsMu(cdouble Eps, cdouble Mu)
-{ SetEpsMu(0, Eps, Mu); }
+{ SetEpsMu(nullptr, Eps, Mu); }
 
 void RWGGeometry::SetEps(const char *Label, cdouble Eps)
 { SetEpsMu(Label, Eps, 1.0); }
 
 void RWGGeometry::SetEps(cdouble Eps)
-{ SetEpsMu(0, Eps, 1.0); }
+{ SetEpsMu(nullptr, Eps, 1.0); }
 
 /***************************************************************/
 /* update the internally stored cache of epsilon and mu values */

@@ -46,7 +46,7 @@ void WriteData(SLDData *Data, cdouble Omega, double *kBloch,
 
   bool TwoPointDGF = (XMatrix->NC==6);
 
-  const char *Extension=0;
+  const char *Extension=nullptr;
   if (FileType==FILETYPE_BYK)
    Extension = "byOmegakBloch";
   else
@@ -81,7 +81,7 @@ void WriteData(SLDData *Data, cdouble Omega, double *kBloch,
      fprintf(f,"%e %e ",real(Omega),imag(Omega));
      if (HaveGTCList)
       fprintf(f,"%s ",Data->GTCs[WhichTransform]->Tag);
-     if (FileType==FILETYPE_BYK && LDim>0 && kBloch!=0)
+     if (FileType==FILETYPE_BYK && LDim>0 && kBloch!=nullptr)
       for(int nd=0; nd<LDim; nd++)
        fprintf(f,"%e ",kBloch[nd]);
 
@@ -175,12 +175,12 @@ void GetLDOS(void *pData, cdouble Omega, double *kBloch,
             int RowOffset = G->BFIndexOffset[ns];
             int ColOffset = G->BFIndexOffset[nsp];
             G->AssembleBEMMatrixBlock(ns, nsp, Omega, kBloch,
-                                      M, 0, RowOffset, ColOffset,
+                                      M, nullptr, RowOffset, ColOffset,
                                       ABMBCache[nb], false);
 
             if (nsp>ns)
              G->AssembleBEMMatrixBlock(nsp, ns, Omega, kBloch,
-                                       M, 0, ColOffset, RowOffset,
+                                       M, nullptr, ColOffset, RowOffset,
                                        ABMBCache[nb], true);
           };
       };
@@ -275,9 +275,9 @@ void GetLDOS(void *pData, cdouble Omega, double *kBloch,
     /*  or the tput to kBloch-resolved data file for PBC geometries*/
     /***************************************************************/
     if (LDim>0)
-     WriteData(Data, Omega, kBloch, FILETYPE_BYK, nt, nm, Result, 0);
+     WriteData(Data, Omega, kBloch, FILETYPE_BYK, nt, nm, Result, nullptr);
     else
-     WriteData(Data, Omega, 0,      FILETYPE_LDOS, nt, nm, Result, 0);
+     WriteData(Data, Omega, nullptr,      FILETYPE_LDOS, nt, nm, Result, nullptr);
 
    }; // for(int nm=0; nm<NumXMatrices; nm++)
 

@@ -45,15 +45,15 @@ IncField::IncField()
   Omega=-1.0;
 
   // incident fields are non-periodic by default
-  LBasis=RLBasis=0;
+  LBasis=RLBasis=nullptr;
   LVolume=RLVolume=0;
   kBloch[0]=kBloch[1]=kBloch[2]=0.0;
 
   // field sources lie in the exterior region by default
-  RegionLabel = NULL;
+  RegionLabel = nullptr;
   RegionIndex = 0;
 
-  Next = NULL;
+  Next = nullptr;
 }
 
 /***************************************************************/
@@ -119,7 +119,7 @@ void IncField::SetFrequencyAndEpsMu(cdouble pOmega,
 /***************************************************************/
 void IncField::SetLattice(HMatrix *NewLBasis, bool Traverse)
 {
-  if (LBasis==0 || LBasis->NR!=3 || LBasis->NC != NewLBasis->NC)
+  if (LBasis==nullptr || LBasis->NR!=3 || LBasis->NC != NewLBasis->NC)
    { if (LBasis) delete LBasis;
      LBasis = new HMatrix(*NewLBasis);
    };
@@ -139,7 +139,7 @@ void IncField::SetLattice(HMatrix *NewLBasis, bool Traverse)
 /***************************************************************/
 void IncField::SetkBloch(double *NewkBloch, bool Traverse)
 { 
-  if ( LBasis==0 )
+  if ( LBasis==nullptr )
    ErrExit("%s:%i: attempt to set kBloch in a non-periodic IncField",
            __FILE__,__LINE__);
 
@@ -158,7 +158,7 @@ void IncField::SetkBloch(double *NewkBloch, bool Traverse)
 void IncField::SetRegionLabel(const char *Label) 
 {
   if (RegionLabel) free(RegionLabel);
-  RegionLabel = Label ? strdupEC(Label) : 0;
+  RegionLabel = Label ? strdupEC(Label) : nullptr;
   if (!Label) RegionIndex = 0; // exterior medium is always index == 0
 }
 

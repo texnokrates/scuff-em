@@ -153,7 +153,7 @@ int HMatrix::LUFactorize()
 { 
   int info;
 
-  if (ipiv==0)
+  if (ipiv==nullptr)
    ipiv=(int *)mallocEC(NR*sizeof(int));
 
   if ( RealComplex==LHM_REAL && StorageType==LHM_NORMAL )
@@ -184,7 +184,7 @@ int HMatrix::LUSolve(HVector *X)
   if ( NR!=NC || NR!=X->N )
    ErrExit("dimension mismatch in LUSolve");
 
-  if (ipiv==0)  
+  if (ipiv==nullptr)  
    ErrExit("LUFactorize() must be called before LUSolve()");
 
   if ( RealComplex==LHM_REAL && StorageType==LHM_NORMAL )
@@ -218,7 +218,7 @@ int HMatrix::LUSolve(HMatrix *X, char Trans, int nrhs)
    ErrExit("dimension mismatch in LUSolve");
   if ( nrhs > X->NC )
    ErrExit("too many RHSs requested in LUSolve");
-  if (ipiv==0)  
+  if (ipiv==nullptr)  
    ErrExit("LUFactorize() must be called before LUSolve()");
   if ( Trans!='N' && StorageType!=LHM_NORMAL )
    ErrExit("transposed LU-solves not available for packed matrices");
@@ -264,7 +264,7 @@ int HMatrix::LUInvert()
   if ( NR!=NC )
    ErrExit("dimension mismatch in LUSolve");
 
-  if (ipiv==0)  
+  if (ipiv==nullptr)  
    ErrExit("LUFactorize() must be called before LUInvert()");
 
   int MinusOne=-1;
@@ -430,20 +430,20 @@ int HMatrix::CholSolve(HMatrix *X) { return CholSolve(X,X->NC); }
 /***************************************************************/
 int HMatrix::QR(HMatrix **pQ, HMatrix **pR)
 {
-  if (pQ==0 || pR==0)
+  if (pQ==nullptr || pR==nullptr)
    ErrExit("HMatrix::QR called with null pointers");
 
   HMatrix *Q = *pQ; 
   HMatrix *R = *pR; 
 
   // make sure Q and R are the right sizes, namely Q is NRxNR and R is NRxNC
-  if ( Q==0 || Q->NR!=NR || Q->NC!=NR )
-   { if (Q!=0) Warn("invalid Q matrix on entry to HMatrix::QR; reallocating...");
+  if ( Q==nullptr || Q->NR!=NR || Q->NC!=NR )
+   { if (Q!=nullptr) Warn("invalid Q matrix on entry to HMatrix::QR; reallocating...");
      Q=new HMatrix(NR, NR, RealComplex);
    };
 
-  if ( R==0 || R->NR!=NR || R->NC!=NC )
-   { if (R!=0) Warn("invalid Q matrix on entry to HMatrix::QR; reallocating...");
+  if ( R==nullptr || R->NR!=NR || R->NC!=NC )
+   { if (R!=nullptr) Warn("invalid Q matrix on entry to HMatrix::QR; reallocating...");
      R=new HMatrix(NR, NC, RealComplex);
    };
 
@@ -544,9 +544,9 @@ HVector *HMatrix::Eig(HVector *Lambda, HMatrix *U)
   if ( Lambda && ( (Lambda->N!=NR) || (Lambda->RealComplex!=LHM_REAL)) )
    { Warn("Incorrect Lambda vector passed to Eig (reallocating)");
      delete Lambda;
-     Lambda=0;
+     Lambda=nullptr;
    };
-  if (Lambda==0)
+  if (Lambda==nullptr)
    Lambda=new HVector(NR,LHM_REAL);
 
   /***************************************************************/
@@ -561,7 +561,7 @@ HVector *HMatrix::Eig(HVector *Lambda, HMatrix *U)
   /***************************************************************/
   /***************************************************************/
   /***************************************************************/
-  const char *jobz  = (U==0) ? "N" : "V";
+  const char *jobz  = (U==nullptr) ? "N" : "V";
   int idum1, idum2, idum3, lworkOptimal, liworkOptimal, info, MinusOne=-1;
   double ddum1, ddum2, AbsTol=0.0, dlworkOptimal;
 
@@ -574,7 +574,7 @@ HVector *HMatrix::Eig(HVector *Lambda, HMatrix *U)
      /*- stored workspaces as necessary                              */
      /*--------------------------------------------------------------*/
      dsyevr_(jobz, "A", "U", &NR, DM, &NR, &ddum1, &ddum2, &idum1, &idum2, &AbsTol, &idum3,
-             Lambda->DV, U ? U->DM : 0, &NR, isuppz, &dlworkOptimal, &MinusOne,
+             Lambda->DV, U ? U->DM : nullptr, &NR, isuppz, &dlworkOptimal, &MinusOne,
              &liworkOptimal, &MinusOne, &info);
      lworkOptimal = (int)dlworkOptimal;
      if (lworkOptimal > lwork)
@@ -590,7 +590,7 @@ HVector *HMatrix::Eig(HVector *Lambda, HMatrix *U)
      /*--------------------------------------------------------------*/
      /*--------------------------------------------------------------*/
      dsyevr_(jobz, "A", "U", &NR, DM, &NR, &ddum1, &ddum2, &idum1, &idum2, &AbsTol, &idum3,
-             Lambda->DV, U ? U->DM : 0, &NR, isuppz, (double *)work, &lwork,
+             Lambda->DV, U ? U->DM : nullptr, &NR, isuppz, (double *)work, &lwork,
              iwork, &liwork, &info);
    }
   else if ( RealComplex==LHM_REAL && StorageType==LHM_SYMMETRIC )
@@ -606,7 +606,7 @@ HVector *HMatrix::Eig(HVector *Lambda, HMatrix *U)
      cdouble zlworkOptimal;
      double dlrworkOptimal;
      zheevr_(jobz, "A", "U", &NR, ZM, &NR, &ddum1, &ddum2, &idum1, &idum2,
-             &AbsTol, &idum3, Lambda->DV, U ? U->ZM : 0, &NR, isuppz,
+             &AbsTol, &idum3, Lambda->DV, U ? U->ZM : nullptr, &NR, isuppz,
              &zlworkOptimal, &MinusOne, &dlrworkOptimal, &MinusOne,
              &liworkOptimal, &MinusOne, &info);
 
@@ -630,7 +630,7 @@ HVector *HMatrix::Eig(HVector *Lambda, HMatrix *U)
      /*--------------------------------------------------------------*/
      /*--------------------------------------------------------------*/
      zheevr_(jobz, "A", "U", &NR, ZM, &NR, &ddum1, &ddum2, &idum1, &idum2, &AbsTol, &idum3,
-             Lambda->DV, U ? U->ZM : 0, &NR, isuppz, (cdouble *)work, &workSize,
+             Lambda->DV, U ? U->ZM : nullptr, &NR, isuppz, (cdouble *)work, &workSize,
              (double *)rwork, &rworkSize, iwork, &liwork, &info);
 
    }
@@ -663,9 +663,9 @@ HVector *HMatrix::NSEig(HVector *Lambda, HMatrix *U)
   if ( Lambda && ( (Lambda->N!=NR) || (Lambda->RealComplex!=RealComplex)) )
    { Warn("Incorrect Lambda vector passed to NSEig (reallocating)");
      delete Lambda;
-     Lambda=0;
+     Lambda=nullptr;
    }
-  if (Lambda==0)
+  if (Lambda==nullptr)
    Lambda=new HVector(NR,LHM_COMPLEX);
 
   /***************************************************************/
@@ -681,7 +681,7 @@ HVector *HMatrix::NSEig(HVector *Lambda, HMatrix *U)
   /***************************************************************/
   /***************************************************************/
   const char *jobvl = "N";
-  const char *jobvr = ((U==0) ? "N" : "V");
+  const char *jobvr = ((U==nullptr) ? "N" : "V");
   int lworkOptimal, info, MinusOne=-1;
 
   if (RealComplex==LHM_REAL)
@@ -693,8 +693,8 @@ HVector *HMatrix::NSEig(HVector *Lambda, HMatrix *U)
      double *wr = new double[NR];
      double *wi = new double[NR];
      double dlworkOptimal;
-     dgeev_(jobvl, jobvr, &NR, DM, &NR, wr, wi, 0, &NR, 
-            U ? U->DM : 0, &NR, &dlworkOptimal, &MinusOne, &info);
+     dgeev_(jobvl, jobvr, &NR, DM, &NR, wr, wi, nullptr, &NR, 
+            U ? U->DM : nullptr, &NR, &dlworkOptimal, &MinusOne, &info);
 
      lworkOptimal = (int)dlworkOptimal;
      if (lworkOptimal > lwork)
@@ -705,8 +705,8 @@ HVector *HMatrix::NSEig(HVector *Lambda, HMatrix *U)
      /*--------------------------------------------------------------*/
      /*--------------------------------------------------------------*/
      /*--------------------------------------------------------------*/
-     dgeev_(jobvl, jobvr, &NR, DM, &NR, wr, wi, 0, &NR, 
-            U ? U->DM : 0, &NR, (double *)work, &lwork, &info);
+     dgeev_(jobvl, jobvr, &NR, DM, &NR, wr, wi, nullptr, &NR, 
+            U ? U->DM : nullptr, &NR, (double *)work, &lwork, &info);
 
      /*--------------------------------------------------------------*/
      /*--------------------------------------------------------------*/
@@ -725,14 +725,14 @@ HVector *HMatrix::NSEig(HVector *Lambda, HMatrix *U)
      double *rwork = (double *)mallocEC(2*NR*sizeof(double));
 
      cdouble zlworkOptimal;
-     zgeev_(jobvl, jobvr, &NR, ZM, &NR, Lambda->ZV, 0, &NR, 
-            (U ? U->ZM : 0), &NR, 
+     zgeev_(jobvl, jobvr, &NR, ZM, &NR, Lambda->ZV, nullptr, &NR, 
+            (U ? U->ZM : nullptr), &NR, 
             &zlworkOptimal, &MinusOne, rwork, &info);
      lworkOptimal = 2*(int)(ceil(real(zlworkOptimal)));
      cdouble *zwork = (cdouble *)mallocEC(lworkOptimal * sizeof(cdouble));
 
-     zgeev_(jobvl, jobvr, &NR, ZM, &NR, Lambda->ZV, 0, &NR,
-            U ? U->ZM : 0, &NR, zwork, &lworkOptimal, rwork, &info);
+     zgeev_(jobvl, jobvr, &NR, ZM, &NR, Lambda->ZV, nullptr, &NR,
+            U ? U->ZM : nullptr, &NR, zwork, &lworkOptimal, rwork, &info);
 
      Log("zgeev(%i): info=%i",NR,info);
      free(zwork);
@@ -771,13 +771,13 @@ HVector *HMatrix::SVD(HVector *Sigma, HMatrix *U, HMatrix *VT)
   if ( Sigma && ( (Sigma->N!=NRCMin) ) )
    { Warn("Incorrect Sigma vector passed to SVD (reallocating)");
      delete Sigma;
-     Sigma=0;
+     Sigma=nullptr;
    };
-  if (Sigma==0)
+  if (Sigma==nullptr)
    Sigma=new HVector(NRCMin,LHM_REAL);
   
   char jobu[2]="";
-  if ( U==0 ) 
+  if ( U==nullptr ) 
    jobu[0]='N';
   else if ( U->NR==NR && U->NC==NR     && U->RealComplex==RealComplex) 
    jobu[0]='A';
@@ -786,12 +786,12 @@ HVector *HMatrix::SVD(HVector *Sigma, HMatrix *U, HMatrix *VT)
   else 
    { Warn("Incorrect U matrix passed to SVD (omitting RSV calculation)");
      jobu[0]='N';
-     U=0;
+     U=nullptr;
    };
   int LDU = U ? U->NR : 0;
 
   char jobvt[2]="";
-  if ( VT==0 ) 
+  if ( VT==nullptr ) 
    jobvt[0]='N';
   else if ( VT->NR==NC && VT->NC==NC     && VT->RealComplex==RealComplex)
    jobvt[0]='A';
@@ -800,7 +800,7 @@ HVector *HMatrix::SVD(HVector *Sigma, HMatrix *U, HMatrix *VT)
   else 
    { Warn("Incorrect VT matrix passed to SVD (omitting LSV calculation)");
      jobvt[0]='N';
-     VT=0;
+     VT=nullptr;
    };
   int LDVT = VT ? VT->NR : 0;
 
@@ -816,7 +816,7 @@ HVector *HMatrix::SVD(HVector *Sigma, HMatrix *U, HMatrix *VT)
      /*--------------------------------------------------------------*/
      double dlworkOptimal;
      dgesvd_(jobu, jobvt, &NR, &NC, DM, &NR, Sigma->DV,
-             U ? U->DM : 0, &LDU, VT ? VT->DM : 0, &LDVT,
+             U ? U->DM : nullptr, &LDU, VT ? VT->DM : nullptr, &LDVT,
              &dlworkOptimal, &MinusOne, &info);
 
      lworkOptimal = (int)dlworkOptimal;
@@ -829,7 +829,7 @@ HVector *HMatrix::SVD(HVector *Sigma, HMatrix *U, HMatrix *VT)
      /*--------------------------------------------------------------*/
      /*--------------------------------------------------------------*/
      dgesvd_(jobu, jobvt, &NR, &NC, DM, &NR, Sigma->DV,
-             U ? U->DM : 0, &LDU, VT ? VT->DM : 0, &LDVT,
+             U ? U->DM : nullptr, &LDU, VT ? VT->DM : nullptr, &LDVT,
              (double *)work, &lwork, &info);
    }
   else // (RealComplex==LHM_COMPLEX)
@@ -841,7 +841,7 @@ HVector *HMatrix::SVD(HVector *Sigma, HMatrix *U, HMatrix *VT)
      double *rwork = new double[5*NRCMin];
      cdouble zlworkOptimal;
      zgesvd_(jobu, jobvt, &NR, &NC, ZM, &NR, Sigma->DV, 
-             U ? U->ZM : 0, &LDU, VT ? VT->ZM : 0, &LDVT, 
+             U ? U->ZM : nullptr, &LDU, VT ? VT->ZM : nullptr, &LDVT, 
              &zlworkOptimal, &MinusOne, rwork, &info);
 
      lworkOptimal = 2*(int)(real(zlworkOptimal));
@@ -854,7 +854,7 @@ HVector *HMatrix::SVD(HVector *Sigma, HMatrix *U, HMatrix *VT)
      /*--------------------------------------------------------------*/
      /*--------------------------------------------------------------*/
      zgesvd_(jobu, jobvt, &NR, &NC, ZM, &NR, Sigma->DV, 
-             U ? U->ZM : 0, &LDU, VT ? VT->ZM : 0, &LDVT,
+             U ? U->ZM : nullptr, &LDU, VT ? VT->ZM : nullptr, &LDVT,
              (cdouble *)work, &lwork, rwork, &info);
      delete[] rwork;
 
@@ -1000,7 +1000,7 @@ void HMatrix::Apply(HVector *X, HVector *Y, char TransChar)
   if ( StorageType!=LHM_NORMAL )
    ErrExit("%s:%i: HMatrix::Apply not yet implemented for packed matrices",
            __FILE__,__LINE__);
-  if ( X==0 || Y==0  )
+  if ( X==nullptr || Y==nullptr  )
    ErrExit("%s:%i: invalid operand in HMatrix::Apply",__FILE__,__LINE__);
   if ( (RealComplex!=X->RealComplex) || (RealComplex!=Y->RealComplex) )
    ErrExit("%s:%i: data type mismatch in HMatrix::Apply",__FILE__,__LINE__);

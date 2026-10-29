@@ -178,7 +178,7 @@ char *RWGSurface::ParseOBJECTSURFACESection(FILE *f, int *LineNum)
 	GTransformation *NewOTGT = new GTransformation(Tokens, NumTokens, &ErrMsg, &TokensConsumed);
         if (ErrMsg) return ErrMsg;
         if (TokensConsumed!=NumTokens) return strdupEC("junk at end of line");
-        if (OTGT==0)
+        if (OTGT==nullptr)
          OTGT=NewOTGT;
         else
          { OTGT->Transform(NewOTGT);
@@ -197,7 +197,7 @@ char *RWGSurface::ParseOBJECTSURFACESection(FILE *f, int *LineNum)
         if (SSLength>=1 && ZetaString[SSLength-1]=='\n') 
          ZetaString[SSLength-1]=0;
         SurfaceZeta=cevaluator_create(ZetaString);
-        if (SurfaceZeta==0) return vstrdup("invalid SURFACE_IMPEDANCE %s",ZetaString);
+        if (SurfaceZeta==nullptr) return vstrdup("invalid SURFACE_IMPEDANCE %s",ZetaString);
 
         /* these calls are required for thread safety, and they     */
         /* mandate that the w, x, y, z values be specified in that  */
@@ -209,7 +209,7 @@ char *RWGSurface::ParseOBJECTSURFACESection(FILE *f, int *LineNum)
         Log("Surface %s has surface impedance Zeta=%s.\n",Label,cevaluator_get_string(SurfaceZeta));
       }
      else if (   !StrCaseCmp(Tokens[0],"ENDOBJECT") || !StrCaseCmp(Tokens[0],"ENDSURFACE") )
-      return 0; // successfully parsed section in file
+      return nullptr; // successfully parsed section in file
      else
       return vstrdup("unknown keyword %s in %s section",Tokens[0],IsObject ? "OBJECT" : "SURFACE");
    }
@@ -235,11 +235,11 @@ char *ParseMeshFile(char *MeshFileName, int MeshTag, char **MeshFileDir,
   /*-     MESHPATH statements in .scuffgeo files or via the     */
   /*-     SCUFF_MESH_PATH environment variable                  */
   /*------------------------------------------------------------*/
-  char *Dir=0;
+  char *Dir=nullptr;
   FILE *MeshFile=fopenPath(getenv("SCUFF_MESH_PATH"),  MeshFileName, "r", &Dir);
   if (!MeshFile) return vstrdup("could not open file %s",MeshFileName);
   Log(" Opened mesh file %s%s%s",Dir ? Dir : "", Dir ? "/" : "", MeshFileName);
-  *MeshFileDir = Dir ? strdup(Dir) : 0;
+  *MeshFileDir = Dir ? strdup(Dir) : nullptr;
 
   /*------------------------------------------------------------*/
   /*- Switch off based on the file type to read the mesh file:  */
@@ -256,7 +256,7 @@ char *ParseMeshFile(char *MeshFileName, int MeshTag, char **MeshFileDir,
   else
    return vstrdup("file %s: unknown extension %s",MeshFileName,p);
 
-  return 0; // never get here
+  return nullptr; // never get here
 }
 
 /*--------------------------------------------------------------*/
@@ -273,20 +273,20 @@ char *ParseMeshFile(char *MeshFileName, int MeshTag, char **MeshFileDir,
 /*--------------------------------------------------------------*/
 RWGSurface::RWGSurface(FILE *f, const char *pLabel, int *LineNum, char *Keyword)
 { 
-  SurfaceZeta=0;
+  SurfaceZeta=nullptr;
   MeshTag=-1;
-  MeshFileName=MeshFileDir=0;
-  MaterialName=0;
-  RegionLabels[0]=RegionLabels[1]=0;
+  MeshFileName=MeshFileDir=nullptr;
+  MaterialName=nullptr;
+  RegionLabels[0]=RegionLabels[1]=nullptr;
   Label = strdupEC(pLabel);
-  OTGT=GT=0;
+  OTGT=GT=nullptr;
   IsPEC=true;
   IsObject=!StrCaseCmp(Keyword, "OBJECT");
 
   ErrMsg = ParseOBJECTSURFACESection(f, LineNum);
   if (ErrMsg) return;
 
-  if (MeshFileName==0)
+  if (MeshFileName==nullptr)
    { ErrMsg=vstrdup("%s section must include a MESHFILE specification",Keyword);
      return;
    }
@@ -299,7 +299,7 @@ RWGSurface::RWGSurface(FILE *f, const char *pLabel, int *LineNum, char *Keyword)
   // if we are an OBJECT and there was no MATERIAL specification,
   // or we are a SURFACE and there was no REGIONS specification, then
   // we consider ourselves to be a PEC surface in the exterior medium.
-  if ( RegionLabels[0]==0 )
+  if ( RegionLabels[0]==nullptr )
    { IsPEC=true;
      RegionLabels[0] = strdupEC("EXTERIOR");
      RegionLabels[1] = strdupEC("PEC");
@@ -316,13 +316,13 @@ RWGSurface::RWGSurface(FILE *f, const char *pLabel, int *LineNum, char *Keyword)
 RWGSurface::RWGSurface(const char *MeshFile, int pMeshTag)
 {
   MeshFileName=strdup(MeshFile);
-  MeshFileDir=0;
+  MeshFileDir=nullptr;
   MeshTag=pMeshTag;
   Label=strdup(MeshFile);
-  SurfaceZeta=0;
-  MaterialName=RegionLabels[0]=RegionLabels[1]=0;
+  SurfaceZeta=nullptr;
+  MaterialName=RegionLabels[0]=RegionLabels[1]=nullptr;
   IsPEC=true;
-  OTGT=0;
+  OTGT=nullptr;
   dVec VertexCoordinates;
   iVec PanelVertexIndices;
   ErrMsg=ParseMeshFile(MeshFileName, MeshTag, &MeshFileDir, VertexCoordinates, PanelVertexIndices);
@@ -342,12 +342,12 @@ RWGSurface::RWGSurface(dVec VertexCoordinates, iVec PanelVertexIndices, char *pL
 
   Label = strdup( pLabel ? pLabel : "ByHand");
   MeshFileName=vstrdup("Manual_NV%zu_NP%zu",VertexCoordinates.size() / 3, PanelVertexIndices.size() / 3 );
-  MeshFileDir=0;
+  MeshFileDir=nullptr;
   MeshTag=0;
-  SurfaceZeta=0;
-  MaterialName=RegionLabels[0]=RegionLabels[1]=0;
+  SurfaceZeta=nullptr;
+  MaterialName=RegionLabels[0]=RegionLabels[1]=nullptr;
   IsPEC=1;
-  OTGT=0;
+  OTGT=nullptr;
   ErrMsg=InitRWGSurface(VertexCoordinates,PanelVertexIndices);
 }
 
@@ -383,10 +383,10 @@ RWGSurface::RWGSurface(dVec X0, dVec L1, dVec L2, int N1, int N2, char *pLabel)
 
   MeshFileName=vstrdup("Screen_%i_%i",N1,N2);
   Label = strdup( pLabel ? pLabel : MeshFileName );
-  MeshFileDir=MaterialName=RegionLabels[0]=RegionLabels[1]=0;
+  MeshFileDir=MaterialName=RegionLabels[0]=RegionLabels[1]=nullptr;
   MeshTag=0;
-  SurfaceZeta=0;
-  OTGT=0;
+  SurfaceZeta=nullptr;
+  OTGT=nullptr;
   IsPEC=IsObject=true;
   ErrMsg=InitRWGSurface(VertexCoordinates,PanelVertexIndices);
 }
@@ -409,16 +409,16 @@ char *RWGSurface::InitRWGSurface(dVec VertexCoordinates, iVec PanelVertexIndices
   /*- initialize simple fields ---------------------------------*/
   /*------------------------------------------------------------*/
   NumEdges=NumHalfRWGEdges=NumBCs=0;
-  Edges=0;
-  HalfRWGEdges=0;
-  BCEdges=0;
-  NumBCEdges=0;
-  WhichBC=0;
-  ErrMsg=0;
-  GT=0;
-  kdPanels=0;
+  Edges=nullptr;
+  HalfRWGEdges=nullptr;
+  BCEdges=nullptr;
+  NumBCEdges=nullptr;
+  WhichBC=nullptr;
+  ErrMsg=nullptr;
+  GT=nullptr;
+  kdPanels=nullptr;
   NumEdges=TotalStraddlers=0;
-  PhasedBFCs=0;
+  PhasedBFCs=nullptr;
   tolVecClose=0.0;
   Origin[0]=Origin[1]=Origin[2]=0.0;
 
@@ -445,7 +445,7 @@ char *RWGSurface::InitRWGSurface(dVec VertexCoordinates, iVec PanelVertexIndices
   /*- temporary transformation that may be applied and then un- */
   /*- applied to the surface.                                   */
   /*------------------------------------------------------------*/
-  GT=0;
+  GT=nullptr;
 
   /*------------------------------------------------------------*/
   /* gather necessary edge connectivity info. this is           */
@@ -525,18 +525,22 @@ char *RWGSurface::InitRWGSurface(dVec VertexCoordinates, iVec PanelVertexIndices
   /*------------------------------------------------------------*/
   InitkdPanels(false);
 
-  return 0;
+  return nullptr;
 } 
 
 /***************************************************************/
 /* RWGSurface destructor.                                       */
 /***************************************************************/
 RWGSurface::~RWGSurface()
-{ 
-  if(Vertices) free(Vertices);
+{
+  /* The free calls below are the ownership implementation for members
+     malloc'd during mesh parsing; converting them to containers is part
+     of the containerization backlog (G3.6). */
+  // NOLINTBEGIN(cppcoreguidelines-no-malloc) 
+  if(Vertices) free(Vertices); // NOLINT(cppcoreguidelines-no-malloc)
 
   for(int np=0; np<NumPanels; np++)
-   free(Panels[np]);
+   free(Panels[np]); // NOLINT(cppcoreguidelines-no-malloc)
   if(Panels) free(Panels);
 
   for(int ne=0; ne<NumEdges; ne++)
@@ -568,6 +572,7 @@ RWGSurface::~RWGSurface()
   if (RegionLabels[1]) free(RegionLabels[1]);
 
   kdtri_destroy(kdPanels);
+  // NOLINTEND(cppcoreguidelines-no-malloc)
 }
 
 
@@ -591,7 +596,7 @@ void RWGSurface::UpdateBoundingBox()
 /***************************************************************/
 void RWGSurface::Transform(const GTransformation *DeltaGT)
 { 
-  if (DeltaGT==0)
+  if (DeltaGT==nullptr)
    return;
 
   /***************************************************************/
@@ -680,7 +685,7 @@ RWGEdge *RWGSurface::GetEdgeByIndex(int ne)
    return HalfRWGEdges[ -(ne+1) ];
   else
    ErrExit("%s:%i: internal error(%i,%i,%i)",__FILE__,__LINE__,Index,NumEdges,ne);
-  return 0; // never get here
+  return nullptr; // never get here
 }
 
 } // namespace scuff

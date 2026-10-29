@@ -66,27 +66,27 @@ void scuffSolver::InitSolver()
   /*--------------------------------------------------------------------------*/
   /* most internal variables are initialized to zero and allocated lazily later*/
   /*--------------------------------------------------------------------------*/
-  G              = 0;
-  PortList       = 0;
+  G              = nullptr;
+  PortList       = nullptr;
   NumPorts       = 0;
 
-  M              = 0;
-  PBFIMatrix     = 0; 
-  PPIMatrix      = 0;
-  KN             = 0;
-  CachedPortCurrents   = 0;
-  CachedIF             = 0;
+  M              = nullptr;
+  PBFIMatrix     = nullptr; 
+  PPIMatrix      = nullptr;
+  KN             = nullptr;
+  CachedPortCurrents   = nullptr;
+  CachedIF             = nullptr;
   OmegaSIE       = CACHE_DIRTY;
   OmegaPBFI      = CACHE_DIRTY;
 
-  TBlocks        = 0;
-  UBlocks        = 0;
+  TBlocks        = nullptr;
+  UBlocks        = nullptr;
 
-  Medium         = 0;
-  SubstrateFile  = 0;
+  Medium         = nullptr;
+  SubstrateFile  = nullptr;
   SubstrateInitialized = false;
-  scuffgeoFile   = 0;
-  portFile       = 0;
+  scuffgeoFile   = nullptr;
+  portFile       = nullptr;
 }
 
 /***************************************************************/
@@ -164,16 +164,16 @@ void scuffSolver::InitSubstrate()
   if (!G) ErrExit("%s:%i: internal error",__FILE__,__LINE__);
   if (G->Substrate)
    { delete G->Substrate;
-     G->Substrate=0;
+     G->Substrate=nullptr;
    }
 
   if (SubstrateFile)
    { G->Substrate = new LayeredSubstrate(SubstrateFile);
      free(SubstrateFile);
-     SubstrateFile=0;
+     SubstrateFile=nullptr;
    }
   else if (SubstrateLayers.size()>0)
-   { char *SubstrateDescription=0;
+   { char *SubstrateDescription=nullptr;
      for(std::map<double, char *>::iterator it = SubstrateLayers.begin(); it!=SubstrateLayers.end(); it++)
       { SubstrateDescription=vstrappend(SubstrateDescription,"%s\n",it->second);
         free(it->second);
@@ -193,7 +193,7 @@ void scuffSolver::SetGeometryFile(const char *_scuffgeoFile)
    { Warn("can't add geometry file after adding metal traces");
      return;
    }
-  if (_scuffgeoFile==0) ErrExit("%s:%i: internal error",__FILE__,__LINE__);
+  if (_scuffgeoFile==nullptr) ErrExit("%s:%i: internal error",__FILE__,__LINE__);
   if (scuffgeoFile)
    { Warn("overwriting existing geometry file %s with new file %s",scuffgeoFile,_scuffgeoFile);
      free(scuffgeoFile);
@@ -220,7 +220,7 @@ void scuffSolver::SetMediumPermittivity(double Epsilon)
 
 void scuffSolver::AddObject(const char *MeshFile, const char *Material, const char *Label, const char *Transformation)
 {
-  char *ErrMsg=0;
+  char *ErrMsg=nullptr;
 
   if (G) 
    ErrMsg=vstrdup("can't add metal traces after geometry has been initialized");
@@ -255,13 +255,13 @@ void scuffSolver::AddObject(const char *MeshFile, const char *Material, const ch
    }
 
   MeshFiles.push_back(strdup(MeshFile));
-  Materials.push_back(Material ? strdup(Material) : 0);
-  MeshLabels.push_back(Label ? strdup(Label) : 0);
-  MeshTransforms.push_back( Transformation ? strdup(Transformation) : 0);
+  Materials.push_back(Material ? strdup(Material) : nullptr);
+  MeshLabels.push_back(Label ? strdup(Label) : nullptr);
+  MeshTransforms.push_back( Transformation ? strdup(Transformation) : nullptr);
 }
 
 void scuffSolver::AddMetalTraceMesh(const char *MeshFile, const char *Label, const char *Transformation)
-{ AddObject(MeshFile, 0, Label, Transformation); }
+{ AddObject(MeshFile, nullptr, Label, Transformation); }
 
 void scuffSolver::SetGDSIIPortFile(const char *GDSIIPortFile, iVec Layers)
 {
@@ -281,7 +281,7 @@ void scuffSolver::SetGDSIIPortFile(const char *GDSIIPortFile, int Layer)
 { SetGDSIIPortFile(GDSIIPortFile, iVec(1,Layer) ); }
 
 void scuffSolver::SetPortFile(const char *_portFile)
-{ char *ErrMsg=0;
+{ char *ErrMsg=nullptr;
   if (G)
    ErrMsg=vstrdup("can't add port file after geometry has been initialized");
   else if (PortTerminalVertices.size() > 0)
@@ -296,7 +296,7 @@ void scuffSolver::SetPortFile(const char *_portFile)
 }
 
 void scuffSolver::AddPort(const dVec PVertices, const dVec MVertices)
-{ char *ErrMsg=0;
+{ char *ErrMsg=nullptr;
   if (G)
    ErrMsg=vstrdup("can't add port after geometry has been initialized");
   else if (portFile)
@@ -474,7 +474,7 @@ int OffDiagonalBlockIndex(int NS, int ns, int nsp)
 { return ns*NS - ns*(ns+1)/2 + nsp - ns - 1; }
 
 int FindEquivalentSurfacePair(RWGGeometry *G, int nsAlpha, int nsBeta,
-                              bool *pFlipped=0, int *pnsA=0, int *pnsB=0)
+                              bool *pFlipped=nullptr, int *pnsA=nullptr, int *pnsB=nullptr)
 {
   if (CheckEnv("SCUFF_IGNORE_EQUIVALENT_SURFACES")) return -1;
 
@@ -544,12 +544,12 @@ int FindEquivalentSurfacePair(RWGGeometry *G, int nsAlpha, int nsBeta,
 /***************************************************************/
 void scuffSolver::EnableSystemBlockCache()
 { 
-  if (G==0)
+  if (G==nullptr)
    { Warn("EnableSysteBlockCache() must be called after InitGeometry (skipping)");
      return;
    }
 
-  if (TBlocks!=0) return; // already enabled
+  if (TBlocks!=nullptr) return; // already enabled
 
   int NS = G->NumSurfaces, NU=(NS-1)*NS/2;
   if (NS==1)
@@ -576,7 +576,7 @@ void scuffSolver::EnableSystemBlockCache()
 /***************************************************************/
 void scuffSolver::UpdateSystemMatrix(cdouble Omega)
 { 
-  if (TBlocks==0)
+  if (TBlocks==nullptr)
    { Warn("EnableSystemBlockCache() must be called before UpdateSystemMatrix (skipping)");
      return;
    }
@@ -586,7 +586,7 @@ void scuffSolver::UpdateSystemMatrix(cdouble Omega)
    for(int ns=0; ns<G->NumSurfaces; ns++)
     if (G->Mate[ns]==-1)
      { if(NumPorts==0)
-        G->AssembleBEMMatrixBlock(ns, ns, Omega, 0, TBlocks[ns]);
+        G->AssembleBEMMatrixBlock(ns, ns, Omega, nullptr, TBlocks[ns]);
        else 
         AssembleMOIMatrixBlock(G, ns, ns, Omega, TBlocks[ns]);
      }
@@ -597,10 +597,10 @@ void scuffSolver::UpdateSystemMatrix(cdouble Omega)
     { if (FindEquivalentSurfacePair(G, nsa, nsb)!=-1)
        continue;
       if (Omega!=OmegaSIE || G->SurfaceMoved[nsa] || G->SurfaceMoved[nsb])
-       { if (UBlocks[nu]==0) 
+       { if (UBlocks[nu]==nullptr) 
           UBlocks[nu]=new HMatrix(G->Surfaces[nsa]->NumBFs, G->Surfaces[nsb]->NumBFs, LHM_COMPLEX);
          if(NumPorts==0)
-          G->AssembleBEMMatrixBlock(nsa, nsb, Omega, 0, UBlocks[nu]);
+          G->AssembleBEMMatrixBlock(nsa, nsb, Omega, nullptr, UBlocks[nu]);
          else
           AssembleMOIMatrixBlock(G, nsa, nsb, Omega, UBlocks[nu]);
        }
@@ -632,7 +632,7 @@ void scuffSolver::AssembleSystemMatrix(double Omega)
 { 
   if (!G) InitGeometry();
   if (!SubstrateInitialized) InitSubstrate();
-  if (M==0) M=G->AllocateBEMMatrix();
+  if (M==nullptr) M=G->AllocateBEMMatrix();
   G->UpdateCachedEpsMuValues(Omega);
 
   Log("Assembling BEM matrix at Omega=%g (f=%g GHz)...",Omega,Omega/FREQ2OMEGA);
@@ -649,7 +649,7 @@ void scuffSolver::AssembleSystemMatrix(double Omega)
                                             PPIsOnly, Subtract, RetainSingularTerms, Verbose);
    }
 
-  if (TBlocks!=0)
+  if (TBlocks!=nullptr)
    UpdateSystemMatrix(Omega);
   else if (NumPorts!=0)
    AssembleMOIMatrix(G, Omega, M);
@@ -664,7 +664,7 @@ void scuffSolver::AssembleSystemMatrix(double Omega)
 
 void scuffSolver::DoSolve(IncField *IF, cdouble *PortCurrents)
 {
-  if (M==0 || G->StoredOmega!=OmegaSIE)
+  if (M==nullptr || G->StoredOmega!=OmegaSIE)
    { Warn("scuffSolver: AssembleSystemMatrix() must be called before Solve()");
      return;
    }
@@ -674,19 +674,19 @@ void scuffSolver::DoSolve(IncField *IF, cdouble *PortCurrents)
   /*- lazy allocation of internal variables ----------------------*/
   /*--------------------------------------------------------------*/
   int NBF = G->TotalBFs;
-  if (KN==0) KN = new HVector(NBF,                LHM_COMPLEX);
+  if (KN==nullptr) KN = new HVector(NBF,                LHM_COMPLEX);
 
   // stuff needed for RF calculations
   if (PortCurrents)
-   { if (PBFIMatrix==0)   PBFIMatrix   = new HMatrix(NBF,      NumPorts, LHM_COMPLEX);
-     if (PPIMatrix==0)    PPIMatrix    = new HMatrix(NumPorts, NumPorts, LHM_COMPLEX);
+   { if (PBFIMatrix==nullptr)   PBFIMatrix   = new HMatrix(NBF,      NumPorts, LHM_COMPLEX);
+     if (PPIMatrix==nullptr)    PPIMatrix    = new HMatrix(NumPorts, NumPorts, LHM_COMPLEX);
      AssemblePortBFInteractionMatrix(Omega);
     // form RHS vector as weighted linear combination of contributions from each port
      KN->Zero();
      for(int np=0; np<NumPorts; np++)
       for(int nbf=0; nbf<NBF; nbf++)
        KN->AddEntry(nbf, PortCurrents[np]*PBFIMatrix->GetEntry(nbf,np));
-     if (CachedPortCurrents==0) CachedPortCurrents = new cdouble[NumPorts];
+     if (CachedPortCurrents==nullptr) CachedPortCurrents = new cdouble[NumPorts];
      memcpy(CachedPortCurrents, PortCurrents, NumPorts*sizeof(cdouble));
    }
   else if (IF)
@@ -697,7 +697,7 @@ void scuffSolver::DoSolve(IncField *IF, cdouble *PortCurrents)
         any other type (and overwrote the first copy with a second,
         wrong-typed one). */
      if (CachedIF) delete CachedIF;
-     CachedIF=0;
+     CachedIF=nullptr;
      if ( PlaneWave *PW=dynamic_cast<PlaneWave *>(IF) )
       CachedIF=new PlaneWave(*PW);
      else if ( PointSource *PS=dynamic_cast<PointSource *>(IF) )
@@ -713,10 +713,10 @@ void scuffSolver::DoSolve(IncField *IF, cdouble *PortCurrents)
 }
 
 void scuffSolver::Solve(IncField *IF)
-{ DoSolve(IF, 0); }
+{ DoSolve(IF, nullptr); }
 
 void scuffSolver::Solve(cdouble *PortCurrents)
-{ DoSolve(0,PortCurrents); }
+{ DoSolve(nullptr,PortCurrents); }
 
 void scuffSolver::Solve(int WhichPort, cdouble PortCurrent)
 { if (NumPorts==0) ErrExit("no ports defined");
@@ -724,7 +724,7 @@ void scuffSolver::Solve(int WhichPort, cdouble PortCurrent)
      DoSolve copies but does not take ownership of PortCurrents */
   cdouble *PortCurrents = new cdouble[NumPorts]();
   PortCurrents[WhichPort]=PortCurrent;
-  DoSolve(0,PortCurrents);
+  DoSolve(nullptr,PortCurrents);
   delete[] PortCurrents;
 }
 
@@ -861,7 +861,7 @@ void scuffSolver::PlotGeometry(const char *PPFormat, ...)
 }
 
 void scuffSolver::PlotGeometry()
- { PlotGeometry(0); }
+ { PlotGeometry(nullptr); }
 
 void scuffSolver::Transform(const char *SurfaceLabel, const char *Transformation)
 { 

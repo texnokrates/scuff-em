@@ -96,7 +96,7 @@ namespace scuff {
 /***************************************************************/
 /***************************************************************/
 /***************************************************************/
-typedef struct PFTOptions 
+using PFTOptions = struct PFTOptions 
  {
    // general options
    int PFTMethod;
@@ -124,22 +124,22 @@ typedef struct PFTOptions
 
    bool GetRegionPFTs;
 
- } PFTOptions;
+ };
 
 /***************************************************************/
 /* routine for initializing a PFTOptions structure to default  */
 /* values; creates and returns a new default structure if      */
 /* called with Options=NULL or with no argument                */
 /***************************************************************/
-PFTOptions *InitPFTOptions(PFTOptions *Options=0);
+PFTOptions *InitPFTOptions(PFTOptions *Options=nullptr);
 
 /***************************************************************/
 /***************************************************************/
 /***************************************************************/
 class RWGGeometry;
 HMatrix *GetSRFluxTrace(RWGGeometry *G, HMatrix *XMatrix, cdouble Omega,
-                   HMatrix *DRMatrix, HMatrix *FMatrix=0,
-                   HMatrix *RFMatrix=0, bool RFMatrixDirty=true);
+                   HMatrix *DRMatrix, HMatrix *FMatrix=nullptr,
+                   HMatrix *RFMatrix=nullptr, bool RFMatrixDirty=true);
 
 void GetKNBilinears(HVector *KNVector, HMatrix *DRMatrix,
                     bool IsPECA, int KNIndexA,

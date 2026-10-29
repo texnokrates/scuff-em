@@ -42,7 +42,7 @@
 /*******************************************************************/
 /*******************************************************************/
 /*******************************************************************/
-typedef struct Checklist
+using Checklist = struct Checklist
  { 
    int NumKeys;
    int *KeyColumns;
@@ -57,20 +57,20 @@ typedef struct Checklist
    int LogLevel;
    int MaxColumn;
    
- } Checklist;
+ };
 
-typedef struct DataRecord
+using DataRecord = struct DataRecord
  { char **KeyValues;
    char **DataValues;
    int FileLine;
- } DataRecord;
+ };
 
-typedef struct DataSet
+using DataSet = struct DataSet
  { DataRecord **DataRecords;
    int NumRecords;
    int TotalDataItems;
    char *FileName;
- } DataSet;
+ };
 
 /*******************************************************************/
 /*******************************************************************/
@@ -81,11 +81,11 @@ Checklist *ReadChecklist(const char *FileName, int LogLevel)
   /***************************************************************/
   /***************************************************************/
   int NumKeys=0;
-  int *KeyColumns=0;
-  char **KeyNames=0;
+  int *KeyColumns=nullptr;
+  char **KeyNames=nullptr;
   int NumData=0;
-  int *DataColumns=0;
-  char **DataNames=0;
+  int *DataColumns=nullptr;
+  char **DataNames=nullptr;
   bool CaseSensitive=false;
   double AbsTol=0.0;
   double RelTol=1.0e-2;
@@ -199,7 +199,7 @@ DataSet *ReadDataSet(const char *FileName, Checklist *CL)
   int NumData      = CL->NumData;
   int *DataColumns = CL->DataColumns;
 
-  DataRecord **DataRecords=0;
+  DataRecord **DataRecords=nullptr;
   int NumRecords=0;
   int NumWildcards=0;
 
@@ -266,7 +266,7 @@ DataSet *ReadDataSet(const char *FileName, Checklist *CL)
 /***************************************************************/
 bool Agree(char *TestDatum, char *RefDatum, Checklist *CL)
 {
-  if (RefDatum==0 || TestDatum==0)
+  if (RefDatum==nullptr || TestDatum==nullptr)
    return false;
 
   if (TestDatum[0]=='*' || RefDatum[0]=='*')
@@ -309,7 +309,7 @@ DataRecord *FindDataRecord(DataSet *DS, char **KeyValues, Checklist *CL)
      if (IsAMatch)
       return DR;    
    };
-  return 0;
+  return nullptr;
     
 }
 
@@ -435,11 +435,11 @@ int main(int argc, char *argv[])
  
   if (ErrorFileName.empty())
    ErrorFileName = std::string(GetFileBase(DataFile.c_str())) + ".errors";
-  FILE *ErrorFile = 0;
+  FILE *ErrorFile = nullptr;
   if (!ErrorFileName.empty())
    { ErrorFile=fopen(ErrorFileName.c_str(),"w");
      fprintf(ErrorFile,"CheckSCUFFData running on %s (%s)\n",GetHostName(),GetTimeString());
-     fprintf(ErrorFile,"Checklist:      %s \n",CLFile);
+     fprintf(ErrorFile,"Checklist:      %s \n",CLFile.c_str());
      fprintf(ErrorFile,"Data      file: %s \n",DataFile.c_str());
      fprintf(ErrorFile,"Reference file: %s \n",RefFile.c_str());
    };

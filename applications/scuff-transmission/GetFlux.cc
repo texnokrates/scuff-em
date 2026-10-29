@@ -109,9 +109,9 @@ void GetFlux(RWGGeometry *G, IncField *IF, HVector *KN,
   /* on the first invocation we allocate space for the matrices  */
   /* of evaluation points and fields.                            */
   /***************************************************************/
-  static HMatrix *XMatrixAbove = 0, *XMatrixBelow = 0;
-  static HMatrix *FMatrixAbove = 0, *FMatrixBelow = 0;
-  if (XMatrixAbove==0)
+  static HMatrix *XMatrixAbove = nullptr, *XMatrixBelow = nullptr;
+  static HMatrix *FMatrixAbove = nullptr, *FMatrixBelow = nullptr;
+  if (XMatrixAbove==nullptr)
    { XMatrixAbove = new HMatrix(NCP, 3 );
      XMatrixBelow = new HMatrix(NCP, 3 );
      FMatrixAbove = new HMatrix(NCP, 6, LHM_COMPLEX);
@@ -176,8 +176,8 @@ void GetFlux(RWGGeometry *G, IncField *IF, HVector *KN,
   cdouble tDenominator[2]={0.0, 0.0};
   tIntegral[0]=tIntegral[1]=rIntegral[0]=rIntegral[1]=0.0;
   double pzHat[3]={0,0,1.0}, mzHat[3]={0,0,-1.0};
-  if (nHatAbove==0) nHatAbove=pzHat;
-  if (nHatBelow==0) nHatBelow=mzHat;
+  if (nHatAbove==nullptr) nHatAbove=pzHat;
+  if (nHatBelow==nullptr) nHatBelow=mzHat;
   for(int ncp=0; ncp<NCP; ncp++)
    {
      double w;

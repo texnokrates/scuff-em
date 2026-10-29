@@ -133,7 +133,7 @@ static void swap(void *a_, void *b_, size_t size)
              stores are alignment-safe. */
           unsigned char *a = (unsigned char *) a_, *b = (unsigned char *) b_;
           while (size >= sizeof(uint64_t)) {
-               uint64_t ca, cb;
+               uint64_t ca, cb; // NOLINT(cppcoreguidelines-init-variables) -- initialized via memcpy below
                memcpy(&ca, a, sizeof(ca));
                memcpy(&cb, b, sizeof(cb));
                memcpy(a, &cb, sizeof(cb));
@@ -207,10 +207,10 @@ static void partition(void *base_, size_t nmemb, size_t size, size_t which,
 
 /***********************************************************************/
 
-typedef struct {
+using boxtri = struct {
   float bmin[2], bmax[2]; /* corners of bounding box */
   float x[3], y[3], z[3]; /* corners of triangle, sorted by y[i] */
-} boxtri;
+};
 
 struct kdtri_s {
   int dim; /* which dimension to split on (0 or 1) */
@@ -326,7 +326,7 @@ static kdtri kdtri_create(boxtri *B, size_t n)
      if (t) {
        t->B = B;
        t->n = n;
-       t->le = t->gt = NULL;
+       t->le = t->gt = nullptr;
        t->dim = -1;
        t->div = 0;
        kdtri_compute_bounds(t);
@@ -387,7 +387,7 @@ static int kdtri_partition(kdtri t)
 	  }
 
 	  free(t->B);
-	  t->B = NULL;
+	  t->B = nullptr;
      }
      return EXIT_SUCCESS;
 }
@@ -494,7 +494,7 @@ static kdtri kdtri_create_from_surface(const RWGSurface *S)
 {
   int i;
   boxtri *B;
-  kdtri t = NULL;
+  kdtri t = nullptr;
 
   if (!S || !S->NumPanels) goto done;
   if (!(B = (boxtri *) malloc(sizeof(boxtri) * S->NumPanels))) goto done;
@@ -529,7 +529,7 @@ static kdtri kdtri_create_from_surface(const RWGSurface *S)
   }
 
   if (kdtri_partition(t) != EXIT_SUCCESS) {
-    kdtri_destroy(t); t = NULL;
+    kdtri_destroy(t); t = nullptr;
     goto done;
   }
 
@@ -545,7 +545,7 @@ void RWGSurface::InitkdPanels(bool reinit, int LogLevel)
   if (kdPanels) {
     if (!reinit) return;
     kdtri_destroy(kdPanels); // destroy pre-existing tree
-    kdPanels = NULL;
+    kdPanels = nullptr;
   }
   if (!NumPanels) return;
   kdPanels = kdtri_create_from_surface(this);

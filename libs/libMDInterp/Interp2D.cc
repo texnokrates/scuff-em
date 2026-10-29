@@ -69,7 +69,7 @@ static int GetCTableOffset(int nf, int nFun, int n1, int N1, int n2, int N2)
 /* thread routine used to compute values and derivatives of     */
 /* user's function at grid points                               */
 /****************************************************************/
-typedef struct ThreadData
+using ThreadData = struct ThreadData
  {
    double *X1Points, *X2Points;
    int N1, N2;
@@ -85,7 +85,7 @@ typedef struct ThreadData
 
    int nt, nThread;
 
- } ThreadData;
+ };
 
 static void *GetPhiVD_Thread(void *data)
 {
@@ -166,7 +166,7 @@ static void *GetPhiVD_Thread(void *data)
 
   delete[] PhiVD;
 
-  return 0;
+  return nullptr;
   
 }
 
@@ -213,7 +213,7 @@ Interp2D::Interp2D(double *pX1Points, int pN1,
    /*--------------------------------------------------------------*/ 
    /*--------------------------------------------------------------*/ 
    /*--------------------------------------------------------------*/ 
-   if (PhiFunc==0)
+   if (PhiFunc==nullptr)
     return;
 
    /*--------------------------------------------------------------*/ 
@@ -239,12 +239,12 @@ Interp2D::Interp2D(double pX1Min, double X1Max, int pN1,
     ErrExit("Interp2D: grid must have 2 or more points in every dimension");
 
    N1=pN1; 
-   X1Points=0;
+   X1Points=nullptr;
    X1Min=pX1Min;
    DX1 = (X1Max - X1Min) / ((double)(N1-1));
 
    N2=pN2; 
-   X2Points=0;
+   X2Points=nullptr;
    X2Min=pX2Min;
    DX2 = (X2Max - X2Min) / ((double)(N2-1));
 
@@ -265,7 +265,7 @@ Interp2D::Interp2D(double pX1Min, double X1Max, int pN1,
    /*--------------------------------------------------------------*/ 
    /*--------------------------------------------------------------*/ 
    /*--------------------------------------------------------------*/ 
-   if (PhiFunc==0)
+   if (PhiFunc==nullptr)
     return;
 
    /*--------------------------------------------------------------*/ 
@@ -501,7 +501,7 @@ Interp2D::Interp2D(const char *FileName)
       freadEC(X2Points, sizeof(double), N2, f, FileName);
     }
    else
-    { X1Points=X2Points=0;
+    { X1Points=X2Points=nullptr;
       freadEC(&X1Min, sizeof(double), 1, f, FileName);
       freadEC(&DX1,   sizeof(double), 1, f, FileName);
       freadEC(&X2Min, sizeof(double), 1, f, FileName);

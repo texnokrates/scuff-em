@@ -33,31 +33,32 @@
 
 namespace scuff {
 
-typedef struct ParentPairData
+using ParentPairData = struct ParentPairData
  { int nea, neb;
    ParentPairData(int _nea, int _neb): nea(_nea), neb(_neb) {}
- } ParentPairData;
+ };
 
-typedef vector<ParentPairData> ParentPairList;
+using ParentPairList = vector<ParentPairData>;
 
 #define GKERNEL 0
 #define IKCKERNEL 1
 #define NUMKERNELS 2
-typedef struct { bool Flipped[NUMKERNELS]; } SignPattern;
+struct SignPattern
+ { bool Flipped[NUMKERNELS]; };
 
-typedef struct ChildPairData
+struct ChildPairData
  { int nea, neb;
    double GCSign[NUMKERNELS];
    ChildPairData(int _nea, int _neb, SignPattern Signs): nea(_nea), neb(_neb)
     { GCSign[0] = Signs.Flipped[0] ? -1.0 : 1.0, GCSign[1] = Signs.Flipped[1] ? -1.0 : 1.0; }
    ChildPairData(int _nea, int _neb): nea(_nea), neb(_neb) { GCSign[0]=GCSign[1]=1.0; }
- } ChildPairData;
-typedef vector<ChildPairData> ChildPairList;
+ };
+using ChildPairList = vector<ChildPairData>;
 
 class EquivalentEdgePairTable
  {
 public:
-    EquivalentEdgePairTable(RWGGeometry *G, int nsa, int nsb, char *EEPTFile=0);
+    EquivalentEdgePairTable(RWGGeometry *G, int nsa, int nsb, char *EEPTFile=nullptr);
     ~EquivalentEdgePairTable();
 
     /* tables are owned by RWGGeometry::EEPTables; copying is neither
@@ -65,9 +66,9 @@ public:
     EquivalentEdgePairTable(const EquivalentEdgePairTable &) = delete;
     EquivalentEdgePairTable &operator=(const EquivalentEdgePairTable &) = delete;
 
-    void Export(const char *EEPTFile=0);
+    void Export(const char *EEPTFile=nullptr);
 
-    bool HasParent(int neaChild, int nebChild, int *neaParent=0, int *nebParent=0, SignPattern *Signs=0);
+    bool HasParent(int neaChild, int nebChild, int *neaParent=nullptr, int *nebParent=nullptr, SignPattern *Signs=nullptr);
     ParentPairList GetParents();
     ChildPairList GetChildren(int neaParent, int nebParent, bool IncludeParent=false);
     int NumParents();
