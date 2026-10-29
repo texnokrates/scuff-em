@@ -162,7 +162,10 @@ void scuffSolver::InitSubstrate()
   OmegaSIE=OmegaPBFI=CACHE_DIRTY;
 
   if (!G) ErrExit("%s:%i: internal error",__FILE__,__LINE__);
-  if (G->Substrate) delete G->Substrate;
+  if (G->Substrate)
+   { delete G->Substrate;
+     G->Substrate=0;
+   }
 
   if (SubstrateFile)
    { G->Substrate = new LayeredSubstrate(SubstrateFile);

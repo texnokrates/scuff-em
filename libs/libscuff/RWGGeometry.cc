@@ -786,7 +786,7 @@ RWGGeometry::RWGGeometry(const char *pGeoFileName, int pLogLevel)
   /***************************************************************/
   if (!CheckEnv("SCUFF_IGNORE_EEPS"))
    for(int ns=0; ns<NumSurfaces; ns++)
-    EEPTables.push_back( vector<EquivalentEdgePairTable *>(NumSurfaces, NULL) );
+    EEPTables.push_back( std::vector<std::unique_ptr<EquivalentEdgePairTable>>(NumSurfaces) );
 
   /***************************************************************/
   /***************************************************************/
@@ -832,6 +832,31 @@ RWGGeometry::~RWGGeometry()
   free(MuTF);
   free(SurfaceMoved);
   free(GeoFileName);
+
+  delete LBasis;
+  delete RLBasis;
+  delete Substrate;
+
+  /* per-lattice-vector straddler/extended-region arrays, allocated in
+     PBCSetup for periodic geometries (NULL for non-periodic) */
+  for(int nd=0; nd<MAXLDIM; nd++)
+   { free(NumStraddlers[nd]);
+     free(RegionIsExtended[nd]);
+   }
+
+  /* multi-material junction records (allocated by
+     DetectMultiMaterialJunctions) */
+  for(int nMMJ=0; nMMJ<NumMMJs; nMMJ++)
+   { free(MultiMaterialJunctions[nMMJ]->SurfaceIndices);
+     free(MultiMaterialJunctions[nMMJ]->EdgeIndices);
+     delete MultiMaterialJunctions[nMMJ];
+   }
+  free(MultiMaterialJunctions);
+
+  /* equivalent-edge-pair tables, created lazily during matrix assembly */
+  for(size_t nsa=0; nsa<EEPTables.size(); nsa++)
+   for(size_t nsb=0; nsb<EEPTables[nsa].size(); nsb++)
+    EEPTables[nsa][nsb].reset();
 
   /* The FIBBI caches of mated surfaces alias the caches of their mates,
      so only the Mate[] array can say which caches to destroy.  This must

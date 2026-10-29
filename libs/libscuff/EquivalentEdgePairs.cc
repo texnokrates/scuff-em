@@ -601,6 +601,10 @@ EquivalentEdgePairTable::EquivalentEdgePairTable(RWGGeometry *_G, int _nsa, int 
 /***************************************************************/
 /***************************************************************/
 /***************************************************************/
+EquivalentEdgePairTable::~EquivalentEdgePairTable()
+{ delete (EquivalentEdgePairSubTable *)MasterTable;
+}
+
 bool EquivalentEdgePairTable::HasParent(int neaChild, int nebChild, int *neaParent, int *nebParent, SignPattern *Signs)
 { 
   EquivalentEdgePairSubTable *Table=(EquivalentEdgePairSubTable *)MasterTable;

@@ -553,6 +553,9 @@ RWGSurface::~RWGSurface()
   if (NumBCEdges) free(NumBCEdges);
   if (WhichBC) free(WhichBC);
 
+  if (PhasedBFCs) free(PhasedBFCs);
+  if (SurfaceZeta) cevaluator_destroy(SurfaceZeta);
+
   if (MeshFileName) free(MeshFileName);
   if (MeshFileDir) free(MeshFileDir);
   if (Label) free(Label);

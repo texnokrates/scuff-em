@@ -42,6 +42,7 @@
 #include <vector>
 
 #include <libhrutil.h>
+#include <memory>
 #include <libhmat.h>
 #include <libMatProp.h>
 #include <libIncField.h>
@@ -197,6 +198,11 @@ class RWGSurface
 
    /* destructor */
    ~RWGSurface();
+
+   /* surfaces are created with new and handled by pointer; copying is
+      neither used nor safe (owning raw members, C.21) */
+   RWGSurface(const RWGSurface &) = delete;
+   RWGSurface &operator=(const RWGSurface &) = delete;
 
    /* get overlap integrals between two basis functions */
    double GetOverlap(int neAlpha, int neBeta, double *pOTimes = NULL);
@@ -355,6 +361,11 @@ class RWGGeometry
    /* constructor / destructor */
    RWGGeometry(const char *GeoFileName, int pLogLevel = SCUFF_NOLOGGING);
    ~RWGGeometry();
+
+   /* geometries are created with new and handled by pointer; copying is
+      neither used nor safe (owning raw members, C.21) */
+   RWGGeometry(const RWGGeometry &) = delete;
+   RWGGeometry &operator=(const RWGGeometry &) = delete;
 
    /*--------------------------------------------------------------*/
    /*- routines for setting up the BEM system, i.e. allocating and */
@@ -610,7 +621,7 @@ class RWGGeometry
    int *Mate;
 
    // EEPTables[nsa][nsb] = equivalent edge-pair table for surfaces (nsa,nsb) 
-   std::vector < std::vector< EquivalentEdgePairTable *> > EEPTables;
+   std::vector < std::vector< std::unique_ptr<EquivalentEdgePairTable> > > EEPTables;
 
    /* SurfaceMoved[i] = 1 if surface #i was moved on the most   */
    /* recent call to Transform(). Otherwise SurfaceMoved[i]=0.  */

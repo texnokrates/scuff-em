@@ -664,8 +664,8 @@ void AssembleMOIMatrixBlock(RWGGeometry *G, int nsa, int nsb,
   EquivalentEdgePairTable *EEPTable=0;
   if ( G->EEPTables.size()>0 && !CheckEnv("SCUFF_IGNORE_EEPS") )
    { if (G->EEPTables[nsa][nsb]==0)
-      G->EEPTables[nsa][nsb]=new EquivalentEdgePairTable(G,nsa,nsb);
-     EEPTable=G->EEPTables[nsa][nsb];
+      G->EEPTables[nsa][nsb]=std::unique_ptr<EquivalentEdgePairTable>(new EquivalentEdgePairTable(G,nsa,nsb));
+     EEPTable=G->EEPTables[nsa][nsb].get();
    }
 
   /***************************************************************/
