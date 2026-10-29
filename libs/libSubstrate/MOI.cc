@@ -654,7 +654,7 @@ InterpND *LayeredSubstrate::InitScalarGFInterpolator(cdouble Omega,
   if (EpsLayer[1]==1.0 && std::isinf(zGP)) return 0; // substrate is trivial
 
   if (CheckScalarGFInterpolator(Omega,RhoMin,RhoMax,ZMin,ZMax,PPIsOnly,Subtract,RetainSingularTerms))
-   return ScalarGFInterpolator;
+   return ScalarGFInterpolator.get();
 
   DestroyScalarGFInterpolator();
 
@@ -720,8 +720,8 @@ InterpND *LayeredSubstrate::InitScalarGFInterpolator(cdouble Omega,
   else
    Log("Initializing ScalarGF interpolator for Rho=(%e,%e)",RhoMin,RhoMax);
 
-  ScalarGFInterpolator = new InterpND(PhiVDFunc_ScalarGFs, (void *)&Data, NF, RZMin, RZMax,
-                                      Tolerance, Verbose);
+  ScalarGFInterpolator.reset(new InterpND(PhiVDFunc_ScalarGFs, (void *)&Data, NF, RZMin, RZMax,
+                                      Tolerance, Verbose));
 
   if (Dimension>1)
    Log("Rho,Z grid: %zu x %zu points",ScalarGFInterpolator->XGrids[0].size(),
@@ -735,14 +735,12 @@ InterpND *LayeredSubstrate::InitScalarGFInterpolator(cdouble Omega,
   memcpy(&SGFIOptions, Options, sizeof(ScalarGFOptions));
   if (Dimension==1) zSGFI=ZMin;
   OmegaSGFI=Omega;
-  return ScalarGFInterpolator;
+  return ScalarGFInterpolator.get();
 }
 
 /***************************************************************/
 /***************************************************************/
 /***************************************************************/
 void LayeredSubstrate::DestroyScalarGFInterpolator()
-{ if (ScalarGFInterpolator)
-   delete ScalarGFInterpolator;
-  ScalarGFInterpolator=0;
+{ ScalarGFInterpolator.reset();
 }

@@ -243,7 +243,7 @@ void LayeredSubstrate::Initialize(FILE *f, const char *FileName, int *pLineNum)
   if (qMaxEvalA==0) qMaxEvalA=qMaxEval;
   if (qMaxEvalB==0) qMaxEvalB=qMaxEval;
 
-  ScalarGFInterpolator=0;
+  ScalarGFInterpolator=nullptr;
   zSGFI=0.0;
   OmegaSGFI=0.0;
 

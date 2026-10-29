@@ -33,6 +33,7 @@
 #include <stdarg.h>
 
 #include <libhrutil.h>
+#include <memory>
 #include <libhmat.h>
 #include <libMatProp.h>
 #include <libMDInterp.h>
@@ -226,6 +227,12 @@ public:
    /*--------------------------------------------------------------*/
    void InitStaticAccelerator1D(double RhoMin, double RhoMax, double z);
 
+   /* Rebuild the scalar-GF interpolation table (if necessary) and
+      return a NON-OWNING pointer to it: the returned InterpND is owned
+      by *this and stays valid until this LayeredSubstrate is destroyed
+      (or until a later call rebuilds the table).  Callers must not
+      delete it; use DestroyScalarGFInterpolator() for explicit early
+      disposal.  This aliasing was previously undocumented. */
    InterpND *InitScalarGFInterpolator(cdouble Omega, double RhoMin, double RhoMax,
                                       double zMin, double zMax, bool PPIsOnly, bool Subtract,
                                       bool RetainSingularTerms, bool Verbose=false);
@@ -334,7 +341,9 @@ public:
    int WhichIntegral;
 
    // interpolation tables
-   InterpND *ScalarGFInterpolator;
+   /* owned; the pointer returned by InitScalarGFInterpolator aliases
+      this member */
+   std::unique_ptr<InterpND> ScalarGFInterpolator;
    ScalarGFOptions SGFIOptions;
    double zSGFI;
    cdouble OmegaSGFI;
