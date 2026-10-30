@@ -108,7 +108,7 @@ SLDData *CreateSLDData(const char *GeoFile, const char *TransFile,
   /* read in geometry and allocate BEM matrix and RHS vector     */
   /***************************************************************/
   RWGGeometry *G = Data->G = new RWGGeometry(GeoFile);
-  Data->M = G->AllocateBEMMatrix();
+  Data->M = G->AllocateBEMMatrix().release();
 
   /***************************************************************/
   /* read in geometrical transformation file if any **************/

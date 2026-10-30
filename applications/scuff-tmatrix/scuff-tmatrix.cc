@@ -124,8 +124,8 @@ int main(int argc, char *argv[])
   /*--------------------------------------------------------------*/
   /* preallocate BEM matrix and RHS vector                        */
   /*--------------------------------------------------------------*/
-  HMatrix *M  = G->AllocateBEMMatrix();
-  HVector *KN = G->AllocateRHSVector();
+  auto M  = G->AllocateBEMMatrix();
+  auto KN = G->AllocateRHSVector();
 
   /*--------------------------------------------------------------*/
   /*- preallocate an HMatrix to store the T-matrix data           */
@@ -188,7 +188,7 @@ int main(int argc, char *argv[])
      /*--------------------------------------------------------------*/
      /* assemble and factorize the BEM matrix at this frequency      */
      /*--------------------------------------------------------------*/
-     G->AssembleBEMMatrix(Omega, M);
+     G->AssembleBEMMatrix(Omega, M.get());
      M->LUFactorize();
 
      /*--------------------------------------------------------------*/
@@ -206,13 +206,13 @@ int main(int argc, char *argv[])
 
            // solve the scattering problem for this incident spherical wave
            Log("Solving scattering problem with incident spherical wave #%i: (L,M,P)=(%i,%i,%i)",Beta,LBeta,MBeta,PBeta);
-           G->AssembleRHSVector(Omega, &SW, KN);
-           M->LUSolve(KN);
+           G->AssembleRHSVector(Omega, &SW, KN.get());
+           M->LUSolve(KN.get());
 
            // compute the full vector of spherical multipole moments induced by the
            // incident wave on the object and store it as the Betath column of the T-matrix
            HVector TColumn(NumMoments, LHM_COMPLEX, (cdouble *)TMatrix->GetColumnPointer(Beta));
-           GetSphericalMoments(G, Omega, LMax, KN, &TColumn);
+           GetSphericalMoments(G, Omega, LMax, KN.get(), &TColumn);
         }; // for (nc=l=0...)
 
      /*--------------------------------------------------------------*/

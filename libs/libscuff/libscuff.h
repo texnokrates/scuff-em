@@ -371,11 +371,11 @@ class RWGGeometry
    /*- routines for setting up the BEM system, i.e. allocating and */
    /*- assembling the BEM matrix and RHS vector                    */
    /*--------------------------------------------------------------*/
-   HMatrix *AllocateBEMMatrix(bool PureImagFreq = false, bool Packed = false);
+   std::unique_ptr<HMatrix> AllocateBEMMatrix(bool PureImagFreq = false, bool Packed = false);
    HMatrix *AssembleBEMMatrix(cdouble Omega, double *kBloch, HMatrix *M = nullptr);
    HMatrix *AssembleBEMMatrix(cdouble Omega, HMatrix *M = nullptr);
 
-   HVector *AllocateRHSVector(bool PureImagFreq = false );
+   std::unique_ptr<HVector> AllocateRHSVector(bool PureImagFreq = false );
    HVector *AssembleRHSVector(cdouble Omega, double *kBloch,
                               IncField *IF, HVector *RHS = nullptr);
    HVector *AssembleRHSVector(cdouble Omega, IncField *IF, HVector *RHS = nullptr);

@@ -632,7 +632,7 @@ void scuffSolver::AssembleSystemMatrix(double Omega)
 { 
   if (!G) InitGeometry();
   if (!SubstrateInitialized) InitSubstrate();
-  if (M==nullptr) M=G->AllocateBEMMatrix();
+  if (M==nullptr) M=G->AllocateBEMMatrix().release();
   G->UpdateCachedEpsMuValues(Omega);
 
   Log("Assembling BEM matrix at Omega=%g (f=%g GHz)...",Omega,Omega/FREQ2OMEGA);

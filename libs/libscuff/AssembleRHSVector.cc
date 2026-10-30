@@ -366,7 +366,7 @@ HVector *RWGGeometry::AssembleRHSVector(cdouble Omega, double *kBloch,
                                         IncField *IF, HVector *RHS)
 { 
   if (RHS==nullptr)
-   RHS=AllocateRHSVector();
+   RHS=AllocateRHSVector().release();
 
   RHS->Zero();
    
@@ -432,16 +432,11 @@ HVector *RWGGeometry::AssembleRHSVector(cdouble Omega, IncField *IF, HVector *RH
 /***************************************************************/
 /* Allocate an RHS vector of the appropriate size. *************/
 /***************************************************************/
-HVector *RWGGeometry::AllocateRHSVector(bool PureImagFreq)
-{ 
-  HVector *V;
-
+std::unique_ptr<HVector> RWGGeometry::AllocateRHSVector(bool PureImagFreq)
+{
   if (PureImagFreq && LBasis==nullptr)
-   V=new HVector(TotalBFs,LHM_REAL);
-  else
-   V=new HVector(TotalBFs,LHM_COMPLEX);
-
-  return V;
+   return std::make_unique<HVector>(TotalBFs,LHM_REAL);
+  return std::make_unique<HVector>(TotalBFs,LHM_COMPLEX);
 
 } 
 

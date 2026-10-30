@@ -44,8 +44,8 @@ SCPData *CreateSCPData(const char *GeoFileIn,
   const char *GeoFile = GeoFileIn ? GeoFileIn : "PECPlate";
   if (GeoFileIn)
    { SCPD->G  = new RWGGeometry(GeoFile, SCUFF_TERSELOGGING);
-     SCPD->M  = SCPD->G->AllocateBEMMatrix(SCUFF_PUREIMAGFREQ);
-     SCPD->KN = SCPD->G->AllocateRHSVector(SCUFF_PUREIMAGFREQ);
+     SCPD->M  = SCPD->G->AllocateBEMMatrix(SCUFF_PUREIMAGFREQ).release();
+     SCPD->KN = SCPD->G->AllocateRHSVector(SCUFF_PUREIMAGFREQ).release();
    }
   else
    { SCPD->G  = nullptr; // in this case we take the

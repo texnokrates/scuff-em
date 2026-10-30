@@ -422,7 +422,7 @@ void scuffSolver::AddMinusIdVTermsToZMatrix(HMatrix *KMatrix, HMatrix *ZMatrix)
    { 
      // get fields at centroids of all port edges due to unit-strength current into SourcePort
      HVector KNSource(NBF, LHM_COMPLEX, KMatrix->GetColumnPointer(SourcePort));
-     if (!KN) KN=G->AllocateRHSVector();
+     if (!KN) KN=G->AllocateRHSVector().release();
      KN->Copy(&KNSource);
      if (CachedPortCurrents==nullptr) CachedPortCurrents=new cdouble[NumPorts];
      memset(CachedPortCurrents, 0, NumPorts*sizeof(cdouble));

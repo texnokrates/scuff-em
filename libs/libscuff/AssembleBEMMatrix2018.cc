@@ -228,10 +228,10 @@ HMatrix *AssembleBEMMatrix2018(RWGGeometry *G, cdouble Omega, double *kBloch, HM
   /***************************************************************/
   /***************************************************************/
   if (M==nullptr)
-   M=G->AllocateBEMMatrix();
+   M=G->AllocateBEMMatrix().release();
   else if ( M->NR != G->TotalBFs || M->NC != G->TotalBFs )
    { Warn("wrong-size matrix passed to AssembleBEMMatrix; reallocating...");
-     M=G->AllocateBEMMatrix();
+     M=G->AllocateBEMMatrix().release();
    }
 
   /***************************************************************/

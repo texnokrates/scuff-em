@@ -700,10 +700,10 @@ HMatrix *RWGGeometry::AssembleBEMMatrix(cdouble Omega, double *kBloch, HMatrix *
   /***************************************************************/
   /***************************************************************/
   if (M==nullptr)
-   M=AllocateBEMMatrix();
+   M=AllocateBEMMatrix().release();
   else if ( M->NR != TotalBFs || M->NC != TotalBFs )
    { Warn("wrong-size matrix passed to AssembleBEMMatrix; reallocating...");
-     M=AllocateBEMMatrix();
+     M=AllocateBEMMatrix().release();
    }
 
   /***************************************************************/
@@ -777,11 +777,11 @@ HMatrix *RWGGeometry::AssembleBEMMatrix(cdouble Omega, HMatrix *M)
 /***************************************************************/
 /***************************************************************/
 /***************************************************************/
-HMatrix *RWGGeometry::AllocateBEMMatrix(bool PureImagFreq, bool Packed)
+std::unique_ptr<HMatrix> RWGGeometry::AllocateBEMMatrix(bool PureImagFreq, bool Packed)
 {
   int Storage = Packed ? LHM_SYMMETRIC : LHM_NORMAL;
   int DataType = (!LBasis && PureImagFreq) ? LHM_REAL : LHM_COMPLEX;
-  return new HMatrix(TotalBFs, TotalBFs, DataType, Storage);
+  return std::make_unique<HMatrix>(TotalBFs, TotalBFs, DataType, Storage);
 }
 
 } // namespace scuff
