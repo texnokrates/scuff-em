@@ -243,14 +243,14 @@ int main(int argc, char *argv[])
   if (MinFreqSpecified || MaxFreqSpecified || NumFreqsSpecified)
    { if ( !MinFreqSpecified || !MaxFreqSpecified || !NumFreqsSpecified )
       ErrExit("--MinFreq, --MaxFreq, --NumFreqs must be all present or all absent");
-     FV3.reset( LogFreq ? LogSpace(MinFreq, MaxFreq, NumFreqsOpt)
-                        : LinSpace(MinFreq, MaxFreq, NumFreqsOpt) );
+     FV3 = ( LogFreq ? LogSpace(MinFreq, MaxFreq, NumFreqsOpt)
+                     : LinSpace(MinFreq, MaxFreq, NumFreqsOpt) );
    };
   int NumFreqs=0;
   if ( FV1.get() || FV2.get() || FV3.get() )
    { if (!PCFile.empty() )
       ErrExit("--portcurrentfile may not be combined with a frequency specification");
-     FreqList.reset(new HVector(0));
+     FreqList = std::make_unique<HVector>(0);
      HVConcat(FreqList.get(), FV1.get());
      HVConcat(FreqList.get(), FV2.get());
      HVConcat(FreqList.get(), FV3.get());

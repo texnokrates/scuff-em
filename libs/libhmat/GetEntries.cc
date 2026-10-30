@@ -295,7 +295,7 @@ cdouble *HMatrix::GetEntries(int Row, const char *ColString, cdouble *Entries)
 /***************************************************************/
 /* RowColString is a string like "[8,2:2:4]"                   */
 /***************************************************************/ 
-HMatrix *HMatrix::ExtractEntries(const char *RowColString, HMatrix *B)
+std::unique_ptr<HMatrix> HMatrix::ExtractEntries(const char *RowColString)
 { 
   /***************************************************************/
   /* extract row and column index strings from first argument ****/
@@ -324,10 +324,11 @@ HMatrix *HMatrix::ExtractEntries(const char *RowColString, HMatrix *B)
   /***************************************************************/
   /***************************************************************/
   /***************************************************************/
-  return DoGetEntries(RowStart, RowStop, RowInc, RowLen, 
-                      ColStart, ColStop, ColInc, ColLen,
-                      B, 0, 0);
-  
+  return std::unique_ptr<HMatrix>(
+   DoGetEntries(RowStart, RowStop, RowInc, RowLen,
+                ColStart, ColStop, ColInc, ColLen,
+                nullptr, 0, 0));
+
 }
 
 /***************************************************************/

@@ -167,11 +167,11 @@ differential Green's functions of a compact or periodic object"};
       ErrExit("%s",OkBPoints->ErrMsg);
    }
   else
-   { OmegaPoints.reset(
+   { OmegaPoints =
       GetOmegaList(OmegaFile.empty() ? nullptr : OmegaFile.c_str(),
                    OmegaVals.data(), (int)OmegaVals.size(),
                    LambdaFile.empty() ? nullptr : LambdaFile.c_str(),
-                   LambdaVals.data(), (int)LambdaVals.size()) );
+                   LambdaVals.data(), (int)LambdaVals.size());
      if (OmegaPoints.get()==nullptr)
       ErrExit("you must specify at least one frequency");
    };

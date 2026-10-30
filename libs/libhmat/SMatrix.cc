@@ -382,13 +382,13 @@ void SMatrix::Apply(HMatrix *X, HMatrix *MX)
    }
 }
 
-HMatrix *SMatrix::Apply(HMatrix *X)
+std::unique_ptr<HMatrix> SMatrix::Apply(HMatrix *X)
 {
-  HMatrix *MX = new HMatrix(NR, X->NC,
+  auto MX = std::make_unique<HMatrix>(NR, X->NC,
 			    X->RealComplex == LHM_REAL
 			    && RealComplex == LHM_REAL ? LHM_REAL
 			    : LHM_COMPLEX);
-  Apply(X, MX);
+  Apply(X, MX.get());
   return MX;
 }
 

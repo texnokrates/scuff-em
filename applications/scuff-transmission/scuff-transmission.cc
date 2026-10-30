@@ -273,11 +273,11 @@ int main(int argc, char *argv[])
   /* process frequency/wavelength options to construct a list of     */
   /* frequencies at which to run calculations.                       */
   /*******************************************************************/
-  std::unique_ptr<HVector> OmegaVector(
+  std::unique_ptr<HVector> OmegaVector =
     GetOmegaList(OmegaFile.empty() ? nullptr : OmegaFile.c_str(),
                  OmegaVals.data(), (int)OmegaVals.size(),
                  LambdaFile.empty() ? nullptr : LambdaFile.c_str(),
-                 LambdaVals.data(), (int)LambdaVals.size()) );
+                 LambdaVals.data(), (int)LambdaVals.size());
   if ( OmegaVector.get()==nullptr || OmegaVector->N==0)
    { CLI::ValidationError Error("scuff-transmission",
         "you must specify at least one frequency");
@@ -303,7 +303,7 @@ int main(int argc, char *argv[])
       };
      if ( ThetaMax==ThetaMin )
       ThetaPoints=1;
-     ThetaVector.reset( LinSpace(ThetaMin*DEG2RAD, ThetaMax*DEG2RAD, ThetaPoints) );
+     ThetaVector = LinSpace(ThetaMin*DEG2RAD, ThetaMax*DEG2RAD, ThetaPoints);
    }
   else
    { ThetaVector.reset(new HVector(1));

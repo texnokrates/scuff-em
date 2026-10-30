@@ -246,55 +246,52 @@ void HVector::Copy(HVector *V)
 /***************************************************************/
 /***************************************************************/
 /***************************************************************/
-HVector *LinSpace(double Min, double Max, int Num)
-{ 
+std::unique_ptr<HVector> LinSpace(double Min, double Max, int Num)
+{
   if (Num<1) ErrExit("LinSpace: invalid N value (%i)\n",Num);
-  HVector *V=new HVector(Num);
+  auto V=std::make_unique<HVector>(Num);
   V->SetEntry(0, Min);
   double Delta=(Max-Min) / ( ((double)Num) - 1.0 );
   for(int n=1; n<Num; n++)
    V->SetEntry(n, V->GetEntryD(n-1) + Delta);
   return V;
-  
-} 
+}
 
-HVector *LogSpace(double Min, double Max, int Num)
-{ 
+std::unique_ptr<HVector> LogSpace(double Min, double Max, int Num)
+{
   if (Num<1) ErrExit("LogSpace: invalid N value (%i)\n",Num);
-  HVector *V=new HVector(Num);
+  auto V=std::make_unique<HVector>(Num);
   V->SetEntry(0, Min);
   double Mult=exp( log(Max/Min)/((double)(Num-1)) );
   for(int n=1; n<Num; n++)
    V->SetEntry(n, V->GetEntry(n-1) * Mult );
   return V;
-  
 }
 
 /***************************************************************/
 /* concatenate two vectors, [V1; V2] in matlab notation.       */
 /* returns NULL if both vectors are NULL.                      */
 /***************************************************************/
-HVector *Concat(HVector *V1, HVector *V2)
-{  
+std::unique_ptr<HVector> Concat(HVector *V1, HVector *V2)
+{
   if ( V1==nullptr && V2==nullptr )
    return nullptr;
-  
+
   if ( V1==nullptr && V2!=nullptr )
-   return new HVector(*V2); // invoke copy constructor
+   return std::make_unique<HVector>(*V2);
 
   if ( V1!=nullptr && V2==nullptr )
-   return new HVector(*V1); // invoke copy constructor
+   return std::make_unique<HVector>(*V1);
 
   int RealComplex = (V1->RealComplex==LHM_REAL && V2->RealComplex==LHM_REAL ) ? LHM_REAL : LHM_COMPLEX;
-  
-  HVector *V = new HVector(V1->N + V2->N, RealComplex);
+
+  auto V = std::make_unique<HVector>(V1->N + V2->N, RealComplex);
   int n, n1, n2;
   for(n=n1=0; n1<V1->N; n1++)
    V->SetEntry( n++, V1->GetEntry(n1) );
   for(n2=0; n2<V2->N; n2++)
    V->SetEntry( n++, V2->GetEntry(n2) );
   return V;
-
 }
 
 /***************************************************************/
@@ -331,37 +328,36 @@ cdouble HVector::Min()
 /* helper routine to process frequency-related options to      */
 /* construct a list of angular frequencies                     */
 /***************************************************************/
-HVector *GetOmegaList(const char *OmegaFile,  cdouble *OmegaVals,  int nOmegaVals,
+std::unique_ptr<HVector> GetOmegaList(const char *OmegaFile,  cdouble *OmegaVals,  int nOmegaVals,
                       const char *LambdaFile, cdouble *LambdaVals, int nLambdaVals)
 {
-  HVector *OmegaList=nullptr;
   int TotalFreqs=0;
 
-  HVector *OmegaList1=nullptr, *OmegaList2=nullptr, *LambdaList1=nullptr, *LambdaList2=nullptr;
+  std::unique_ptr<HVector> OmegaList1, OmegaList2, LambdaList1, LambdaList2;
   if (OmegaFile) // process --OmegaFile option if present
-   { 
-     OmegaList1=new HVector(OmegaFile,LHM_TEXT);
+   {
+     OmegaList1=std::make_unique<HVector>(OmegaFile,LHM_TEXT);
      if (OmegaList1->ErrMsg)
-      ErrExit(OmegaList1->ErrMsg);
+      ErrExit("%s",OmegaList1->ErrMsg);
      TotalFreqs += OmegaList1->N;
    };
   if (nOmegaVals>0) // process -- Omega options if present
    {
-     OmegaList2=new HVector(nOmegaVals, LHM_COMPLEX);
+     OmegaList2=std::make_unique<HVector>(nOmegaVals, LHM_COMPLEX);
      for(int n=0; n<nOmegaVals; n++)
       OmegaList2->SetEntry(n,OmegaVals[n]);
      TotalFreqs += OmegaList2->N;
    };
   if (LambdaFile) // process --LambdaFile option if present
-   { 
-     LambdaList1=new HVector(LambdaFile,LHM_TEXT);
+   {
+     LambdaList1=std::make_unique<HVector>(LambdaFile,LHM_TEXT);
      if (LambdaList1->ErrMsg)
-      ErrExit(LambdaList1->ErrMsg);
+      ErrExit("%s",LambdaList1->ErrMsg);
      TotalFreqs += LambdaList1->N;
    };
   if (nLambdaVals>0) // process -- Lambda options if present
    {
-     LambdaList2=new HVector(nLambdaVals, LHM_COMPLEX);
+     LambdaList2=std::make_unique<HVector>(nLambdaVals, LHM_COMPLEX);
      for(int n=0; n<nLambdaVals; n++)
       LambdaList2->SetEntry(n,LambdaVals[n]);
      TotalFreqs += LambdaList2->N;
@@ -370,7 +366,7 @@ HVector *GetOmegaList(const char *OmegaFile,  cdouble *OmegaVals,  int nOmegaVal
   if (TotalFreqs==0)
    return nullptr;
 
-  OmegaList = new HVector(TotalFreqs, LHM_COMPLEX);
+  auto OmegaList = std::make_unique<HVector>(TotalFreqs, LHM_COMPLEX);
   int nOmega=0;
   if ( OmegaList1 )
    for(int n=0; n<OmegaList1->N; n++)

@@ -96,7 +96,7 @@ bool RowSorter::operator() (int nri, int nrj)
 /*             R, V: ascending by real part                    */
 /*           = m, i, r, v: descending                          */
 /***************************************************************/
-HMatrix *SortHMatrix(HMatrix *M, ivec SortColumns, cvec SortType)
+std::unique_ptr<HMatrix> SortHMatrix(HMatrix *M, ivec SortColumns, cvec SortType)
 {
   int NR=M->NR, NC=M->NC;
 
@@ -106,7 +106,7 @@ HMatrix *SortHMatrix(HMatrix *M, ivec SortColumns, cvec SortType)
   RowSorter MyRowSorter(M, SortColumns, SortType);
   std::sort (RowIndices.begin(), RowIndices.end(), MyRowSorter);
 
-  HMatrix *NewM = new HMatrix(*M);
+  auto NewM = std::make_unique<HMatrix>(*M);
   for(int nr=0; nr<NR; nr++)
    for(int nc=0; nc<NC; nc++)
     NewM->SetEntry(nr, nc, M->GetEntry(RowIndices[nr], nc));
@@ -118,12 +118,11 @@ void HMatrix::Sort(ivec SortColumns, cvec SortType)
 { 
   if (StorageType!=LHM_NORMAL)
    ErrExit("matrix sort not yet implemented for packed matrices");
-  HMatrix *NewM=SortHMatrix(this, SortColumns, SortType);
+  auto NewM=SortHMatrix(this, SortColumns, SortType);
   if (RealComplex==LHM_REAL)
    memcpy(DM, NewM->DM, NR*NC*sizeof(double));
   else
    memcpy(ZM, NewM->ZM, NR*NC*sizeof(cdouble));
-  delete NewM;
 }
 
 void HMatrix::Sort(ivec SortColumns)

@@ -31,6 +31,7 @@
 #include <math.h>
 #include <cmath>
 #include <complex>
+#include <memory>
 #include <vector>
 
 /***************************************************************/
@@ -110,7 +111,7 @@ class HVector
 
    /* copying another HVector of the same size */
    void Copy(HVector *V);
-   HVector *Copy() { return new HVector(*this); }
+   std::unique_ptr<HVector> Copy() { return std::make_unique<HVector>(*this); }
 
    /* set the value of an entry */
    void SetEntry(int n, double Entry);
@@ -153,10 +154,10 @@ class HVector
 /* a couple of non-class methods that return newly allocated   */
 /* HVectors                                                    */
 /***************************************************************/
-HVector *LinSpace(double Min, double Max, int Num);
-HVector *LogSpace(double Min, double Max, int Num);
-HVector *Concat(HVector *V1, HVector *V2);
-HVector *GetOmegaList(const char *OmegaFile,
+std::unique_ptr<HVector> LinSpace(double Min, double Max, int Num);
+std::unique_ptr<HVector> LogSpace(double Min, double Max, int Num);
+std::unique_ptr<HVector> Concat(HVector *V1, HVector *V2);
+std::unique_ptr<HVector> GetOmegaList(const char *OmegaFile,
                       cdouble *OmegaVals,  int nOmegaVals,
                       const char *LambdaFile,
                       cdouble *LambdaVals, int nLambdaVals);
@@ -227,7 +228,10 @@ class HMatrix
    cdouble *GetEntries(const char *RowString, int Col, cdouble *Entries=nullptr);
    double *GetEntriesD(int Row, const char *ColString, double *Entries=nullptr);
    cdouble *GetEntries(int Row, const char *ColString, cdouble *Entries=nullptr);
-   HMatrix *ExtractEntries(const char *RowColString, HMatrix *B=nullptr);
+   std::unique_ptr<HMatrix> ExtractEntries(const char *RowColString);
+   /* placement worker for the GetEntries family: fills the caller's B
+      (allocating it only when B==nullptr on entry, in which case the
+      caller owns the returned pointer).  Prefer ExtractEntries(). */
    HMatrix *DoGetEntries(int RowStart, int RowStop, int RowInc, int RowLen,
                          int ColStart, int ColStop, int ColInc, int ColLen,
                          HMatrix *B, int RowOffset, int ColOffset);
@@ -254,7 +258,7 @@ class HMatrix
 
    /* routine for copying another HMatrix of the same size*/
    void Copy(const HMatrix *M);
-   HMatrix *Copy() { return new HMatrix(*this); }
+   std::unique_ptr<HMatrix> Copy() { return std::make_unique<HMatrix>(*this); }
 
    /* get the trace */
    cdouble GetTrace();
@@ -402,13 +406,13 @@ class HMatrix
  };
 
 // make an unpacked copy of a symmetric/Hermitian matrix
-HMatrix *CopyHMatrixUnpacked(HMatrix *Mpacked);
+std::unique_ptr<HMatrix> CopyHMatrixUnpacked(HMatrix *Mpacked);
 
 // contatenate A and B to create a new HMatrix
-HMatrix *Concat(HMatrix *A, HMatrix *B, int How=LHM_HORIZONTAL);
+std::unique_ptr<HMatrix> Concat(HMatrix *A, HMatrix *B, int How=LHM_HORIZONTAL);
 
 // make a sorted copy of a matrix
-HMatrix *SortHMatrix(HMatrix *M, std::vector<int> SortColumns, 
+std::unique_ptr<HMatrix> SortHMatrix(HMatrix *M, std::vector<int> SortColumns, 
                                  std::vector<char> SortType);
 
 // return a matrix with given properties, using an optional
@@ -458,7 +462,7 @@ class SMatrix
     double ApplyD(HVector *X, HVector *MX);
     HVector *Apply(HVector *X); // return new MX
     void Apply(HMatrix *X, HMatrix *MX);
-    HMatrix *Apply(HMatrix *X); // return new MX
+    std::unique_ptr<HMatrix> Apply(HMatrix *X);
 
     // compute vector-matrix-vector product X'*this*Y
     cdouble BilinearProduct(HVector *X, HVector *Y=nullptr);

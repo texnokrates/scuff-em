@@ -250,11 +250,11 @@ int main(int argc, char *argv[])
   /*******************************************************************/
   /* process frequency-related options                               */
   /*******************************************************************/
-  std::unique_ptr<HVector> OmegaList(
+  std::unique_ptr<HVector> OmegaList =
     GetOmegaList(OmegaFile.empty() ? nullptr : OmegaFile.c_str(),
                  OmegaVals.data(), (int)OmegaVals.size(),
                  LambdaFile.empty() ? nullptr : LambdaFile.c_str(),
-                 LambdaVals.data(), (int)LambdaVals.size()));
+                 LambdaVals.data(), (int)LambdaVals.size());
   if (OmegaList.get()==nullptr)
    { CLI::ValidationError Error("scuff-scatter",
         "you must specify at least one frequency");

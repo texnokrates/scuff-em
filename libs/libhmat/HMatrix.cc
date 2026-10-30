@@ -752,9 +752,9 @@ void HMatrix::ExtractBlock(int RowOffset, int ColOffset, HMatrix *B)
 /***************************************************************/
 /* Make an unpacked copy of the matrix *************************/
 /***************************************************************/
-HMatrix *CopyHMatrixUnpacked(HMatrix *Mpacked) {
+std::unique_ptr<HMatrix> CopyHMatrixUnpacked(HMatrix *Mpacked) {
   if (!Mpacked) return nullptr;
-  HMatrix *M = new HMatrix(Mpacked->NR, Mpacked->NC, Mpacked->RealComplex);
+  auto M = std::make_unique<HMatrix>(Mpacked->NR, Mpacked->NC, Mpacked->RealComplex);
   M->Copy(Mpacked);
   return M;
 }
@@ -773,7 +773,7 @@ HMatrix *CopyHMatrixUnpacked(HMatrix *Mpacked) {
 /*       one feasible way to do the concatenation, in which    */
 /*       case the How argument is silently ignored.            */
 /***************************************************************/
-HMatrix *Concat(HMatrix *A, HMatrix *B, int How)
+std::unique_ptr<HMatrix> Concat(HMatrix *A, HMatrix *B, int How)
 {
   if ( (A->NR == B->NR) && (A->NC != B->NC) )
    How = LHM_HORIZONTAL;
@@ -788,7 +788,7 @@ HMatrix *Concat(HMatrix *A, HMatrix *B, int How)
   int NC = (How==LHM_VERTICAL)   ? A->NC : (A->NC + B->NC);
   int DataType = (A->RealComplex==LHM_REAL && B->RealComplex==LHM_REAL) ? LHM_REAL : LHM_COMPLEX;
 
-  HMatrix *C = new HMatrix(NR, NC, DataType);
+  auto C = std::make_unique<HMatrix>(NR, NC, DataType);
   C->InsertBlock(A, 0, 0);
   if (How==LHM_HORIZONTAL)
    C->InsertBlock(B, 0, A->NC);
@@ -823,6 +823,10 @@ double HMatrix::BilinearProductD(HVector *X, HVector *Y)
 /* allocating a new matrix with the given properties (in which */
 /* case M is deallocated first.)                               */
 /***************************************************************/
+/* CheckHMatrix takes-and-maybe-replaces: the candidate *M is deleted if
+   it has the wrong geometry, and a correctly-sized matrix is returned.
+   This raw take-and-return signature is deliberate; callers typically
+   hold the result in a unique_ptr member or assign it back. */
 HMatrix *CheckHMatrix(HMatrix *M, int NR, int NC, int RealComplex, const char *Context)
 {
   if (M && (M->NR!=NR || M->NC!=NC || M->RealComplex!=RealComplex) )
@@ -837,5 +841,9 @@ HMatrix *CheckHMatrix(HMatrix *M, int NR, int NC, int RealComplex, const char *C
   return M;
 }
 
+/* CheckHMatrix takes-and-maybe-replaces: the candidate *M is deleted if
+   it has the wrong geometry, and a correctly-sized matrix is returned.
+   This raw take-and-return signature is deliberate; callers typically
+   hold the result in a unique_ptr member or assign it back. */
 HMatrix *CheckHMatrix(HMatrix *M, HMatrix *M0, const char *Context)
 { return CheckHMatrix(M, M0->NR, M0->NC, M0->RealComplex, Context); }
