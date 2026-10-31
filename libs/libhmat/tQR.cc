@@ -36,9 +36,10 @@ int main(int argc, char *argv[])
   if (M->ErrMsg)
    ErrExit(M->ErrMsg);
   
-  HMatrix *Q=0, *R=0;
+  auto Q = std::make_unique<HMatrix>(M->NR, M->NR, M->RealComplex);
+  auto R = std::make_unique<HMatrix>(M->NR, M->NC, M->RealComplex);
 
-  M->QR(&Q, &R);
+  M->QR(*Q, *R);
 
   int nr, nrMax = M->NR > 5 ? 5 : M->NR;
   int nc, ncMax = M->NC > 5 ? 5 : M->NC;

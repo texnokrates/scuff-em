@@ -335,20 +335,34 @@ class HMatrix
    int CholSolve(HMatrix *X);
    int CholSolve(HMatrix *X, int nrhs);
 
-   /* routine for qr-factorizing (xgeqrf) */
-   //int QR(HMatrix **R);
-   int QR(HMatrix **Q, HMatrix **R);
+   /* routine for qr-factorizing (xgeqrf); Q and R are caller-owned
+      buffers of the right sizes (Q is NRxNR, R is NRxNC)           */
+   int QR(HMatrix &Q, HMatrix &R);
 
-   /* routine for eigenvalues and optionally vectors of */
-   /* symmetric/hermitian matrices (dsyevr / zheevr)    */
-   HVector *Eig(HVector *Lambda=nullptr, HMatrix *U=nullptr);
+   /* eigenvalues (and optionally eigenvectors) of symmetric/
+      hermitian matrices (dsyevr / zheevr).  The allocating forms
+      return a newly allocated vector of eigenvalues; the U buffer,
+      if supplied, must have the matrix's dimensions and receives
+      the eigenvectors.  The filling forms store into caller-owned
+      buffers of the right sizes.                                   */
+   std::unique_ptr<HVector> Eig();
+   std::unique_ptr<HVector> Eig(HMatrix &U);
+   void Eig(HVector &Lambda);
+   void Eig(HVector &Lambda, HMatrix &U);
 
-   /* routine for eigenvalues and optionally vectors of */
-   /* non-symmetric matrices (dgeevx / zgeevx )         */
-   HVector *NSEig(HVector *Lambda=nullptr, HMatrix *U=nullptr);
+   /* same, for non-symmetric matrices (dgeevx / zgeevx) */
+   std::unique_ptr<HVector> NSEig();
+   std::unique_ptr<HVector> NSEig(HMatrix &U);
+   void NSEig(HVector &Lambda);
+   void NSEig(HVector &Lambda, HMatrix &U);
 
-   /* singular-value decomposition */
-   HVector *SVD(HVector *Sigma=nullptr, HMatrix *U=nullptr, HMatrix *VT=nullptr);
+   /* singular-value decomposition (xgesvd); the U/VT buffers, if
+      supplied, may be either full-size (NRxNR / NCxNC) or compact
+      (NRxNRCMin / NRCMinxNC)                                       */
+   std::unique_ptr<HVector> SVD();
+   std::unique_ptr<HVector> SVD(HMatrix &U, HMatrix &VT);
+   void SVD(HVector &Sigma);
+   void SVD(HVector &Sigma, HMatrix &U, HMatrix &VT);
 
    /* matrix norm*/
    double GetNorm(bool UseInfinityNorm=false);
@@ -402,6 +416,14 @@ class HMatrix
    // will return an HMatrix/HVector with no data and with a 
    // non-NULL value of its ErrMsg field.
    static bool AbortOnIOError;
+
+ private:
+   /* workers for the Eig/NSEig/SVD entry points; the buffers they
+      fill must have exactly the right dimensions (enforced by the
+      public overloads, which ErrExit on mismatches)                */
+   void EigCore(HVector *Lambda, HMatrix *U);
+   void NSEigCore(HVector *Lambda, HMatrix *U);
+   void SVDCore(HVector *Sigma, HMatrix *U, HMatrix *VT);
 
  };
 

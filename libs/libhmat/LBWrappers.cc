@@ -428,48 +428,40 @@ int HMatrix::CholSolve(HMatrix *X) { return CholSolve(X,X->NC); }
 /* HMatrices of the appropriate size are allocated and returned*/
 /* in those slots.                                             */
 /***************************************************************/
-int HMatrix::QR(HMatrix **pQ, HMatrix **pR)
+int HMatrix::QR(HMatrix &Q, HMatrix &R)
 {
-  if (pQ==nullptr || pR==nullptr)
-   ErrExit("HMatrix::QR called with null pointers");
-
-  HMatrix *Q = *pQ; 
-  HMatrix *R = *pR; 
-
-  // make sure Q and R are the right sizes, namely Q is NRxNR and R is NRxNC
-  if ( Q==nullptr || Q->NR!=NR || Q->NC!=NR )
-   { if (Q!=nullptr) Warn("invalid Q matrix on entry to HMatrix::QR; reallocating...");
-     Q=new HMatrix(NR, NR, RealComplex);
-   };
-
-  if ( R==nullptr || R->NR!=NR || R->NC!=NC )
-   { if (R!=nullptr) Warn("invalid Q matrix on entry to HMatrix::QR; reallocating...");
-     R=new HMatrix(NR, NC, RealComplex);
-   };
+  // the caller's Q and R must have the right sizes, namely Q is NRxNR
+  // and R is NRxNC
+  if ( Q.NR!=NR || Q.NC!=NR )
+   ErrExit("wrong-size Q matrix (%ix%i) passed to HMatrix::QR (expected %ix%i)",
+            Q.NR,Q.NC,NR,NR);
+  if ( R.NR!=NR || R.NC!=NC )
+   ErrExit("wrong-size R matrix (%ix%i) passed to HMatrix::QR (expected %ix%i)",
+            R.NR,R.NC,NR,NC);
 
   /*--------------------------------------------------------------*/
   /*- set Q equal to the unit matrix -----------------------------*/
   /*--------------------------------------------------------------*/
-  Q->Zero();
+  Q.Zero();
   for(int nr=0; nr<NR; nr++)
-   Q->SetEntry(nr, nr, 1.0);
+   Q.SetEntry(nr, nr, 1.0);
 
   /*--------------------------------------------------------------*/
   /*- call lapack's QR routine to get the R matrix, plus the     -*/
   /*- sequence of reflectors that define Q, in the body of the   -*/
   /*- R HMatrix                                                  -*/
   /*--------------------------------------------------------------*/
-  R->Copy(this);
+  R.Copy(this);
   int info, MinusOne=-1;
   int TauLength = NR<NC ? NR:NC;
   if ( RealComplex==LHM_REAL )
    { 
-     double *Tau=R->DM, *dwork;
+     double *Tau=R.DM, *dwork=nullptr;
      double dlworkOptimal;
      int lworkOptimal;
 
      // workspace size query
-     dgeqrf_(&NR, &NC, R->DM, &NR, Tau, &dlworkOptimal, &MinusOne, &info);
+     dgeqrf_(&NR, &NC, R.DM, &NR, Tau, &dlworkOptimal, &MinusOne, &info);
      lworkOptimal = (int) dlworkOptimal;
 
      // make sure our internally-stored workspace is large enough
@@ -483,21 +475,21 @@ int HMatrix::QR(HMatrix **pQ, HMatrix **pR)
      dwork = Tau + TauLength;
 
      // do the QR factorization 
-     dgeqrf_(&NR, &NC, R->DM, &NR, Tau, dwork, &lworkOptimal, &info);
+     dgeqrf_(&NR, &NC, R.DM, &NR, Tau, dwork, &lworkOptimal, &info);
 
      // reconstruct the Q matrix from the Householder reflectors
-     dormqr_("L", "N", &NR, &NR, &TauLength, R->DM, &NR, Tau, Q->DM, &NR,
+     dormqr_("L", "N", &NR, &NR, &TauLength, R.DM, &NR, Tau, Q.DM, &NR,
              dwork, &lworkOptimal, &info);
 
    }
   else //( RealComplex==LHM_COMPLEX
    { 
-     cdouble *Tau=R->ZM, *zwork;
+     cdouble *Tau=R.ZM, *zwork=nullptr;
      cdouble zlworkOptimal;
      int lworkOptimal;
 
      // workspace size query
-     zgeqrf_(&NR, &NC, R->ZM, &NR, Tau, &zlworkOptimal, &MinusOne, &info);
+     zgeqrf_(&NR, &NC, R.ZM, &NR, Tau, &zlworkOptimal, &MinusOne, &info);
      lworkOptimal = (int) real(zlworkOptimal);
 
      // make sure our internally-stored workspace is large enough
@@ -512,10 +504,10 @@ int HMatrix::QR(HMatrix **pQ, HMatrix **pR)
      zwork = Tau + TauLength;
 
      // do the QR factorization 
-     zgeqrf_(&NR, &NC, R->ZM, &NR, Tau, zwork, &lworkOptimal, &info);
+     zgeqrf_(&NR, &NC, R.ZM, &NR, Tau, zwork, &lworkOptimal, &info);
 
      // reconstruct the Q matrix from the Householder reflectors
-     zunmqr_("L", "N", &NR, &NR, &TauLength, R->ZM, &NR, Tau, Q->ZM, &NR,
+     zunmqr_("L", "N", &NR, &NR, &TauLength, R.ZM, &NR, Tau, Q.ZM, &NR,
              zwork, &lworkOptimal, &info);
 
    };
@@ -523,10 +515,8 @@ int HMatrix::QR(HMatrix **pQ, HMatrix **pR)
   // zero out the lower diagonal of R 
   for(int nc=0; nc<NC; nc++)
    for(int nr=nc+1; nr<NR; nr++)
-    R->SetEntry(nr,nc,0.0);
+    R.SetEntry(nr,nc,0.0);
 
-  *pQ = Q;
-  *pR = R;
   return info;
 }
 
@@ -534,29 +524,14 @@ int HMatrix::QR(HMatrix **pQ, HMatrix **pR)
 /* routine for eigenvalues and optionally vectors of           */
 /* symmetric/hermitian matrices (dsyevr / zheevr)              */
 /***************************************************************/
-HVector *HMatrix::Eig(HVector *Lambda, HMatrix *U)
+void HMatrix::EigCore(HVector *Lambda, HMatrix *U)
 {
   /***************************************************************/
   /***************************************************************/
   /***************************************************************/
-  if (NR!=NC)
-   ErrExit("non-square matrix passed to Eig");
-  if ( Lambda && ( (Lambda->N!=NR) || (Lambda->RealComplex!=LHM_REAL)) )
-   { Warn("Incorrect Lambda vector passed to Eig (reallocating)");
-     delete Lambda;
-     Lambda=nullptr;
-   };
-  if (Lambda==nullptr)
-   Lambda=new HVector(NR,LHM_REAL);
-
-  /***************************************************************/
-  /***************************************************************/
-  /***************************************************************/
   if ( U && ( (U->NR!=NR) || (U->NC!=NC)) )
-   { Warn("Incorrect U matrix passed to Eig (reallocating)");
-     delete U;
-     U = new HMatrix(NR, NC, RealComplex);
-   };
+   ErrExit("wrong-size U matrix (%ix%i) passed to Eig (expected %ix%i)",
+            U->NR,U->NC,NR,NC);
 
   /***************************************************************/
   /***************************************************************/
@@ -644,38 +619,53 @@ HVector *HMatrix::Eig(HVector *Lambda, HMatrix *U)
    }
 
   delete[] isuppz;
+}
+
+/***************************************************************/
+/* Eig entry points                                            */
+/***************************************************************/
+std::unique_ptr<HVector> HMatrix::Eig()
+{
+  auto Lambda=std::make_unique<HVector>(NR, LHM_REAL);
+  EigCore(Lambda.get(), nullptr);
   return Lambda;
+}
+
+std::unique_ptr<HVector> HMatrix::Eig(HMatrix &U)
+{
+  auto Lambda=std::make_unique<HVector>(NR, LHM_REAL);
+  EigCore(Lambda.get(), &U);
+  return Lambda;
+}
+
+void HMatrix::Eig(HVector &Lambda)
+{
+  if ( Lambda.N!=NR || Lambda.RealComplex!=LHM_REAL )
+   ErrExit("wrong-size Lambda vector passed to Eig (%i entries; expected %i)",
+            Lambda.N,NR);
+  EigCore(&Lambda, nullptr);
+}
+
+void HMatrix::Eig(HVector &Lambda, HMatrix &U)
+{
+  if ( Lambda.N!=NR || Lambda.RealComplex!=LHM_REAL )
+   ErrExit("wrong-size Lambda vector passed to Eig (%i entries; expected %i)",
+            Lambda.N,NR);
+  EigCore(&Lambda, &U);
 }
 
 /***************************************************************/
 /* routine for eigenvalues and optionally vectors of           */
 /* non-symmetric matrices (dsyevr / zheevr)                    */
 /***************************************************************/
-HVector *HMatrix::NSEig(HVector *Lambda, HMatrix *U)
+void HMatrix::NSEigCore(HVector *Lambda, HMatrix *U)
 {
   /***************************************************************/
   /***************************************************************/
   /***************************************************************/
-  if (NR!=NC)
-   ErrExit("non-square matrix passed to NSEig");
-  if (StorageType!=LHM_NORMAL)
-   ErrExit("packed-storage matrix passed to NSEig()");
-  if ( Lambda && ( (Lambda->N!=NR) || (Lambda->RealComplex!=RealComplex)) )
-   { Warn("Incorrect Lambda vector passed to NSEig (reallocating)");
-     delete Lambda;
-     Lambda=nullptr;
-   }
-  if (Lambda==nullptr)
-   Lambda=new HVector(NR,LHM_COMPLEX);
-
-  /***************************************************************/
-  /***************************************************************/
-  /***************************************************************/
   if ( U && ( (U->NR!=NR) || (U->NC!=NC)) )
-   { Warn("Incorrect U matrix passed to NSEig (reallocating)");
-     delete U;
-     U = new HMatrix(NR, NC, LHM_COMPLEX);
-   }
+   ErrExit("wrong-size U matrix (%ix%i) passed to NSEig (expected %ix%i)",
+            U->NR,U->NC,NR,NC);
 
   /***************************************************************/
   /***************************************************************/
@@ -739,8 +729,39 @@ HVector *HMatrix::NSEig(HVector *Lambda, HMatrix *U)
      free(rwork);
    }
 
-  return Lambda;
+}
 
+/***************************************************************/
+/* NSEig entry points                                          */
+/***************************************************************/
+std::unique_ptr<HVector> HMatrix::NSEig()
+{
+  auto Lambda=std::make_unique<HVector>(NR, LHM_COMPLEX);
+  NSEigCore(Lambda.get(), nullptr);
+  return Lambda;
+}
+
+std::unique_ptr<HVector> HMatrix::NSEig(HMatrix &U)
+{
+  auto Lambda=std::make_unique<HVector>(NR, LHM_COMPLEX);
+  NSEigCore(Lambda.get(), &U);
+  return Lambda;
+}
+
+void HMatrix::NSEig(HVector &Lambda)
+{
+  if ( Lambda.N!=NR || Lambda.RealComplex!=RealComplex )
+   ErrExit("wrong-size Lambda vector passed to NSEig (%i entries; expected %i)",
+            Lambda.N,NR);
+  NSEigCore(&Lambda, nullptr);
+}
+
+void HMatrix::NSEig(HVector &Lambda, HMatrix &U)
+{
+  if ( Lambda.N!=NR || Lambda.RealComplex!=RealComplex )
+   ErrExit("wrong-size Lambda vector passed to NSEig (%i entries; expected %i)",
+            Lambda.N,NR);
+  NSEigCore(&Lambda, &U);
 }
 
 /***************************************************************/
@@ -759,7 +780,7 @@ HVector *HMatrix::NSEig(HVector *Lambda, HMatrix *U)
 /*  -- NC x NC:  VT <-- (adjoint of) matrix of full LSVs (JOBV='A')  */
 /*  -- NS x NC:  VT <-- (adjoint of) matrix of reduced LSVs (JOBV='S') */
 /***************************************************************/
-HVector *HMatrix::SVD(HVector *Sigma, HMatrix *U, HMatrix *VT)
+void HMatrix::SVDCore(HVector *Sigma, HMatrix *U, HMatrix *VT)
 {
   if (StorageType!=LHM_NORMAL)
    ErrExit("SVD() not supported for packed-storage matrices");
@@ -768,40 +789,27 @@ HVector *HMatrix::SVD(HVector *Sigma, HMatrix *U, HMatrix *VT)
   /***************************************************************/
   /***************************************************************/
   int NRCMin = (NR<NC ? NR : NC);
-  if ( Sigma && ( (Sigma->N!=NRCMin) ) )
-   { Warn("Incorrect Sigma vector passed to SVD (reallocating)");
-     delete Sigma;
-     Sigma=nullptr;
-   };
-  if (Sigma==nullptr)
-   Sigma=new HVector(NRCMin,LHM_REAL);
-  
+
   char jobu[2]="";
-  if ( U==nullptr ) 
+  if ( U==nullptr )
    jobu[0]='N';
-  else if ( U->NR==NR && U->NC==NR     && U->RealComplex==RealComplex) 
+  else if ( U->NR==NR && U->NC==NR     && U->RealComplex==RealComplex)
    jobu[0]='A';
   else if ( U->NR==NR && U->NC==NRCMin && U->RealComplex==RealComplex)
    jobu[0]='S';
-  else 
-   { Warn("Incorrect U matrix passed to SVD (omitting RSV calculation)");
-     jobu[0]='N';
-     U=nullptr;
-   };
+  else
+   ErrExit("wrong-size U matrix (%ix%i) passed to SVD",U->NR,U->NC);
   int LDU = U ? U->NR : 0;
 
   char jobvt[2]="";
-  if ( VT==nullptr ) 
+  if ( VT==nullptr )
    jobvt[0]='N';
   else if ( VT->NR==NC && VT->NC==NC     && VT->RealComplex==RealComplex)
    jobvt[0]='A';
   else if ( VT->NR==NRCMin && VT->NC==NC && VT->RealComplex==RealComplex)
    jobvt[0]='S';
-  else 
-   { Warn("Incorrect VT matrix passed to SVD (omitting LSV calculation)");
-     jobvt[0]='N';
-     VT=nullptr;
-   };
+  else
+   ErrExit("wrong-size VT matrix (%ix%i) passed to SVD",VT->NR,VT->NC);
   int LDVT = VT ? VT->NR : 0;
 
   /***************************************************************/
@@ -859,13 +867,47 @@ HVector *HMatrix::SVD(HVector *Sigma, HMatrix *U, HMatrix *VT)
      delete[] rwork;
 
    };
-
-  return Sigma;
-
 }
 
 /***************************************************************/
-/***************************************************************/ 
+/* SVD entry points                                            */
+/***************************************************************/
+std::unique_ptr<HVector> HMatrix::SVD()
+{
+  int NRCMin = (NR<NC ? NR : NC);
+  auto Sigma=std::make_unique<HVector>(NRCMin, LHM_REAL);
+  SVDCore(Sigma.get(), nullptr, nullptr);
+  return Sigma;
+}
+
+std::unique_ptr<HVector> HMatrix::SVD(HMatrix &U, HMatrix &VT)
+{
+  int NRCMin = (NR<NC ? NR : NC);
+  auto Sigma=std::make_unique<HVector>(NRCMin, LHM_REAL);
+  SVDCore(Sigma.get(), &U, &VT);
+  return Sigma;
+}
+
+void HMatrix::SVD(HVector &Sigma)
+{
+  int NRCMin = (NR<NC ? NR : NC);
+  if ( Sigma.N!=NRCMin || Sigma.RealComplex!=LHM_REAL )
+   ErrExit("wrong-size Sigma vector passed to SVD (%i entries; expected %i)",
+            Sigma.N,NRCMin);
+  SVDCore(&Sigma, nullptr, nullptr);
+}
+
+void HMatrix::SVD(HVector &Sigma, HMatrix &U, HMatrix &VT)
+{
+  int NRCMin = (NR<NC ? NR : NC);
+  if ( Sigma.N!=NRCMin || Sigma.RealComplex!=LHM_REAL )
+   ErrExit("wrong-size Sigma vector passed to SVD (%i entries; expected %i)",
+            Sigma.N,NRCMin);
+  SVDCore(&Sigma, &U, &VT);
+}
+
+/***************************************************************/
+/***************************************************************/
 /***************************************************************/
 double HMatrix::GetNorm(bool UseInfinityNorm)
 {

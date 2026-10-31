@@ -100,7 +100,7 @@ int main(int argc, char *argv[])
   /*--------------------------------------------------------------*/
   double Elapsed;
   Tic();
-  HVector *Lambda = NS ? M->NSEig() : M->Eig();
+  auto Lambda = NS ? M->NSEig() : M->Eig();
   Elapsed=Toc();
   printf("...%.3f s\n",Elapsed);
 

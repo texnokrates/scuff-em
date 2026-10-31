@@ -145,7 +145,7 @@ int ProcessAMatrices(BeynSolver *Solver, BeynFunction UserFunc, void *UserData,
   Log(" Beyn: computing SVD...");
   HMatrix V0Full(M,L,LHM_COMPLEX,(void *)MLBuffers[0]);
   HMatrix W0TFull(L,L,LHM_COMPLEX,(void *)LLBuffers[0]);
-  A0->SVD(Sigma, &V0Full, &W0TFull);
+  A0->SVD(*Sigma, V0Full, W0TFull);
 
   // compute effective rank K (number of eigenvalue candidates)
   int K=0;
@@ -183,7 +183,7 @@ int ProcessAMatrices(BeynSolver *Solver, BeynFunction UserFunc, void *UserData,
   Log(" Eigensolving (%i,%i)",K,K);
   HVector Lambda(K,LLBuffers[0]);
   HMatrix S(K,K,LLBuffers[1]);
-  B.NSEig(&Lambda, &S);
+  B.NSEig(Lambda, S);
 
   // V0S <- V0*S
   Log(" Multiplying V0*S...");
