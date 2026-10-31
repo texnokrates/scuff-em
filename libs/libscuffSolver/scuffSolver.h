@@ -184,7 +184,11 @@ public:
 
     // alternative implementation of GetFields that uses RPF ("reduced potential/field") matrices
     HMatrix *GetRFFieldsViaRPFMatrices(HMatrix *XMatrix);
-    HMatrix *GetPanelSourceDensities(HMatrix *PSDMatrix=nullptr);
+    /* GetPanelSourceDensities comes in two forms: allocating and
+       filling (PSDMatrix must be TotalPanels x 13).               */
+    std::unique_ptr<HMatrix> GetPanelSourceDensities();
+    void GetPanelSourceDensities(HMatrix &PSDMatrix);
+    void AddPortContributionsToPSD(cdouble Omega, HMatrix *PSDMatrix);
 
 // private:
 

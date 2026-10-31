@@ -452,8 +452,14 @@ class RWGGeometry
    /*- post-processing routines for various other quantities      -*/
    /*--------------------------------------------------------------*/
    /* charge and current densities at panel centroids */
-   HMatrix *GetPanelSourceDensities(cdouble Omega, double *kBloch, HVector *KN, HMatrix *PSD=nullptr);
-   HMatrix *GetPanelSourceDensities(cdouble Omega, HVector *KN, HMatrix *PSD=nullptr);
+   /* GetPanelSourceDensities comes in two forms: the allocating
+      form returns a newly allocated TotalPanels x 13 matrix; the
+      filling form stores into a caller-owned PSD of those
+      dimensions.                                                   */
+   std::unique_ptr<HMatrix> GetPanelSourceDensities(cdouble Omega, double *kBloch, HVector *KN);
+   std::unique_ptr<HMatrix> GetPanelSourceDensities(cdouble Omega, HVector *KN);
+   void GetPanelSourceDensities(cdouble Omega, double *kBloch, HVector *KN, HMatrix &PSD);
+   void GetPanelSourceDensities(cdouble Omega, HVector *KN, HMatrix &PSD);
 
    /* scattering amplitudes */
    cdouble GetPlaneWaveAmplitude(cdouble Omega, double *kBloch, HVector *KNVector, PlaneWave *PW, cdouble *Terms=nullptr);

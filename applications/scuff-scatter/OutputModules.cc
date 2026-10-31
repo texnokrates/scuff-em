@@ -494,11 +494,11 @@ void WritePSDFile(SSData *SSD, const char *PSDFile)
 
   Log("Computing panel source densities at Omega=%s...",z2s(SSD->Omega));
 
-  static HMatrix *PSDMatrix=nullptr;
+  static std::unique_ptr<HMatrix> PSDMatrix;
   if (PSDMatrix==nullptr)
-   PSDMatrix=SSD->G->GetPanelSourceDensities(SSD->Omega, SSD->KN, nullptr); 
+   PSDMatrix=SSD->G->GetPanelSourceDensities(SSD->Omega, SSD->KN);
   else
-   SSD->G->GetPanelSourceDensities(SSD->Omega, SSD->KN, PSDMatrix); 
+   SSD->G->GetPanelSourceDensities(SSD->Omega, SSD->KN, *PSDMatrix);
 
   for(int nr=0; nr<PSDMatrix->NR; nr++)
    { fprintf(f,"%s ",z2s(SSD->Omega));

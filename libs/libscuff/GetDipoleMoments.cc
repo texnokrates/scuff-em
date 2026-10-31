@@ -167,21 +167,18 @@ std::unique_ptr<HMatrix> RWGGeometry::GetDipoleMoments(cdouble Omega, HVector *K
 /*       straddler panels are returned as zeros.               */
 /***************************************************************/
 #define PSD_MATRIX_COLUMNS 13
-HMatrix *RWGGeometry::GetPanelSourceDensities(cdouble Omega,
-                                              double *kBloch,
-                                              HVector *KN,
-                                              HMatrix *PSD)
+void RWGGeometry::GetPanelSourceDensities(cdouble Omega,
+                                          double *kBloch,
+                                          HVector *KN,
+                                          HMatrix &PSD)
 { 
   /***************************************************************/
   /***************************************************************/
   /***************************************************************/
-  if ( PSD && (PSD->NR!=TotalPanels || PSD->NC!=PSD_MATRIX_COLUMNS) ) 
-   { Warn("invalid PSD matrix passed to GetPanelSourceDensities (reallocating)");
-     delete PSD;
-     PSD=0;  
-   }
-  if (!PSD) PSD=new HMatrix(TotalPanels, PSD_MATRIX_COLUMNS, LHM_COMPLEX);
-  PSD->Zero();
+  if ( PSD.NR!=TotalPanels || PSD.NC!=PSD_MATRIX_COLUMNS )
+   ErrExit("wrong-size PSD matrix (%ix%i) passed to GetPanelSourceDensities "
+           "(expected %ix%i)",PSD.NR,PSD.NC,TotalPanels,PSD_MATRIX_COLUMNS);
+  PSD.Zero();
 
   /***************************************************************/
   /* loop over all panels on all surfaces ************************/
@@ -234,18 +231,18 @@ HMatrix *RWGGeometry::GetPanelSourceDensities(cdouble Omega,
       /*- store quantities associated with panel in the PSD matrix  --*/
       /*--------------------------------------------------------------*/
       int POffset=PanelIndexOffset[ns];
-      PSD->SetEntry(POffset + np,  0, P->Centroid[0]);
-      PSD->SetEntry(POffset + np,  1, P->Centroid[1]);
-      PSD->SetEntry(POffset + np,  2, P->Centroid[2]);
-      PSD->SetEntry(POffset + np,  3, P->Area);
-      PSD->SetEntry(POffset + np,  4, Sigma);
-      PSD->SetEntry(POffset + np,  5, K[0]);
-      PSD->SetEntry(POffset + np,  6, K[1]);
-      PSD->SetEntry(POffset + np,  7, K[2]);
-      PSD->SetEntry(POffset + np,  8, Eta);
-      PSD->SetEntry(POffset + np,  9, N[0]);
-      PSD->SetEntry(POffset + np, 10, N[1]);
-      PSD->SetEntry(POffset + np, 11, N[2]);
+      PSD.SetEntry(POffset + np,  0, P->Centroid[0]);
+      PSD.SetEntry(POffset + np,  1, P->Centroid[1]);
+      PSD.SetEntry(POffset + np,  2, P->Centroid[2]);
+      PSD.SetEntry(POffset + np,  3, P->Area);
+      PSD.SetEntry(POffset + np,  4, Sigma);
+      PSD.SetEntry(POffset + np,  5, K[0]);
+      PSD.SetEntry(POffset + np,  6, K[1]);
+      PSD.SetEntry(POffset + np,  7, K[2]);
+      PSD.SetEntry(POffset + np,  8, Eta);
+      PSD.SetEntry(POffset + np,  9, N[0]);
+      PSD.SetEntry(POffset + np, 10, N[1]);
+      PSD.SetEntry(POffset + np, 11, N[2]);
 
     }; // for(int ns=... for (int np=...
 
@@ -274,8 +271,8 @@ HMatrix *RWGGeometry::GetPanelSourceDensities(cdouble Omega,
            cdouble BlochPhase = exp( II*(kBloch[0]*L[0] + kBloch[1]*L[1]) );
 
            for(int nc=4; nc<=11; nc++)
-            { PSD->AddEntry(npDest,   nc, BlochPhase*PSD->GetEntry(npSource, nc) );
-              PSD->SetEntry(npSource, nc, 0.0);
+            { PSD.AddEntry(npDest,   nc, BlochPhase*PSD.GetEntry(npSource, nc) );
+              PSD.SetEntry(npSource, nc, 0.0);
             }; 
          }; 
       };
@@ -292,23 +289,34 @@ HMatrix *RWGGeometry::GetPanelSourceDensities(cdouble Omega,
       { double *nHat = S->Panels[np]->ZHat;
         cdouble K[3];
         cdouble N[3];
-        PSD->GetEntries(Offset+np, "5:7",  K);
-        PSD->GetEntries(Offset+np, "9:11", N);
+        PSD.GetEntries(Offset+np, "5:7",  K);
+        PSD.GetEntries(Offset+np, "9:11", N);
         double IDNPF = 0.5*real( conj(K[0]) * (nHat[1]*N[2] - nHat[2]*N[1])
                                 +conj(K[1]) * (nHat[2]*N[0] - nHat[0]*N[2])
                                 +conj(K[2]) * (nHat[0]*N[1] - nHat[1]*N[0]));
-        PSD->SetEntry(Offset + np, 12, IDNPF);
+        PSD.SetEntry(Offset + np, 12, IDNPF);
       };
    };
 
-  return PSD;
 }
 
 /*--------------------------------------------------------------*/
+/* allocating and no-kBloch entry points                        */
 /*--------------------------------------------------------------*/
-/*--------------------------------------------------------------*/
-HMatrix *RWGGeometry::GetPanelSourceDensities(cdouble Omega, HVector *KN, HMatrix *PSD)
-{ return GetPanelSourceDensities(Omega, 0, KN, PSD); }
+std::unique_ptr<HMatrix> RWGGeometry::GetPanelSourceDensities(cdouble Omega,
+                                                              double *kBloch,
+                                                              HVector *KN)
+{
+  auto PSD=std::make_unique<HMatrix>(TotalPanels, PSD_MATRIX_COLUMNS, LHM_COMPLEX);
+  GetPanelSourceDensities(Omega, kBloch, KN, *PSD);
+  return PSD;
+}
+
+void RWGGeometry::GetPanelSourceDensities(cdouble Omega, HVector *KN, HMatrix &PSD)
+{ GetPanelSourceDensities(Omega, nullptr, KN, PSD); }
+
+std::unique_ptr<HMatrix> RWGGeometry::GetPanelSourceDensities(cdouble Omega, HVector *KN)
+{ return GetPanelSourceDensities(Omega, nullptr, KN); }
 
 /***************************************************************/
 /***************************************************************/

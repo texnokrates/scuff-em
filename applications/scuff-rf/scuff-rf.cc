@@ -412,7 +412,7 @@ int main(int argc, char *argv[])
                                     CD2S(PM->GetEntry(ns,0)), CD2S(PM->GetEntry(ns,1)), CD2S(PM->GetEntry(ns,2)),
                                     CD2S(PM->GetEntry(ns,3)), CD2S(PM->GetEntry(ns,4)), CD2S(PM->GetEntry(ns,5)));
 
-               G->GetPanelSourceDensities(Omega, KN.get(), PSD.get());
+               G->GetPanelSourceDensities(Omega, KN.get(), *PSD);
                G->PlotSurfaceCurrents(PSD.get(), Omega, "%s_Before(WO).pp",GetFileBase(G->GeoFileName));
 
                SetDefaultCD2SFormat("{%+.2e,%+.2e}");
@@ -458,7 +458,7 @@ int main(int argc, char *argv[])
                                     CD2S(PM->GetEntry(ns,0)), CD2S(PM->GetEntry(ns,1)), CD2S(PM->GetEntry(ns,2)),
                                     CD2S(PM->GetEntry(ns,3)), CD2S(PM->GetEntry(ns,4)), CD2S(PM->GetEntry(ns,5)));
 
-               G->GetPanelSourceDensities(Omega, KN.get(), PSD.get());
+               G->GetPanelSourceDensities(Omega, KN.get(), *PSD);
                G->PlotSurfaceCurrents(PSD.get(), Omega, "%s_AfterWO.pp",GetFileBase(G->GeoFileName));
 
                SetDefaultCD2SFormat("{%+.2e,%+.2e}");

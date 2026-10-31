@@ -886,9 +886,8 @@ void RWGGeometry::PlotSurfaceCurrents(HVector *KN, cdouble Omega,
                                       const char *FileNameFormat, ...)
 { 
   COMPLETE_VARARGS(FileNameFormat, FileName);
-  HMatrix *PSD=GetPanelSourceDensities(Omega, kBloch, KN, 0);
-  PlotSurfaceCurrents(PSD, Omega, kBloch, FileName);
-  delete PSD;
+  auto PSD=GetPanelSourceDensities(Omega, kBloch, KN);
+  PlotSurfaceCurrents(PSD.get(), Omega, kBloch, FileName);
 }
 
 void RWGGeometry::PlotSurfaceCurrents(HVector *KN, cdouble Omega,

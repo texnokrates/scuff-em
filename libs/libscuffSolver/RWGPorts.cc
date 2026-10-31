@@ -665,18 +665,34 @@ void scuffSolver::EvalSourceDistribution(const double X[3], cdouble iwSigmaK[4])
 /***************************************************************/
 /* contribution of port currents to panel source densities     */
 /***************************************************************/
-HMatrix *scuffSolver::GetPanelSourceDensities(HMatrix *PSDMatrix)
-{ 
+std::unique_ptr<HMatrix> scuffSolver::GetPanelSourceDensities()
+{
+  cdouble Omega = G->StoredOmega;
+  auto PSDMatrix=G->GetPanelSourceDensities(Omega, KN);
+  AddPortContributionsToPSD(Omega, PSDMatrix.get());
+  return PSDMatrix;
+}
+
+void scuffSolver::GetPanelSourceDensities(HMatrix &PSDMatrix)
+{
+  cdouble Omega = G->StoredOmega;
+  G->GetPanelSourceDensities(Omega, KN, PSDMatrix);
+  AddPortContributionsToPSD(Omega, &PSDMatrix);
+}
+
+/*--------------------------------------------------------------*/
+/* port-contribution worker shared by the two entry points      */
+/*--------------------------------------------------------------*/
+void scuffSolver::AddPortContributionsToPSD(cdouble Omega, HMatrix *PSDMatrix)
+{
   /***************************************************************/
   /* get basis-function contributions     ************************/
   /***************************************************************/
-  cdouble Omega = G->StoredOmega;
-  PSDMatrix=G->GetPanelSourceDensities(Omega, KN, PSDMatrix);
 
   if ( CheckEnv("SCUFF_RFPSD_PORTONLY") )
    PSDMatrix->Zero();
   if ( CheckEnv("SCUFF_RFPSD_BFONLY") )
-   return PSDMatrix;
+   return;
 
   /***************************************************************/
   /* add port contributions **************************************/
@@ -701,8 +717,6 @@ HMatrix *scuffSolver::GetPanelSourceDensities(HMatrix *PSDMatrix)
       PSDMatrix->AddEntry( PanelIndex,  6, PreFac*XmQ[1] );  // K_y
       PSDMatrix->AddEntry( PanelIndex,  7, PreFac*XmQ[2] );  // K_z
     } // for(int nPE=0...)
- 
-  return PSDMatrix;
 }
 
 } // namespace scuff

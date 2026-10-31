@@ -451,12 +451,15 @@ void RWGGeometry::AssembleBEMMatrixBlock(int nsa, int nsb,
   /*- storage for the kBloch-independent matrix blocks.           */
   /*--------------------------------------------------------------*/
   HMatrix *GradBBuffer[3]={nullptr, nullptr, nullptr};
+  std::unique_ptr<HMatrix> OwnB, OwnGradB;
   Args->GradB = (GradM && GradM[2]) ? GradBBuffer : nullptr;
   if (!HaveCache)
-   { 
-     Args->B = new HMatrix(NBFA, NBFB, LHM_COMPLEX);
+   {
+     OwnB = std::make_unique<HMatrix>(NBFA, NBFB, LHM_COMPLEX);
+     Args->B = OwnB.get();
      if (Args->GradB)
-      Args->GradB[2] = new HMatrix(NBFA, NBFB, LHM_COMPLEX);
+      { OwnGradB = std::make_unique<HMatrix>(NBFA, NBFB, LHM_COMPLEX);
+        Args->GradB[2] = OwnGradB.get(); }
    };
 
   /***************************************************************/
@@ -515,10 +518,7 @@ done:
   /*--------------------------------------------------------------*/
   /*--------------------------------------------------------------*/
   /*--------------------------------------------------------------*/
-  if (!HaveCache)
-   { delete Args->B;
-     if (Args->GradB) delete Args->GradB[2];
-   };
+
 
   /***************************************************************/
   /***************************************************************/
