@@ -108,9 +108,9 @@ HMatrix *RWGGeometry::GetDyadicGFs(cdouble Omega, double *kBloch,
    for(int d=0; d<LDim; d++)
     if (kBloch[d]!=0.0) HavekBloch=true;  
 
-  GetRFMatrix(Omega, kBloch, XMatrix, RFDest.get(), true);
+  GetRFMatrix(Omega, kBloch, XMatrix, *RFDest, true);
   if ( TwoPointDGF || HavekBloch )
-   GetRFMatrix(Omega, kBloch, XMatrix, RFSource.get(), false, TwoPointDGF ? 3 : 0);
+   GetRFMatrix(Omega, kBloch, XMatrix, *RFSource, false, TwoPointDGF ? 3 : 0);
   else
    RFSource->Copy(RFDest.get());
 

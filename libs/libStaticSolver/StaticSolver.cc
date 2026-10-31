@@ -82,42 +82,42 @@ StaticSolver::~StaticSolver()
 /***********************************************************************/
 /***********************************************************************/
 /***********************************************************************/
-HMatrix *StaticSolver::AllocateBEMMatrix()
+std::unique_ptr<HMatrix> StaticSolver::AllocateBEMMatrix()
 {
   int Dim = G->TotalPanels;
-  return new HMatrix(Dim,Dim);
+  return std::make_unique<HMatrix>(Dim,Dim);
 }
 
 /***********************************************************************/
 /***********************************************************************/
 /***********************************************************************/
-HMatrix *StaticSolver::AssembleBEMMatrix(HMatrix *M)
+void StaticSolver::AssembleBEMMatrix(HMatrix &M)
 {
   int Dim = G->TotalPanels;
 
   /***************************************************************/
-  /* (re)allocate the matrix as necessary                        */
+  /* the caller's M must have the right dimensions; use the      */
+  /* allocating overload if you don't have a correctly sized     */
+  /* matrix                                                      */
   /***************************************************************/
-  if ( M && ((M->NR!=Dim) || (M->NC!=Dim)) )
-   { Warn("wrong-size M matrix passed to AssembleBEMMatrix (resizing...)");
-     delete M;
-     M=nullptr;
-   };
-  if (!M)
-   M = new HMatrix(Dim, Dim);
+  if ( M.NR!=Dim || M.NC!=Dim )
+   ErrExit("AssembleBEMMatrix() called with wrong-size M matrix (%ix%i; expected %ix%i)",
+            M.NR,M.NC,Dim,Dim);
 
   /***************************************************************/
   /* assemble the matrix one subblock at a time                  */
   /***************************************************************/
   for (int ns=0; ns<G->NumSurfaces; ns++)
    for (int nsp=0; nsp<G->NumSurfaces; nsp++)
-    AssembleBEMMatrixBlock(ns, nsp, M,
+    AssembleBEMMatrixBlock(ns, nsp, &M,
                            G->PanelIndexOffset[ns],
                            G->PanelIndexOffset[nsp]);
+}
 
-  /***************************************************************/
-  /***************************************************************/
-  /***************************************************************/
+std::unique_ptr<HMatrix> StaticSolver::AssembleBEMMatrix()
+{
+  auto M = AllocateBEMMatrix();
+  AssembleBEMMatrix(*M);
   return M;
 }
 
@@ -255,10 +255,10 @@ double GetRHSIntegral(RWGSurface *S, int np, StaticExcitation *SE,
 /***********************************************************************/
 /***********************************************************************/
 /***********************************************************************/
-HVector *StaticSolver::AllocateRHSVector()
-{ 
+std::unique_ptr<HVector> StaticSolver::AllocateRHSVector()
+{
   int Dim = G->TotalPanels;
-  return new HVector(Dim);
+  return std::make_unique<HVector>(Dim);
 }
 
 /***********************************************************************/

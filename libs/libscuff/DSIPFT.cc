@@ -95,22 +95,26 @@ HMatrix *GetSRFluxTrace(RWGGeometry *G, HMatrix *XMatrix, cdouble Omega,
   /***************************************************************/
   /* if RFMatrix is non-null and RFMatrixDirty=false, we assume  */
   /* the RFMatrix has been precomputed for this XMatrix and this */
-  /* frequency and thus bypass its calculation.                  */
+  /* frequency and thus bypass its calculation.  A wrong-size    */
+  /* caller-provided matrix is rejected (the caller owns it); we */
+  /* allocate our own replacement in that case.                  */
   /***************************************************************/
-  bool OwnsRFMatrix = (RFMatrix==nullptr);
   int NBF=G->TotalBFs;
   if (RFMatrix && (RFMatrix->NR!=NBF || RFMatrix->NC!=6*NX) )
-   { Log(" wrong-size RFMatrix in GetSRFluxTrace (reallocating...)");
-     OwnsRFMatrix=true;
+   { Log(" wrong-size RFMatrix in GetSRFluxTrace (ignoring caller's matrix)");
+     RFMatrix=nullptr;
    };
-  if (OwnsRFMatrix)
-   RFMatrix=new HMatrix(NBF, 6*NX, LHM_COMPLEX);
+  std::unique_ptr<HMatrix> OwnedRFMatrix;
+  if (RFMatrix==nullptr)
+   { OwnedRFMatrix = std::make_unique<HMatrix>(NBF, 6*NX, LHM_COMPLEX);
+     RFMatrix = OwnedRFMatrix.get();
+   };
 
-  if (OwnsRFMatrix==false && RFMatrixDirty==false)
+  if (OwnedRFMatrix==nullptr && RFMatrixDirty==false)
    Log(" Reusing cached RFMatrix");
-  else 
+  else
    { Log(" Computing RF matrix for %i evaluation points...",NX);
-     G->GetRFMatrix(Omega, nullptr, XMatrix, RFMatrix);
+     G->GetRFMatrix(Omega, nullptr, XMatrix, *RFMatrix);
      Log(" ...done with RF matrix for %i evaluation points",NX);
    }
 
@@ -228,7 +232,6 @@ HMatrix *GetSRFluxTrace(RWGGeometry *G, HMatrix *XMatrix, cdouble Omega,
   /*--------------------------------------------------------------*/
   /*--------------------------------------------------------------*/
   /*--------------------------------------------------------------*/
-  delete RFMatrix;
   return FMatrix;
 
 } // routine GetSRFlux

@@ -185,7 +185,7 @@ void WriteCapacitanceMatrix(StaticSolver *SS, HMatrix *M,
   /*--------------------------------------------------------------*/
   /*--------------------------------------------------------------*/
   /*--------------------------------------------------------------*/
-  HMatrix *CapMatrix=SS->GetCapacitanceMatrix(M, Sigma, nullptr);
+  auto CapMatrix=SS->GetCapacitanceMatrix(M, Sigma);
   if (!CapMatrix) return;
 
   /*--------------------------------------------------------------*/
@@ -222,8 +222,6 @@ void WriteCapacitanceMatrix(StaticSolver *SS, HMatrix *M,
   fprintf(f,"\n");
   fclose(f);
 
-  delete CapMatrix;
-  
 }
 
 /***************************************************************/

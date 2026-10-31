@@ -212,7 +212,7 @@ void ReassembleBEMMatrix(StaticSolver *SS, HMatrix **pM,
   HMatrix *M = *pM;
 
   if (M==0)
-   M=*pM=SS->AllocateBEMMatrix();
+   M=*pM=SS->AllocateBEMMatrix().release();
 
   /*******************************************************************/
   /* assemble BEM matrix, either (a) all at once if we have only one */
@@ -221,8 +221,8 @@ void ReassembleBEMMatrix(StaticSolver *SS, HMatrix **pM,
   /* reused for multiple geometric transformations                   */
   /*******************************************************************/
   if (BMA==0)
-   { 
-     SS->AssembleBEMMatrix(M);
+   {
+     SS->AssembleBEMMatrix(*M);
    }
   else
    { 

@@ -145,9 +145,9 @@ void GetDistanceToBF(double X0[3], RWGSurface *S, int ne)
 /* of RFMatrix is dotted into KN to yield the Muth component   */
 /* of the field six-vector F=\{ E \choose H \}.                */
 /***************************************************************/
-HMatrix *RWGGeometry::GetRFMatrix(cdouble Omega, double *kBloch0,
-                                  HMatrix *XMatrix, HMatrix *RFMatrix,
-                                  bool MinuskBloch, int ColumnOffset)
+void RWGGeometry::GetRFMatrix(cdouble Omega, double *kBloch0,
+                              HMatrix *XMatrix, HMatrix &RFMatrix,
+                              bool MinuskBloch, int ColumnOffset)
 {
   double *kBloch=kBloch0;
   double kBlochBuffer[3];
@@ -164,17 +164,10 @@ HMatrix *RWGGeometry::GetRFMatrix(cdouble Omega, double *kBloch0,
   int NE  = TotalEdges;
   int NBF = TotalBFs;
   int NX  = XMatrix->NR;
-  if (     RFMatrix==0 
-       || (RFMatrix->NR != NBF) 
-       || (RFMatrix->NC != 6*NX) 
-     )
-   { if (RFMatrix) 
-      { Warn("wrong-size RFMatrix passed to GetRFMatrix; reallocating");
-        delete RFMatrix;
-      };
-     RFMatrix = new HMatrix(NBF, 6*NX, LHM_COMPLEX);
-   };
-  RFMatrix->Zero();
+  if ( RFMatrix.NR != NBF || RFMatrix.NC != 6*NX )
+   ErrExit("wrong-size RFMatrix (%ix%i) passed to GetRFMatrix() "
+           "(expected %ix%i)",RFMatrix.NR,RFMatrix.NC,NBF,6*NX);
+  RFMatrix.Zero();
 
   /***************************************************************/
   /***************************************************************/
@@ -334,20 +327,20 @@ HMatrix *RWGGeometry::GetRFMatrix(cdouble Omega, double *kBloch0,
      cdouble ENFactor = -1.0*Sign*II*k*ZVAC;
      cdouble HNFactor = -1.0*Sign*II*k/ZRel;
 
-     RFMatrix->SetEntry(nbf, 6*nx + 0, EKFactor * GG[0] );
-     RFMatrix->SetEntry(nbf, 6*nx + 1, EKFactor * GG[1] );
-     RFMatrix->SetEntry(nbf, 6*nx + 2, EKFactor * GG[2] );
-     RFMatrix->SetEntry(nbf, 6*nx + 3, HKFactor * CC[0] );
-     RFMatrix->SetEntry(nbf, 6*nx + 4, HKFactor * CC[1] );
-     RFMatrix->SetEntry(nbf, 6*nx + 5, HKFactor * CC[2] );
+     RFMatrix.SetEntry(nbf, 6*nx + 0, EKFactor * GG[0] );
+     RFMatrix.SetEntry(nbf, 6*nx + 1, EKFactor * GG[1] );
+     RFMatrix.SetEntry(nbf, 6*nx + 2, EKFactor * GG[2] );
+     RFMatrix.SetEntry(nbf, 6*nx + 3, HKFactor * CC[0] );
+     RFMatrix.SetEntry(nbf, 6*nx + 4, HKFactor * CC[1] );
+     RFMatrix.SetEntry(nbf, 6*nx + 5, HKFactor * CC[2] );
 
      if ( !(S->IsPEC) )
-      { RFMatrix->SetEntry(nbf+1, 6*nx + 0, ENFactor * CC[0] );
-        RFMatrix->SetEntry(nbf+1, 6*nx + 1, ENFactor * CC[1] );
-        RFMatrix->SetEntry(nbf+1, 6*nx + 2, ENFactor * CC[2] );
-        RFMatrix->SetEntry(nbf+1, 6*nx + 3, HNFactor * GG[0] );
-        RFMatrix->SetEntry(nbf+1, 6*nx + 4, HNFactor * GG[1] );
-        RFMatrix->SetEntry(nbf+1, 6*nx + 5, HNFactor * GG[2] );
+      { RFMatrix.SetEntry(nbf+1, 6*nx + 0, ENFactor * CC[0] );
+        RFMatrix.SetEntry(nbf+1, 6*nx + 1, ENFactor * CC[1] );
+        RFMatrix.SetEntry(nbf+1, 6*nx + 2, ENFactor * CC[2] );
+        RFMatrix.SetEntry(nbf+1, 6*nx + 3, HNFactor * GG[0] );
+        RFMatrix.SetEntry(nbf+1, 6*nx + 4, HNFactor * GG[1] );
+        RFMatrix.SetEntry(nbf+1, 6*nx + 5, HNFactor * GG[2] );
       };
 
    }; // for(int nenx=0; nenx<NENX; nenx++)
@@ -364,7 +357,17 @@ HMatrix *RWGGeometry::GetRFMatrix(cdouble Omega, double *kBloch0,
 
   delete[] ZRels;
   delete[] ks;
+}
 
+/***************************************************************/
+/* allocating entry point: create the RFMatrix and delegate.   */
+/***************************************************************/
+std::unique_ptr<HMatrix> RWGGeometry::GetRFMatrix(cdouble Omega, double *kBloch,
+                                                  HMatrix *XMatrix,
+                                                  bool MinuskBloch, int ColumnOffset)
+{
+  auto RFMatrix=std::make_unique<HMatrix>(TotalBFs, 6*XMatrix->NR, LHM_COMPLEX);
+  GetRFMatrix(Omega, kBloch, XMatrix, *RFMatrix, MinuskBloch, ColumnOffset);
   return RFMatrix;
 }
 
@@ -412,15 +415,13 @@ void RWGGeometry::GetFields(IncField *IFList, HVector *KN,
   /***************************************************************/
   if (KN)
    {
-     HMatrix *RFMatrix = GetRFMatrix(Omega, kBloch, XMatrix, 0, true);
+     auto RFMatrix = GetRFMatrix(Omega, kBloch, XMatrix, true);
      HMatrix KNMatrix(1, TotalBFs, LHM_COMPLEX, LHM_NORMAL, (void *)KN->ZV);
      auto FMatrixT = std::make_unique<HMatrix>(1, 6*NX, LHM_COMPLEX);
-     KNMatrix.Multiply(RFMatrix, FMatrixT.get());
+     KNMatrix.Multiply(RFMatrix.get(), FMatrixT.get());
      for(int nx=0; nx<NX; nx++)
       for(int Mu=0; Mu<6; Mu++)
        FMatrix.SetEntry(nx, Mu, FMatrixT->GetEntry(0, 6*nx + Mu));
-
-     delete RFMatrix;
    };
 
   /***************************************************************/

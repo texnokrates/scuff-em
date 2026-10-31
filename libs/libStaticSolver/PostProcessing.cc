@@ -204,17 +204,16 @@ void StaticSolver::VisualizeFields(HVector *Sigma,
 /***************************************************************/
 /***************************************************************/
 /***************************************************************/
-HMatrix *StaticSolver::GetCapacitanceMatrix(HMatrix *M,
-                                        HVector *Sigma,
-                                        HMatrix *CMatrix)
+std::unique_ptr<HMatrix> StaticSolver::GetCapacitanceMatrix(HMatrix *M,
+                                                        HVector *Sigma)
 {
   int NS = G->NumSurfaces;
   Log("Computing capacitance matrix for %s",G->GeoFileName);
 
   /*--------------------------------------------------------------*/
-  /*- (re)allocate capacitance matrix as necessary ---------------*/
+  /*- allocate the capacitance matrix ----------------------------*/
   /*--------------------------------------------------------------*/
-  int NCS=0; // number of conducting surfaces 
+  int NCS=0; // number of conducting surfaces
   for(int ns=0; ns<NS; ns++)
    if (G->Surfaces[ns]->IsPEC)
     NCS++;
@@ -222,42 +221,40 @@ HMatrix *StaticSolver::GetCapacitanceMatrix(HMatrix *M,
    { Warn("No conducting surfaces! Aborting capacitance calculation.");
      return nullptr;
    };
-  if (CMatrix==nullptr || CMatrix->NR!=NCS || CMatrix->NC!=NCS )
-   { if (CMatrix) delete CMatrix;
-     CMatrix=nullptr;
-   };
-  if (CMatrix==nullptr)
-   CMatrix = new HMatrix(NCS, NCS);
+  auto CMatrix = std::make_unique<HMatrix>(NCS, NCS);
 
   /*--------------------------------------------------------------*/
-  /*- allocate BEM matrix and RHS vector if necessary             */
+  /*- assemble BEM matrix and RHS vector if not provided          */
   /*--------------------------------------------------------------*/
-  bool OwnsM = (M==nullptr);
-  if (OwnsM)
-   { M=AssembleBEMMatrix();
-     M->LUFactorize();
+  std::unique_ptr<HMatrix> OwnM;
+  if (M==nullptr)
+   { OwnM = AssembleBEMMatrix();
+     OwnM->LUFactorize();
+     M = OwnM.get();
    };
 
-  bool OwnsSigma = (Sigma==nullptr);
-  if (OwnsSigma)
-   Sigma=AllocateRHSVector();
+  std::unique_ptr<HVector> OwnSigma;
+  if (Sigma==nullptr)
+   { OwnSigma = AllocateRHSVector();
+     Sigma = OwnSigma.get();
+   }
 
   /*--------------------------------------------------------------*/
   /*--------------------------------------------------------------*/
   /*--------------------------------------------------------------*/
-  double *Potentials = new double[NS];
-  HMatrix *QP = new HMatrix(NS, 4);
+  std::vector<double> Potentials(NS, 0.0);
+  auto QP = std::make_unique<HMatrix>(NS, 4);
   for(int ns=0, ncs=-1; ns<NS; ns++)
-   { 
+   {
      if ( !(G->Surfaces[ns]->IsPEC) )
       continue;
      ncs++;
 
-     memset(Potentials, 0, NS*sizeof(double));
+     Potentials.assign(NS, 0.0);
      Potentials[ns]=1.0;
-     AssembleRHSVector(Potentials, Sigma);
+     AssembleRHSVector(Potentials.data(), Sigma);
      M->LUSolve(Sigma);
-     GetCartesianMoments(Sigma, QP);
+     GetCartesianMoments(Sigma, QP.get());
 
      for(int nsp=0, ncsp=-1; nsp<NS; nsp++)
       { if ( !(G->Surfaces[nsp]->IsPEC) )
@@ -266,11 +263,6 @@ HMatrix *StaticSolver::GetCapacitanceMatrix(HMatrix *M,
         CMatrix->SetEntry(ncsp, ncs, QP->GetEntry(nsp,0));
       };
    };
-  delete[] Potentials;
-  delete QP;
-
-  if (OwnsM) delete M;
-  if (OwnsSigma) delete Sigma;
 
   return CMatrix;
 }

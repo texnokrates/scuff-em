@@ -90,16 +90,20 @@ class StaticSolver
                 int pLogLevel = SCUFF_NOLOGGING);
    ~StaticSolver();
 
-   /* routines for allocating, and then filling in, the electrostatic BEM matrix */
-   HMatrix *AllocateBEMMatrix();
-   HMatrix *AssembleBEMMatrix(HMatrix *M = nullptr);
+   /* routines for allocating, and then filling in, the electrostatic
+      BEM matrix.  The filling form of AssembleBEMMatrix stores into a
+      caller-owned M, which must have the right (TotalPanels x
+      TotalPanels) dimensions.                                       */
+   std::unique_ptr<HMatrix> AllocateBEMMatrix();
+   std::unique_ptr<HMatrix> AssembleBEMMatrix();
+   void AssembleBEMMatrix(HMatrix &M);
 
    /* lower-level routine for assembling individual BEM matrix blocks */
    void AssembleBEMMatrixBlock(int nsa, int nsb,
                                HMatrix *M, int RowOffset=0, int ColOffset=0);
 
    /* routines for allocating, and then filling in, the RHS vector */
-   HVector *AllocateRHSVector();
+   std::unique_ptr<HVector> AllocateRHSVector();
    HVector *AssembleRHSVector(StaticExcitation *SE, HVector *RHS = nullptr);
    HVector *AssembleRHSVector(double *Potentials, HVector *RHS = nullptr);
 
@@ -117,9 +121,13 @@ class StaticSolver
    std::unique_ptr<HMatrix> GetFields(HVector *Sigma, HMatrix *X);
    void GetFields(HVector *Sigma, HMatrix *X, HMatrix &PhiE);
 
-   /* compute capacitance matrix */
-   HMatrix *GetCapacitanceMatrix(HMatrix *M=nullptr, HVector *Sigma=nullptr,
-                                 HMatrix *CMatrix=nullptr);
+   /* compute capacitance matrix; returns a newly allocated
+      NCSxNCS matrix (NCS = number of conducting surfaces).
+      M and Sigma, if non-null, are borrowed and must be the
+      factorized BEM matrix and RHS vector; if null they are
+      assembled internally.                                          */
+   std::unique_ptr<HMatrix> GetCapacitanceMatrix(HMatrix *M=nullptr,
+                                                 HVector *Sigma=nullptr);
 
    /* visualization */
    void PlotChargeDensity(HVector *Sigma, const char *FileName);

@@ -528,10 +528,17 @@ class RWGGeometry
    void DestroyABMBAccelerator(void *Accelerator);
    void ApplyMMJTransformation(HMatrix *M, HVector *RHS);
 
-   // helper function for GetFields, GetDyadicGFs, GetSRFluxTrace
-   HMatrix *GetRFMatrix(cdouble Omega, double *kBloch, HMatrix *XMatrix,
-                        HMatrix *RFMatrix=nullptr, bool MinuskBloch=false,
-                        int ColumnOffset=0);
+   // helper function for GetFields, GetDyadicGFs, GetSRFluxTrace.
+   // The allocating form returns a newly allocated NBF x (6*NX) matrix;
+   // the filling form stores into a caller-owned RFMatrix, which must
+   // have exactly NBF rows and 6*NX columns.
+   std::unique_ptr<HMatrix> GetRFMatrix(cdouble Omega, double *kBloch,
+                                        HMatrix *XMatrix,
+                                        bool MinuskBloch=false,
+                                        int ColumnOffset=0);
+   void GetRFMatrix(cdouble Omega, double *kBloch, HMatrix *XMatrix,
+                    HMatrix &RFMatrix, bool MinuskBloch=false,
+                    int ColumnOffset=0);
 
    // helper function for accelerating periodic GF calculations
    GBarAccelerator *CreateRegionGBA(int nr, cdouble Omega, double *kBloch, int ns1, int ns2);
