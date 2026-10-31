@@ -188,7 +188,7 @@ int main(int argc, char *argv[])
      /*--------------------------------------------------------------*/
      /* assemble and factorize the BEM matrix at this frequency      */
      /*--------------------------------------------------------------*/
-     G->AssembleBEMMatrix(Omega, M.get());
+     G->AssembleBEMMatrix(Omega, *M);
      M->LUFactorize();
 
      /*--------------------------------------------------------------*/
@@ -206,7 +206,7 @@ int main(int argc, char *argv[])
 
            // solve the scattering problem for this incident spherical wave
            Log("Solving scattering problem with incident spherical wave #%i: (L,M,P)=(%i,%i,%i)",Beta,LBeta,MBeta,PBeta);
-           G->AssembleRHSVector(Omega, &SW, KN.get());
+           G->AssembleRHSVector(Omega, &SW, *KN);
            M->LUSolve(KN.get());
 
            // compute the full vector of spherical multipole moments induced by the

@@ -31,7 +31,7 @@ int main(int argc, char *argv[])
   /*--------------------------------------------------------------*/
   /* preallocate BEM matrix and RHS vector                        */
   /*--------------------------------------------------------------*/
-  HMatrix *M  = G->AllocateBEMMatrix();
+  auto M      = G->AllocateBEMMatrix();
   HVector *KN = G->AllocateRHSVector();
 
   /*--------------------------------------------------------------*/
@@ -53,7 +53,7 @@ int main(int argc, char *argv[])
      /*--------------------------------------------------------------*/
      /* assemble and factorize the BEM matrix at this frequency      */
      /*--------------------------------------------------------------*/
-     G->AssembleBEMMatrix(Omega, M);
+     G->AssembleBEMMatrix(Omega, *M);
      M->LUFactorize();
 
     /*--------------------------------------------------------------*/
@@ -77,7 +77,7 @@ int main(int argc, char *argv[])
            PS.SetP(P);  
 
            // solve the scattering problem for this point source
-           G->AssembleRHSVector(Omega, &PS, KN);
+           G->AssembleRHSVector(Omega, &PS, *KN);
            M->LUSolve(KN);
 
            // compute the scattered E and H fields at X0 

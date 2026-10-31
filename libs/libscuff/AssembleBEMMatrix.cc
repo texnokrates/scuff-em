@@ -681,10 +681,20 @@ void RWGGeometry::ApplyMMJTransformation(HMatrix *M, HVector *RHS)
 /* appropriate size is allocated and returned. Otherwise, the  */
 /* return value is M.                                          */
 /***************************************************************/
-HMatrix *RWGGeometry::AssembleBEMMatrix(cdouble Omega, double *kBloch, HMatrix *M)
-{ 
+void RWGGeometry::AssembleBEMMatrix(cdouble Omega, double *kBloch, HMatrix &M)
+{
+  /***************************************************************/
+  /* the caller's M must have the right dimensions; use          */
+  /* AllocateBEMMatrix() to create a correctly sized matrix      */
+  /***************************************************************/
+  if ( M.NR != TotalBFs || M.NC != TotalBFs )
+   ErrExit("wrong-size M matrix (%ix%i) passed to AssembleBEMMatrix "
+           "(expected %ix%i)",M.NR,M.NC,TotalBFs,TotalBFs);
+
   if (CheckEnv("SCUFF_MATRIX_2018") && LDim==0 )
-   return AssembleBEMMatrix2018(this, Omega, kBloch, M);
+   { AssembleBEMMatrix2018(this, Omega, kBloch, &M);
+     return;
+   }
 
   /***************************************************************/
   /***************************************************************/
@@ -695,16 +705,6 @@ HMatrix *RWGGeometry::AssembleBEMMatrix(cdouble Omega, double *kBloch, HMatrix *
   if ( LBasis!=nullptr && kBloch==nullptr )
    ErrExit("%s:%i: Bloch wavevector must be specified for PBC geometries",
            __FILE__,__LINE__);
-
-  /***************************************************************/
-  /***************************************************************/
-  /***************************************************************/
-  if (M==nullptr)
-   M=AllocateBEMMatrix().release();
-  else if ( M->NR != TotalBFs || M->NC != TotalBFs )
-   { Warn("wrong-size matrix passed to AssembleBEMMatrix; reallocating...");
-     M=AllocateBEMMatrix().release();
-   }
 
   /***************************************************************/
   /***************************************************************/
@@ -735,10 +735,10 @@ HMatrix *RWGGeometry::AssembleBEMMatrix(cdouble Omega, double *kBloch, HMatrix *
          int MateOffset = BFIndexOffset[nsm];
          int Dim = Surfaces[ns]->NumBFs;
          Log("Block(%i,%i) is identical to block (%i,%i) (reusing)",ns,ns,nsm,nsm);
-         M->InsertBlock(M, ThisOffset, ThisOffset, Dim, Dim, MateOffset, MateOffset);
+         M.InsertBlock(&M, ThisOffset, ThisOffset, Dim, Dim, MateOffset, MateOffset);
        }
       else
-       AssembleBEMMatrixBlock(ns, nsp, Omega, kBloch, M, nullptr,
+       AssembleBEMMatrixBlock(ns, nsp, Omega, kBloch, &M, nullptr,
                               BFIndexOffset[ns], BFIndexOffset[nsp]);
     }
 
@@ -752,26 +752,23 @@ HMatrix *RWGGeometry::AssembleBEMMatrix(cdouble Omega, double *kBloch, HMatrix *
   /* blocks should already have been filled in, so this code is  */
   /* slightly redundant because it re-fills-in those entries.    */
   /***************************************************************/
-  if (MatrixIsSymmetric && M->StorageType==LHM_NORMAL)
-   { 
+  if (MatrixIsSymmetric && M.StorageType==LHM_NORMAL)
+   {
      for(int nr=1; nr<TotalBFs; nr++)
       for(int nc=0; nc<nr; nc++)
-       M->SetEntry(nr, nc, M->GetEntry(nc, nr) );
+       M.SetEntry(nr, nc, M.GetEntry(nc, nr) );
    };
 
   if (UseHRWGFunctions && NumMMJs>0 )
-   ApplyMMJTransformation(M, nullptr);
-
-  return M;
-
+   ApplyMMJTransformation(&M, nullptr);
 }
 
 /***************************************************************/
 /***************************************************************/
 /***************************************************************/
-HMatrix *RWGGeometry::AssembleBEMMatrix(cdouble Omega, HMatrix *M)
+void RWGGeometry::AssembleBEMMatrix(cdouble Omega, HMatrix &M)
 {
-  return AssembleBEMMatrix(Omega, nullptr, M); 
+  AssembleBEMMatrix(Omega, nullptr, M);
 }
 
 /***************************************************************/

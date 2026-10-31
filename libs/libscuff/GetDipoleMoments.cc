@@ -332,7 +332,7 @@ cdouble RWGGeometry::GetPlaneWaveAmplitude(cdouble Omega, double *kBloch, HVecto
                                            PlaneWave *PW, cdouble *Terms)
 
 {
-  HVector *RHSVector = AssembleRHSVector(Omega, kBloch, PW);
+  auto RHSVector = AssembleRHSVector(Omega, kBloch, PW);
   cdouble ucdot=0.0, hdot=0.0;
   double KNSign[2]={1.0, -1.0};
   for(int ns=0, nbf=0; ns<NumSurfaces; ns++)
@@ -344,7 +344,6 @@ cdouble RWGGeometry::GetPlaneWaveAmplitude(cdouble Omega, double *kBloch, HVecto
   double Prefac = 0.5*ZVAC*ZVAC;
   if (LDim) Prefac /= LVolume;
   if (Terms) Terms[0]=Prefac*hdot;
-  delete RHSVector;
   return Prefac*ucdot;
 
   // get panel currents for the given source distribution

@@ -367,7 +367,7 @@ int main(int argc, char *argv[])
        Warn("complex wavenumber in source region (behavior undefined)");
       double kBloch[2] = {0.0, 0.0};
       kBloch[0] = real(kSource)*SinTheta;
-      G->AssembleBEMMatrix(Omega, kBloch, M.get());
+      G->AssembleBEMMatrix(Omega, kBloch, *M);
       M->LUFactorize();
 
       /*--------------------------------------------------------------*/
@@ -395,7 +395,7 @@ int main(int argc, char *argv[])
          E0[1]=EpsVectors[IncPol][1];
          E0[2]=EpsVectors[IncPol][2];
          PW.SetE0(E0);
-         G->AssembleRHSVector(Omega, kBloch, &PW, KN.get());
+         G->AssembleRHSVector(Omega, kBloch, &PW, *KN);
          M->LUSolve(KN.get());
 
          double Flux[NUMREGIONS];

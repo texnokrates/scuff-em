@@ -362,13 +362,16 @@ void *AssembleRHS_Thread(void *data)
 /***************************************************************/
 /* Assemble the RHS vector.  ***********************************/
 /***************************************************************/
-HVector *RWGGeometry::AssembleRHSVector(cdouble Omega, double *kBloch,
-                                        IncField *IF, HVector *RHS)
-{ 
-  if (RHS==nullptr)
-   RHS=AllocateRHSVector().release();
+void RWGGeometry::AssembleRHSVector(cdouble Omega, double *kBloch,
+                                    IncField *IF, HVector &RHS)
+{
+  /* the caller's RHS must have the right dimensions; use the
+     allocating overload if you don't have a correctly sized vector */
+  if (RHS.N != TotalBFs)
+   ErrExit("wrong-size RHS vector (%i entries) passed to AssembleRHSVector"
+           " (expected %i)",RHS.N,TotalBFs);
 
-  RHS->Zero();
+  RHS.Zero();
    
   int nt, NumTasks, NumThreads = GetNumThreads();
   int NIF=UpdateIncFields(IF, Omega, kBloch);
@@ -377,7 +380,7 @@ HVector *RWGGeometry::AssembleRHSVector(cdouble Omega, double *kBloch,
   ReferenceTD.G=this;
   ReferenceTD.IF=IF;
   ReferenceTD.NIF=NIF;
-  ReferenceTD.RHS=RHS;
+  ReferenceTD.RHS=&RHS;
 
 #ifdef USE_PTHREAD
   ThreadData *TDs = new ThreadData[NumThreads], *TD;
@@ -418,16 +421,29 @@ HVector *RWGGeometry::AssembleRHSVector(cdouble Omega, double *kBloch,
 #endif
 
   if (UseHRWGFunctions && NumMMJs>0 )
-   ApplyMMJTransformation(nullptr, RHS);
+   ApplyMMJTransformation(nullptr, &RHS);
+}
 
+/***************************************************************/
+/* allocating entry point: create the RHS vector and delegate. */
+/***************************************************************/
+std::unique_ptr<HVector> RWGGeometry::AssembleRHSVector(cdouble Omega,
+                                                        double *kBloch,
+                                                        IncField *IF)
+{
+  auto RHS=AllocateRHSVector();
+  AssembleRHSVector(Omega, kBloch, IF, *RHS);
   return RHS;
 }
 
 /***************************************************************/
-/* non-PBC entry point for AssembleRHSVector                   */
+/* non-PBC entry points for AssembleRHSVector                  */
 /***************************************************************/
-HVector *RWGGeometry::AssembleRHSVector(cdouble Omega, IncField *IF, HVector *RHS)
-{ return AssembleRHSVector(Omega, nullptr, IF, RHS); }
+std::unique_ptr<HVector> RWGGeometry::AssembleRHSVector(cdouble Omega, IncField *IF)
+{ return AssembleRHSVector(Omega, nullptr, IF); }
+
+void RWGGeometry::AssembleRHSVector(cdouble Omega, IncField *IF, HVector &RHS)
+{ AssembleRHSVector(Omega, nullptr, IF, RHS); }
 
 /***************************************************************/
 /* Allocate an RHS vector of the appropriate size. *************/

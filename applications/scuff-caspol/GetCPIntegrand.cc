@@ -136,7 +136,7 @@ void GetCPIntegrand(void *pSCPD, cdouble Omega, double *kBloch, double *U)
    { 
      if (G->LDim==0)
       { Log("Assembling BEM matrix at Xi=%g",Xi);
-        G->AssembleBEMMatrix(Omega, M);
+        G->AssembleBEMMatrix(Omega, *M);
       }
      else
       { if (G->LDim==1)

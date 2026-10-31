@@ -77,7 +77,7 @@ int main(int argc, char *argv[])
   /*--------------------------------------------------------------*/
   /* preallocate BEM matrix and RHS vector                        */
   /*--------------------------------------------------------------*/
-  HMatrix *M  = G->AllocateBEMMatrix();
+  auto M      = G->AllocateBEMMatrix();
   HVector *KN = G->AllocateRHSVector();
 
   /*--------------------------------------------------------------*/
@@ -106,7 +106,7 @@ int main(int argc, char *argv[])
      /* assemble and factorize the BEM matrix at this frequency      */
      /*--------------------------------------------------------------*/
      Omega=OmegaVector->GetEntry(nOmega);
-     G->AssembleBEMMatrix(Omega, M);
+     G->AssembleBEMMatrix(Omega, *M);
      M->LUFactorize();
 
      /*--------------------------------------------------------------*/
@@ -127,7 +127,7 @@ int main(int argc, char *argv[])
 
            // solve the scattering problem for this incident spherical wave
            Log("Solving scattering problem with incident spherical wave P(l,m)=%c(%i,%i)",TypeChar[Type],l,m);
-           G->AssembleRHSVector(Omega, &SW, KN);
+           G->AssembleRHSVector(Omega, &SW, *KN);
            M->LUSolve(KN);
 
            // compute the spherical multipole moments induced by the 

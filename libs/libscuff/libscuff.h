@@ -372,13 +372,22 @@ class RWGGeometry
    /*- assembling the BEM matrix and RHS vector                    */
    /*--------------------------------------------------------------*/
    std::unique_ptr<HMatrix> AllocateBEMMatrix(bool PureImagFreq = false, bool Packed = false);
-   HMatrix *AssembleBEMMatrix(cdouble Omega, double *kBloch, HMatrix *M = nullptr);
-   HMatrix *AssembleBEMMatrix(cdouble Omega, HMatrix *M = nullptr);
+   /* filling forms: M must have exactly TotalBFs x TotalBFs
+      dimensions (use AllocateBEMMatrix() to create it)             */
+   void AssembleBEMMatrix(cdouble Omega, double *kBloch, HMatrix &M);
+   void AssembleBEMMatrix(cdouble Omega, HMatrix &M);
 
    std::unique_ptr<HVector> AllocateRHSVector(bool PureImagFreq = false );
-   HVector *AssembleRHSVector(cdouble Omega, double *kBloch,
-                              IncField *IF, HVector *RHS = nullptr);
-   HVector *AssembleRHSVector(cdouble Omega, IncField *IF, HVector *RHS = nullptr);
+   /* AssembleRHSVector comes in two forms: the allocating form
+      returns a newly allocated vector of length TotalBFs; the
+      filling form stores into a caller-owned RHS, which must have
+      exactly TotalBFs entries.                                     */
+   std::unique_ptr<HVector> AssembleRHSVector(cdouble Omega, double *kBloch,
+                                              IncField *IF);
+   std::unique_ptr<HVector> AssembleRHSVector(cdouble Omega, IncField *IF);
+   void AssembleRHSVector(cdouble Omega, double *kBloch,
+                          IncField *IF, HVector &RHS);
+   void AssembleRHSVector(cdouble Omega, IncField *IF, HVector &RHS);
 
    /*--------------------------------------------------------------*/
    /*- post-processing routines for computing fields               */

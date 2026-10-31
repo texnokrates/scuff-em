@@ -166,7 +166,7 @@ void GetLDOS(void *pData, cdouble Omega, double *kBloch,
   else if (NumTransforms==1)
    { 
      if (LDim==0)
-      G->AssembleBEMMatrix(Omega, M);
+      G->AssembleBEMMatrix(Omega, *M);
      else
       { int NS = G->NumSurfaces;
         for(int ns=0, nb=0; ns<NS; ns++)

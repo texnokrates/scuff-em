@@ -652,7 +652,7 @@ void scuffSolver::AssembleSystemMatrix(double Omega)
   else if (NumPorts!=0)
    AssembleMOIMatrix(G, Omega, M);
   else 
-   G->AssembleBEMMatrix(Omega, M);
+   G->AssembleBEMMatrix(Omega, *M);
 
   Log("Factorizing...");
   M->LUFactorize();
@@ -688,7 +688,7 @@ void scuffSolver::DoSolve(IncField *IF, cdouble *PortCurrents)
      memcpy(CachedPortCurrents, PortCurrents, NumPorts*sizeof(cdouble));
    }
   else if (IF)
-   { G->AssembleRHSVector(Omega, IF, KN);
+   { G->AssembleRHSVector(Omega, IF, *KN);
      /* cache a copy of the incident field for later post-processing.
         Only the field types that can be copied losslessly are cached;
         the unconditional casts used previously produced garbage for

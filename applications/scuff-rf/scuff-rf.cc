@@ -373,7 +373,7 @@ int main(int argc, char *argv[])
       /*--------------------------------------------------------------*/
       Omega=FREQ2OMEGA * Freq;
       Log("Assembling BEM matrix at f=%g GHz...",Freq);
-      G->AssembleBEMMatrix(Omega, M.get());
+      G->AssembleBEMMatrix(Omega, *M);
       Log("Factorizing...");
       M->LUFactorize();
 

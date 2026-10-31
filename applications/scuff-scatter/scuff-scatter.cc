@@ -496,7 +496,7 @@ int main(int argc, char *argv[])
      /* whole matrix                                                    */
      /*******************************************************************/
      if (NumTransformations==1)
-      G->AssembleBEMMatrix(Omega, kBloch, M.get());
+      G->AssembleBEMMatrix(Omega, kBloch, *M);
      else
       for(int ns=0; ns<G->NumSurfaces; ns++)
        if (G->Mate[ns]==-1)
@@ -586,7 +586,7 @@ int main(int argc, char *argv[])
            /* assemble RHS vector and solve BEM system*********************/
            /***************************************************************/
            Log("  Assembling RHS vector...");
-           G->AssembleRHSVector(Omega, kBloch, IF, KN.get());
+           G->AssembleRHSVector(Omega, kBloch, IF, *KN);
            RHS->Copy(KN.get()); // copy RHS vector for later
            Log("  Solving the BEM system...");
            M->LUSolve(KN.get());

@@ -76,9 +76,9 @@ void BeynFunc(cdouble Omega, void *UserData, HMatrix *VHat, HMatrix *MVHat)
    Log(" assembling BEM matrix at k={%e,%e},Omega=%s", kBloch[0],kBloch[1],CD2S(Omega));
 
   if (G->LDim==0)
-   G->AssembleBEMMatrix(Omega, M);
+   G->AssembleBEMMatrix(Omega, *M);
   else
-   G->AssembleBEMMatrix(Omega, kBloch, M);
+   G->AssembleBEMMatrix(Omega, kBloch, *M);
 
   if (LogFile)
    fprintf(LogFile,"%e %e\n",real(Omega),imag(Omega));
