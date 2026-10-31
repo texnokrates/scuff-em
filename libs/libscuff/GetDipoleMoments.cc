@@ -57,32 +57,18 @@ namespace scuff {
 /*  PM[ ns, 3..5 ] = x,y,z components of magnetic dipole       */
 /*                   moment induced on surface #ns             */
 /*                                                             */
-/* If PM is NULL on entry (or points to a matrix of the wrong  */
-/* size) then it is reallocated.                               */
+/* the caller's PM must be a NumSurfacesx6 complex matrix; use   */
+/* the allocating overload if you don't have one.                */
 /***************************************************************/
-HMatrix *RWGGeometry::GetDipoleMoments(cdouble Omega, HVector *KN, HMatrix *PM,
-                                       HMatrix *PMResolved)
-                                       
-{ 
+void RWGGeometry::GetDipoleMoments(cdouble Omega, HVector *KN, HMatrix &PM)
+{
   /***************************************************************/
   /***************************************************************/
   /***************************************************************/
-  if (     PM 
-       && (PM->NR!=NumSurfaces || PM->NC!=6 || PM->RealComplex!=LHM_COMPLEX) )
-   { if (PM) delete PM;
-     PM=0;
-   };
-  if (PM==0)
-   PM=new HMatrix(NumSurfaces, 6, LHM_COMPLEX);
-  PM->Zero(); 
-
-  if ( PMResolved && 
-        (    PMResolved->NR!=NumSurfaces 
-          || PMResolved->NC!=12
-          || PMResolved->RealComplex!=LHM_COMPLEX
-        )
-     ) ErrExit("%s:%i: internal error",__FILE__,__LINE__);
-  if (PMResolved) PMResolved->Zero();
+  if ( PM.NR!=NumSurfaces || PM.NC!=6 || PM.RealComplex!=LHM_COMPLEX )
+   ErrExit("wrong-size PM matrix (%ix%i) passed to GetDipoleMoments "
+           "(expected %ix%i)",PM.NR,PM.NC,NumSurfaces,6);
+  PM.Zero();
 
   /***************************************************************/
   /***************************************************************/
@@ -124,23 +110,22 @@ HMatrix *RWGGeometry::GetDipoleMoments(cdouble Omega, HVector *KN, HMatrix *PM,
 
       for(int Mu=0; Mu<3; Mu++)
        { 
-         if (PM)
-          { PM->AddEntry(ns, Mu + 0, KAlpha*pRWG[Mu] - NAlpha*mRWG[Mu]/ZVAC);
-            PM->AddEntry(ns, Mu + 3, KAlpha*mRWG[Mu] + NAlpha*pRWG[Mu]/ZVAC);
-          };
+         PM.AddEntry(ns, Mu + 0, KAlpha*pRWG[Mu] - NAlpha*mRWG[Mu]/ZVAC);
+         PM.AddEntry(ns, Mu + 3, KAlpha*mRWG[Mu] + NAlpha*pRWG[Mu]/ZVAC);
 
-         if (PMResolved)
-          { PMResolved->AddEntry(ns, 0*3 + Mu, KAlpha*pRWG[Mu]);
-            PMResolved->AddEntry(ns, 1*3 + Mu, NAlpha*pRWG[Mu]/ZVAC);
-            PMResolved->AddEntry(ns, 2*3 + Mu, KAlpha*mRWG[Mu]);
-            PMResolved->AddEntry(ns, 3*3 + Mu, NAlpha*mRWG[Mu]/ZVAC);
-          };
        };
  
     };
+}
 
+/***************************************************************/
+/* allocating entry point: create the PM matrix and delegate.  */
+/***************************************************************/
+std::unique_ptr<HMatrix> RWGGeometry::GetDipoleMoments(cdouble Omega, HVector *KN)
+{
+  auto PM=std::make_unique<HMatrix>(NumSurfaces, 6, LHM_COMPLEX);
+  GetDipoleMoments(Omega, KN, *PM);
   return PM;
-
 }
 
 /***************************************************************/

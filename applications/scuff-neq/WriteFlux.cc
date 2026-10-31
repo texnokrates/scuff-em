@@ -165,8 +165,8 @@ int GetSIFlux(SNEQData *SNEQD, int SourceSurface, cdouble Omega,
   /*- do the PFT calculation           ---------------------------*/
   /*--------------------------------------------------------------*/
   if (PFTMethod==SCUFF_PFT_EMT)
-   { 
-     G->GetPFTMatrix(0, Omega, PFTOpts, PFTMatrix);
+   {
+     G->GetPFTMatrix(nullptr, Omega, PFTOpts, *PFTMatrix);
    }
   else
    {
@@ -347,7 +347,7 @@ void WriteFlux(SNEQData *SNEQD, cdouble Omega, double *kBloch)
            fclose(f);
 
            if (PFTByRegion)
-            { GetPFTByRegion(G, PFTMatrix, PFTByRegion);
+            { GetPFTByRegion(G, PFTMatrix, *PFTByRegion);
               int nsr1 = G->Surfaces[nss]->RegionIndices[0]; // source region 1
               int nsr2 = G->Surfaces[nss]->RegionIndices[1]; // source region 2
               for(int ndr=0; ndr<NR; ndr++) // ndr = destination region

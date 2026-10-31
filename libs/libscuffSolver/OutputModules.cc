@@ -147,7 +147,7 @@ dVec scuffSolver::GetPFT(char *SurfaceLabel, char *Method)
   return PFT;
 }
 
-HMatrix *scuffSolver::GetPFTMatrix(char *Method)
+std::unique_ptr<HMatrix> scuffSolver::GetPFTMatrix(char *Method)
 {
   if (!ReadyToPostprocess()) return nullptr;
   PFTOptions Options;

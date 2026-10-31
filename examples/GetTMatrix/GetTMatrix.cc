@@ -85,7 +85,7 @@ int main(int argc, char *argv[])
   /*--------------------------------------------------------------*/
   int NumMoments= 2*(lMax+1)*(lMax+1);
   HMatrix *TMatrix = new HMatrix(NumMoments, NumMoments, LHM_COMPLEX);
-  HVector *AVector = new HVector(NumMoments, LHM_COMPLEX);
+  auto AVector = std::make_unique<HVector>(NumMoments, LHM_COMPLEX);
 
   /*--------------------------------------------------------------*/
  /* instantiate a SphericalWave structure (we will set the l, m, */
@@ -132,7 +132,7 @@ int main(int argc, char *argv[])
 
            // compute the spherical multipole moments induced by the 
            // incident wave on the object 
-           GetSphericalMoments(G, Omega, lMax, KN, AVector);
+           GetSphericalMoments(G, Omega, lMax, KN, *AVector);
 
            // stamp in the vector of moments as the ncth row of the T-matrix
            for(nr=0; nr<NumMoments; nr++)

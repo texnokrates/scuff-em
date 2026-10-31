@@ -404,7 +404,7 @@ int main(int argc, char *argv[])
             /*--------------------------------------------------------------*/
             /*--------------------------------------------------------------*/
             if (Moments)
-             { G->GetDipoleMoments(Omega, KN.get(), PM.get());
+             { G->GetDipoleMoments(Omega, KN.get(), *PM);
                SetDefaultCD2SFormat("%+.6e %+.6e");
                for(int ns=0; ns<G->NumSurfaces; ns++)
                 fprintf(MomentFile,"%e %i BEFORE %s %s %s %s %s %s %s \n",
@@ -450,7 +450,7 @@ int main(int argc, char *argv[])
             /*--------------------------------------------------------------*/
             /*--------------------------------------------------------------*/
             if (Moments)
-             { G->GetDipoleMoments(Omega, KN.get(), PM.get());
+             { G->GetDipoleMoments(Omega, KN.get(), *PM);
                SetDefaultCD2SFormat("%+.6e %+.6e");
                for(int ns=0; ns<G->NumSurfaces; ns++)
                 fprintf(MomentFile,"%e %i AFTER %s %s %s %s %s %s %s \n",

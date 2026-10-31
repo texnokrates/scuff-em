@@ -155,8 +155,8 @@ void GetKNBilinears(HVector *KNVector, HMatrix *DRMatrix,
                     bool IsPECB, int KNIndexB,
                     cdouble Bilinears[4]);
 
-HMatrix *GetPFTByRegion(RWGGeometry *G, HMatrix *PFTBySurface,
-                        HMatrix *PFTByRegion);
+void GetPFTByRegion(RWGGeometry *G, HMatrix *PFTBySurface,
+                    HMatrix &PFTByRegion);
 
 } // namespace scuff 
 

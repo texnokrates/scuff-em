@@ -416,10 +416,12 @@ class RWGGeometry
    /*--------------------------------------------------------------*/
    /*- post-processing routine for dyadic green's functions -------*/
    /*--------------------------------------------------------------*/
-   HMatrix *GetDyadicGFs(cdouble Omega, double *kBloch,
-                         HMatrix *XMatrix, HMatrix *M,
-                         HMatrix *GMatrix=nullptr, 
-                         bool ScatteringOnly=false);
+   /* filling form: GMatrix must be an NXx18 matrix (NX = number of
+      evaluation points, rows of XMatrix)                           */
+   void GetDyadicGFs(cdouble Omega, double *kBloch,
+                     HMatrix *XMatrix, HMatrix *M,
+                     HMatrix &GMatrix,
+                     bool ScatteringOnly=false);
 
    // these next two are legacy interfaces which will be
    // removed in future versions
@@ -438,8 +440,13 @@ class RWGGeometry
    /*--------------------------------------------------------------*/
    void GetPFT(int SurfaceIndex, HVector *KN, cdouble Omega,
                double PFT[NUMPFT], PFTOptions *Options=nullptr);
-   HMatrix *GetPFTMatrix(HVector *KN, cdouble Omega,
-                         PFTOptions *Options=nullptr, HMatrix *PFTMatrix=nullptr);
+   /* GetPFTMatrix comes in two forms: the allocating form returns a
+      newly allocated NumSurfaces x NUMPFT matrix; the filling form
+      stores into a caller-owned PFTMatrix of those dimensions.     */
+   std::unique_ptr<HMatrix> GetPFTMatrix(HVector *KN, cdouble Omega,
+                         PFTOptions *Options=nullptr);
+   void GetPFTMatrix(HVector *KN, cdouble Omega,
+                     PFTOptions *Options, HMatrix &PFTMatrix);
 
    /*--------------------------------------------------------------*/
    /*- post-processing routines for various other quantities      -*/
@@ -456,8 +463,11 @@ class RWGGeometry
    cdouble GetPlaneWaveAmplitude(cdouble Omega, HVector *KNVector,
                                  cdouble E0[3], double nHat[3], char *RegionLabel=nullptr, cdouble *Terms=nullptr);
 
-   /* electric and magnetic dipole moments */
-   HMatrix *GetDipoleMoments(cdouble Omega, HVector *KN, HMatrix *PM=nullptr, HMatrix *KNResolved=nullptr);
+   /* electric and magnetic dipole moments.  The allocating form
+      returns a newly allocated NumSurfacesx6 matrix; the filling
+      form stores into a caller-owned PM of those dimensions.       */
+   std::unique_ptr<HMatrix> GetDipoleMoments(cdouble Omega, HVector *KN);
+   void GetDipoleMoments(cdouble Omega, HVector *KN, HMatrix &PM);
 
    /* expansion coefficients in the RWG expansion of an arbitrary */
    /* user-supplied surface-tangential vector field               */

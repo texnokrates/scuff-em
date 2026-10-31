@@ -57,6 +57,9 @@ void GetReducedFields_Nearby(RWGSurface *S, const int ne,
 /***************************************************************/
 void GetGCBar2D_Fourier(cdouble k, double *kBloch,
                         HMatrix *RLBasis, double RLVolume,
+                        HMatrix *XDXSMatrix, HMatrix &GCMatrix);
+void GetGCBar2D_Fourier(cdouble k, double *kBloch,
+                        HMatrix *RLBasis, double RLVolume,
                         double *XDest, double *XSource,
                         cdouble G[3][3], cdouble C[3][3]);
 

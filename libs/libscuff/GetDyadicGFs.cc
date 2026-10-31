@@ -57,11 +57,11 @@ namespace scuff {
 /*       X[nx,0:2] = destination point                         */
 /*       X[nx,3:5] = source points                             */
 /***************************************************************/
-HMatrix *RWGGeometry::GetDyadicGFs(cdouble Omega, double *kBloch,
-                                   HMatrix *XMatrix, HMatrix *M,
-                                   HMatrix *GMatrix,
-                                   bool ScatteringOnly)
-{ 
+void RWGGeometry::GetDyadicGFs(cdouble Omega, double *kBloch,
+                               HMatrix *XMatrix, HMatrix *M,
+                               HMatrix &GMatrix,
+                               bool ScatteringOnly)
+{
   int NBF = TotalBFs;
   int NX  = XMatrix->NR;
   Log("Getting DGFs at %i eval points...",NX);
@@ -81,16 +81,11 @@ HMatrix *RWGGeometry::GetDyadicGFs(cdouble Omega, double *kBloch,
    };
 
   /*--------------------------------------------------------------*/
-  /*- allocate an output matrix of the right size if necessary   -*/
+  /*- the caller's GMatrix must have the right dimensions        -*/
   /*--------------------------------------------------------------*/
-  if (GMatrix==nullptr || GMatrix->NR!=NX || GMatrix->NC!=18)
-   { 
-     if (GMatrix) 
-      { Warn("wrong-size GMatrix passed to GetDyadicGFs (reallocating)");
-        delete GMatrix;
-      };
-     GMatrix=new HMatrix(NX, 18, LHM_COMPLEX);
-   };
+  if ( GMatrix.NR!=NX || GMatrix.NC!=18 )
+   ErrExit("wrong-size GMatrix (%ix%i) passed to GetDyadicGFs (expected %ix%i)",
+            GMatrix.NR,GMatrix.NC,NX,18);
 
   /*--------------------------------------------------------------*/
   /*- if we are computing two-point DGFs, initialize a PointSource*/
@@ -177,17 +172,16 @@ HMatrix *RWGGeometry::GetDyadicGFs(cdouble Omega, double *kBloch,
          GEScat *= GEScatNormFac;
          GMScat *= GMScatNormFac;
 
-         GMatrix->SetEntry(nx, 0 + 3*i + j, GEScat);
-         GMatrix->SetEntry(nx, 9 + 3*i + j, GMScat);
+         GMatrix.SetEntry(nx, 0 + 3*i + j, GEScat);
+         GMatrix.SetEntry(nx, 9 + 3*i + j, GMScat);
 
          if (AddDirectContribution)
-          { GMatrix->AddEntry(nx, 0 + 3*i + j, GEDirect[i][j]);
-            GMatrix->AddEntry(nx, 9 + 3*i + j, GMDirect[i][j]);
+          { GMatrix.AddEntry(nx, 0 + 3*i + j, GEDirect[i][j]);
+            GMatrix.AddEntry(nx, 9 + 3*i + j, GMDirect[i][j]);
           };
        };
    };
 
-  return GMatrix;
 
 }
 
@@ -213,7 +207,7 @@ void RWGGeometry::GetDyadicGFs(double XEval[3], double XSource[3],
   cdouble GBuffer[18];
   HMatrix GMatrix(1,18,LHM_COMPLEX,LHM_NORMAL,GBuffer);
   
-  GetDyadicGFs(Omega, kBloch, &XMatrix, M, &GMatrix);
+  GetDyadicGFs(Omega, kBloch, &XMatrix, M, GMatrix);
 
   for(int i=0; i<3; i++)
    for(int j=0; j<3; j++)

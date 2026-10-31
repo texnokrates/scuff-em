@@ -100,23 +100,19 @@ void VSWDotRWGIntegrand(double x[3], double b[3], double Divb,
 /* get the spherical multipole moments of a single object      */
 /* (surface) in a scattering geometry                          */
 /***************************************************************/
-HVector *GetSphericalMoments(RWGGeometry *G, int ns,
-                             cdouble Omega, int lMax,
-                             HVector *KN, HVector *MomentVector)
-{ 
+void GetSphericalMoments(RWGGeometry *G, int ns,
+                         cdouble Omega, int lMax,
+                         HVector *KN, HVector &MomentVector)
+{
   /***************************************************************/
-  /* (re)allocate the MomentVector as necessary ***********************/
+  /* the caller's MomentVector must have the right size **************/
   /***************************************************************/
   int NumLMs = (lMax+1)*(lMax+1) - 1;
   int NumMoments = 2*NumLMs; // M-type and N-type moments for each l,m
-  if ( MomentVector && (MomentVector->N != NumMoments ) )
-   { Warn("wrong-size MomentVector passed to GetSphericalMoments (reallocating...)");
-     delete MomentVector;
-     MomentVector=0;
-   };
-  if ( MomentVector==0 )
-   MomentVector=new HVector(NumMoments, LHM_COMPLEX);
-  MomentVector->Zero();
+  if ( MomentVector.N != NumMoments )
+   ErrExit("wrong-size MomentVector (%i entries) passed to GetSphericalMoments "
+           "(expected %i)",MomentVector.N,NumMoments);
+  MomentVector.Zero();
 
   /***************************************************************/
   /***************************************************************/
@@ -128,9 +124,9 @@ HVector *GetSphericalMoments(RWGGeometry *G, int ns,
    Sign=+1.0;
   else if (S->RegionIndices[1]==EXTERIOR_REGION)
    Sign=-1.0;
-  else 
-   return MomentVector; // currents on this surface do not contribute
-   
+  else
+   return; // currents on this surface do not contribute
+
   cdouble EpsRel, MuRel;
   G->RegionMPs[EXTERIOR_REGION]->GetEpsMu(Omega, &EpsRel, &MuRel);
   cdouble k2 = EpsRel*MuRel*Omega*Omega, k=sqrt(k2);
@@ -200,12 +196,9 @@ HVector *GetSphericalMoments(RWGGeometry *G, int ns,
   /***************************************************************/
   /* accumulate contributions of all threads                     */
   /***************************************************************/
-  MomentVector->Zero();
   for(int nt=0; nt<NT; nt++)
-   for(int nm=0; nm<MomentVector->N; nm++)
-    MomentVector->AddEntry(nm,Sign*PartialMoments[nt]->GetEntry(nm));
-
-  return MomentVector;
+   for(int nm=0; nm<MomentVector.N; nm++)
+    MomentVector.AddEntry(nm,Sign*PartialMoments[nt]->GetEntry(nm));
 
 }
 
@@ -213,38 +206,37 @@ HVector *GetSphericalMoments(RWGGeometry *G, int ns,
 /* get the spherical moments for an entire geometry by summing */
 /* the moments for each individual surface                     */
 /***************************************************************/
-HVector *GetSphericalMoments(RWGGeometry *G, cdouble Omega, int lMax,
-                             HVector *KN, HVector *MomentVector)
-{ 
-  /***************************************************************/
-  /* (re)allocate the MomentVector as necessary ***********************/
-  /***************************************************************/
+void GetSphericalMoments(RWGGeometry *G, cdouble Omega, int lMax,
+                         HVector *KN, HVector &MomentVector)
+{
   int NumLMs = (lMax+1)*(lMax+1)-1;
   int NumMoments = 2*NumLMs; // M-type and N-type moments for each l,m
-  if ( MomentVector && MomentVector->N != NumMoments )
-   { Warn("wrong-size MomentVector passed to GetSphericalMoments (reallocating...)");
-     delete MomentVector;
-     MomentVector=0;
-   };
-  if ( MomentVector==0 )
-   MomentVector=new HVector(NumMoments, LHM_COMPLEX);
+  if ( MomentVector.N != NumMoments )
+   ErrExit("wrong-size MomentVector (%i entries) passed to GetSphericalMoments "
+           "(expected %i)",MomentVector.N,NumMoments);
 
   /***************************************************************/
   /***************************************************************/
   /***************************************************************/
   auto PartialMoments=std::make_unique<HVector>(NumMoments, LHM_COMPLEX);
 
-  MomentVector->Zero();
+  MomentVector.Zero();
   for(int ns=0; ns<G->NumSurfaces; ns++)
-   { 
-     GetSphericalMoments(G, ns, Omega, lMax, KN, PartialMoments.get());
+   {
+     GetSphericalMoments(G, ns, Omega, lMax, KN, *PartialMoments);
      for(int nm=0; nm<NumMoments; nm++)
-      MomentVector->AddEntry(nm, PartialMoments->GetEntry(nm));
+      MomentVector.AddEntry(nm, PartialMoments->GetEntry(nm));
    }
+}
 
-  /***************************************************************/
-  /***************************************************************/
-  /***************************************************************/
+/***************************************************************/
+/* allocating entry point: create the MomentVector, delegate.  */
+/***************************************************************/
+std::unique_ptr<HVector> GetSphericalMoments(RWGGeometry *G, cdouble Omega,
+                                             int lMax, HVector *KN)
+{
+  int NumLMs = (lMax+1)*(lMax+1)-1;
+  auto MomentVector=std::make_unique<HVector>(2*NumLMs, LHM_COMPLEX);
+  GetSphericalMoments(G, Omega, lMax, KN, *MomentVector);
   return MomentVector;
-   
 }

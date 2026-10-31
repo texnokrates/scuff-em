@@ -348,18 +348,14 @@ void GCBar2D_FourierSummand(double *Gamma, void *pData, double *pZM)
 /* GCMatrix[nx][0 + 3*Mu+Nu] = G[Mu][Nu] for point #nx         */
 /* GCMatrix[nx][9 + 3*Mu+Nu] = C[Mu][Nu] for point #nx         */
 /***************************************************************/
-HMatrix *GetGCBar2D_Fourier(cdouble k, double *kBloch,
-                            HMatrix *RLBasis, double RLVolume,
-                            HMatrix *XDXSMatrix, HMatrix *GCMatrix)
+void GetGCBar2D_Fourier(cdouble k, double *kBloch,
+                        HMatrix *RLBasis, double RLVolume,
+                        HMatrix *XDXSMatrix, HMatrix &GCMatrix)
 {
   int NX = XDXSMatrix->NR;
-  if (GCMatrix && (GCMatrix->NR!=XDXSMatrix->NR || GCMatrix->NC!=18))
-   { Warn("incorrect GCMatrix in GetGCBar2D_Fourier (reallocating)");
-     delete GCMatrix;
-     GCMatrix=0;
-   };
-  if (GCMatrix==0)
-   GCMatrix=new HMatrix(NX, 18, LHM_COMPLEX);
+  if ( GCMatrix.NR!=NX || GCMatrix.NC!=18 )
+   ErrExit("wrong-size GCMatrix (%ix%i) passed to GetGCBar2D_Fourier "
+           "(expected %ix%i)",GCMatrix.NR,GCMatrix.NC,NX,18);
 
   GCBar2D_FourierData MyData, *Data=&MyData;
   Data->k          = k;
@@ -378,13 +374,11 @@ HMatrix *GetGCBar2D_Fourier(cdouble k, double *kBloch,
   int MaxCells     = 10000;
   int IDim         = 18*NX;
   int nCells=GetLatticeSum(GCBar2D_FourierSummand, (void *)Data,
-                           2*IDim, RLBasis, (double *)(GCMatrix->ZM),
+                           2*IDim, RLBasis, reinterpret_cast<double *>(GCMatrix.ZM),
                            AbsTolSum, RelTolSum, MaxCells);
 
   if (s)
    Log("GCBar2D tol = %e, %i/%i cells\n",RelTolSum,nCells,MaxCells);
-
-  return GCMatrix;
 
 }
 
@@ -401,7 +395,7 @@ void GetGCBar2D_Fourier(cdouble k, double *kBloch,
   cdouble Buf2[18];
   HMatrix GCMatrix(1,18,LHM_COMPLEX,LHM_NORMAL,(void *)Buf2);
 
-  GetGCBar2D_Fourier(k, kBloch, RLBasis, RLVolume, &XDXSMatrix, &GCMatrix);
+  GetGCBar2D_Fourier(k, kBloch, RLBasis, RLVolume, &XDXSMatrix, GCMatrix);
 
   for(int Mu=0; Mu<3; Mu++)
    for(int Nu=0; Nu<3; Nu++)

@@ -164,7 +164,7 @@ public:
 
     // high-level post-processing
     dVec GetPFT(char *SurfaceLabel, char *Method=nullptr);
-    HMatrix *GetPFTMatrix(char *Method=nullptr);
+    std::unique_ptr<HMatrix> GetPFTMatrix(char *Method=nullptr);
     void ProcessEPFile(char *EPFile, char *OutFileName=nullptr);
     std::unique_ptr<HMatrix> PlotRFFields();
     std::unique_ptr<HVector> PlotRFFields(dVec X0, dVec L1, dVec L2, iVec NVec, char *OutFileBase);

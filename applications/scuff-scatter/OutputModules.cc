@@ -314,7 +314,7 @@ void GetMoments(SSData *SSD, const char *MomentFile)
   RWGGeometry *G = SSD->G;
   HVector *KN    = SSD->KN;
   cdouble Omega  = SSD->Omega;
-  HMatrix *PM    = G->GetDipoleMoments(Omega, KN);
+  auto PM        = G->GetDipoleMoments(Omega, KN);
 
   /***************************************************************/
   /* print to file ***********************************************/
@@ -332,7 +332,6 @@ void GetMoments(SSData *SSD, const char *MomentFile)
    };
   fclose(f);
 
-  delete PM;
 
 }
 
@@ -397,7 +396,7 @@ void WritePFTFile(SSData *SSD, PFTOptions *PFTOpts, int Method,
   /***************************************************************/
   /***************************************************************/
   /***************************************************************/
-  HMatrix *PFTMatrix=G->GetPFTMatrix(KN, Omega, PFTOpts);
+  auto PFTMatrix=G->GetPFTMatrix(KN, Omega, PFTOpts);
 
   /***************************************************************/
   /***************************************************************/
@@ -451,7 +450,6 @@ void WritePFTFile(SSData *SSD, PFTOptions *PFTOpts, int Method,
    };
 
   fclose(f);
-  delete PFTMatrix;
 
 }
 

@@ -250,9 +250,9 @@ void RWGGeometry::GetPFT(int SurfaceIndex, HVector *KN,
 /***************************************************************/
 /***************************************************************/
 /***************************************************************/
-HMatrix *RWGGeometry::GetPFTMatrix(HVector *KN, cdouble Omega,
-                                   PFTOptions *Options, 
-                                   HMatrix *PFTMatrix)
+void RWGGeometry::GetPFTMatrix(HVector *KN, cdouble Omega,
+                               PFTOptions *Options,
+                               HMatrix &PFTMatrix)
 {
   /***************************************************************/
   /***************************************************************/
@@ -266,41 +266,43 @@ HMatrix *RWGGeometry::GetPFTMatrix(HVector *KN, cdouble Omega,
   HMatrix *DRMatrix=Options->DRMatrix;
 
   /***************************************************************/
+  /* the caller's PFTMatrix must have the right dimensions       */
   /***************************************************************/
-  /***************************************************************/
-  if (    PFTMatrix
-       && ( PFTMatrix->NR != NumSurfaces || PFTMatrix->NC != NUMPFT)
-     ) 
-   { Warn("wrong-size PFTMatrix in GetPFTMatrix (reallocating...)");
-     delete PFTMatrix;
-     PFTMatrix=nullptr;
-   };
-  if (PFTMatrix==nullptr)
-   PFTMatrix=new HMatrix(NumSurfaces, NUMPFT);
+  if ( PFTMatrix.NR != NumSurfaces || PFTMatrix.NC != NUMPFT )
+   ErrExit("wrong-size PFTMatrix (%ix%i) passed to GetPFTMatrix "
+           "(expected %ix%i)",PFTMatrix.NR,PFTMatrix.NC,NumSurfaces,NUMPFT);
   
   /***************************************************************/
   /***************************************************************/
   /***************************************************************/
   if (Options->PFTMethod==SCUFF_PFT_EMT)
-   { 
+   {
      GetEMTPFTMatrix(this, Omega, IF, KN, DRMatrix,
-                     PFTMatrix, Options->Interior, Options->EMTPFTIMethod);
+                     &PFTMatrix, Options->Interior, Options->EMTPFTIMethod);
    }
   else if (Options->PFTMethod==SCUFF_PFT_MOMENTS)
-   { 
-     GetMomentPFTMatrix(this, Omega, IF, KN, DRMatrix, PFTMatrix);
+   {
+     GetMomentPFTMatrix(this, Omega, IF, KN, DRMatrix, &PFTMatrix);
    }
   else
-   { 
+   {
      for(int ns=0; ns<NumSurfaces; ns++)
       { double PFT[NUMPFT];
         GetPFT(ns, KN, Omega, PFT, Options);
-        PFTMatrix->SetEntriesD(ns,":",PFT);
+        PFTMatrix.SetEntriesD(ns,":",PFT);
       };
    };
+}
 
+/***************************************************************/
+/* allocating entry point: create the PFTMatrix and delegate.  */
+/***************************************************************/
+std::unique_ptr<HMatrix> RWGGeometry::GetPFTMatrix(HVector *KN, cdouble Omega,
+                                                   PFTOptions *Options)
+{
+  auto PFTMatrix=std::make_unique<HMatrix>(NumSurfaces, NUMPFT);
+  GetPFTMatrix(KN, Omega, Options, *PFTMatrix);
   return PFTMatrix;
-
 }
 
 /***************************************************************/
@@ -311,20 +313,16 @@ HMatrix *RWGGeometry::GetPFTMatrix(HVector *KN, cdouble Omega,
 /* summing the surface-resolved PFTs in PFTBySurface, with     */
 /* proper signs, for all surfaces bounding region #nr.         */
 /***************************************************************/
-HMatrix *GetPFTByRegion(RWGGeometry *G, HMatrix *PFTBySurface,
-                        HMatrix *PFTByRegion)
+void GetPFTByRegion(RWGGeometry *G, HMatrix *PFTBySurface,
+                    HMatrix &PFTByRegion)
 {
   int NS = G->NumSurfaces;
   int NR = G->NumRegions;
-  if (PFTByRegion && (PFTByRegion->NR!=NR || PFTByRegion->NC!=NUMPFT))
-   { Warn("wrong-size matrix in GetPFTByRegion (reallocating)");
-     delete PFTByRegion;
-     PFTByRegion=nullptr;
-   };
-  if (PFTByRegion==nullptr)
-   PFTByRegion = new HMatrix(NR, NUMPFT);
+  if ( PFTByRegion.NR!=NR || PFTByRegion.NC!=NUMPFT )
+   ErrExit("wrong-size PFTByRegion matrix (%ix%i) passed to GetPFTByRegion "
+           "(expected %ix%i)",PFTByRegion.NR,PFTByRegion.NC,NR,NUMPFT);
 
-  PFTByRegion->Zero();
+  PFTByRegion.Zero();
   for(int nr=0; nr<NR; nr++)
    for(int ns=0; ns<NS; ns++)
     { 
@@ -338,10 +336,9 @@ HMatrix *GetPFTByRegion(RWGGeometry *G, HMatrix *PFTBySurface,
       else
        continue;
       for(int nq=0; nq<NUMPFT; nq++)
-       PFTByRegion->AddEntry(nr, nq, Sign*PFTBySurface->GetEntry(ns, nq));
+       PFTByRegion.AddEntry(nr, nq, Sign*PFTBySurface->GetEntry(ns, nq));
     };
-  return PFTByRegion;
-} 
+}
 
 /***************************************************************/
 /* routine for initializing a PFTOptions structure to default  */

@@ -186,7 +186,7 @@ void GetLDOS(void *pData, cdouble Omega, double *kBloch,
       };
      M->LUFactorize();
      for(int nm=0; nm<NumXMatrices; nm++)
-      G->GetDyadicGFs(Omega, kBloch, XMatrices[nm], M, GMatrices[nm],
+      G->GetDyadicGFs(Omega, kBloch, XMatrices[nm], M, *GMatrices[nm],
                       ScatteringOnly);
    }
   else 
@@ -224,7 +224,7 @@ void GetLDOS(void *pData, cdouble Omega, double *kBloch,
         // get LDOS 
         for(int nm=0; nm<NumXMatrices; nm++)
          G->GetDyadicGFs(Omega, kBloch, XMatrices[nm], M,
-                         GMatrices[nt*NumXMatrices + nm],
+                         *GMatrices[nt*NumXMatrices + nm],
                          ScatteringOnly);
 
         G->UnTransform();

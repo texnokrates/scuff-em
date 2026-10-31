@@ -229,7 +229,7 @@ HMatrix *GetMomentPFTMatrix(RWGGeometry *G, cdouble Omega, IncField *IF,
   /*--------------------------------------------------------------*/
   /*--------------------------------------------------------------*/
   /*--------------------------------------------------------------*/
-  G->GetDipoleMoments(Omega, KNVector, PM.get());
+  G->GetDipoleMoments(Omega, KNVector, *PM);
 
   /*--------------------------------------------------------------*/
   /*- loop over all surfaces to moment PFT on that surface        */

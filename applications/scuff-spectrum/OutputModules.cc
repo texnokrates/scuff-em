@@ -39,8 +39,10 @@ using namespace scuff;
 
 // prototype for non-class method in libscuff for fetching
 // spherical moments
-HVector *GetSphericalMoments(RWGGeometry *G, cdouble Omega, int lMax,
-                             HVector *KN, HVector *MomentVector=nullptr);
+std::unique_ptr<HVector> GetSphericalMoments(RWGGeometry *G, cdouble Omega,
+                                             int lMax, HVector *KN);
+void GetSphericalMoments(RWGGeometry *G, cdouble Omega, int lMax,
+                         HVector *KN, HVector &MomentVector);
 
 /***************************************************************/
 /* postprocessing of eigenvector data, part 1: write eigenmode */
@@ -358,7 +360,7 @@ void WriteCartesianMoments(RWGGeometry *G, HVector *KN,
   /***************************************************************/
   /* fetch the moments *******************************************/
   /***************************************************************/
-  HMatrix *PM = G->GetDipoleMoments(Omega, KN);
+  auto PM = G->GetDipoleMoments(Omega, KN);
 
   /***************************************************************/
   /* write data to file                                          */
@@ -387,7 +389,6 @@ void WriteCartesianMoments(RWGGeometry *G, HVector *KN,
    };
   fclose(f);
 
-  delete PM;
 
 }
 
@@ -420,7 +421,7 @@ void WriteSphericalMoments(RWGGeometry *G, HVector *KN,
   /***************************************************************/
   /* fetch spherical moments *************************************/
   /***************************************************************/
-  HVector *aLM=GetSphericalMoments(G, Omega, LMax, KN);
+  auto aLM=GetSphericalMoments(G, Omega, LMax, KN);
 
   /***************************************************************/
   /* write spherical moments to file                             */

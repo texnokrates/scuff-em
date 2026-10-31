@@ -55,8 +55,8 @@ using namespace scuff;
 /***************************************************************/
 /***************************************************************/
 /***************************************************************/
-HVector *GetSphericalMoments(RWGGeometry *G, cdouble k, int LMax,
-                             HVector *KN, HVector *MomentVector);
+void GetSphericalMoments(RWGGeometry *G, cdouble k, int LMax,
+                         HVector *KN, HVector &MomentVector);
 
 /***************************************************************/
 /***************************************************************/
@@ -212,7 +212,7 @@ int main(int argc, char *argv[])
            // compute the full vector of spherical multipole moments induced by the
            // incident wave on the object and store it as the Betath column of the T-matrix
            HVector TColumn(NumMoments, LHM_COMPLEX, (cdouble *)TMatrix->GetColumnPointer(Beta));
-           GetSphericalMoments(G, Omega, LMax, KN.get(), &TColumn);
+           GetSphericalMoments(G, Omega, LMax, KN.get(), TColumn);
         }; // for (nc=l=0...)
 
      /*--------------------------------------------------------------*/
