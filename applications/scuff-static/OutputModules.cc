@@ -120,7 +120,7 @@ void WritePolarizabilities(StaticSolver *SS, HMatrix *M, HVector *Sigma, const c
      Data.E0[0]=Data.E0[1]=Data.E0[2]=0.0;
      Data.E0[Mu]=1.0;
   
-     SS->AssembleRHSVector(&SE, Sigma);
+     SS->AssembleRHSVector(&SE, *Sigma);
      M->LUSolve(Sigma);
      SS->GetCartesianMoments(Sigma, QP);
      for(int ns=0; ns<NS; ns++)
@@ -248,7 +248,7 @@ void WriteCMatrix(StaticSolver *SS, HMatrix *M, HVector *Sigma,
       Data->m = m;
       StaticField SFs[1]={SphericalStaticField};
       StaticExcitation SE={nullptr,nullptr,SFs,(void **)(&Data),1};
-      SS->AssembleRHSVector(&SE, Sigma);
+      SS->AssembleRHSVector(&SE, *Sigma);
       M->LUSolve(Sigma);
 
       /*--------------------------------------------------------------*/

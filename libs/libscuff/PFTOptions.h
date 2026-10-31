@@ -137,8 +137,17 @@ PFTOptions *InitPFTOptions(PFTOptions *Options=nullptr);
 /***************************************************************/
 /***************************************************************/
 class RWGGeometry;
-HMatrix *GetSRFluxTrace(RWGGeometry *G, HMatrix *XMatrix, cdouble Omega,
-                   HMatrix *DRMatrix, HMatrix *FMatrix=nullptr,
+/* GetSRFluxTrace comes in two forms: the allocating form returns a
+   newly allocated NXxNUMSRFLUX matrix of spatially-resolved fluxes at
+   the NX evaluation points; the filling form stores into a
+   caller-owned FMatrix, which must have exactly NX rows and NUMSRFLUX
+   columns.  RFMatrix, if non-null, must be a correctly sized
+   precomputed reduced-field matrix (RFMatrixDirty=false to reuse).  */
+std::unique_ptr<HMatrix> GetSRFluxTrace(RWGGeometry *G, HMatrix *XMatrix,
+                   cdouble Omega, HMatrix *DRMatrix,
+                   HMatrix *RFMatrix=nullptr, bool RFMatrixDirty=true);
+void GetSRFluxTrace(RWGGeometry *G, HMatrix *XMatrix, cdouble Omega,
+                   HMatrix *DRMatrix, HMatrix &FMatrix,
                    HMatrix *RFMatrix=nullptr, bool RFMatrixDirty=true);
 
 void GetKNBilinears(HVector *KNVector, HMatrix *DRMatrix,

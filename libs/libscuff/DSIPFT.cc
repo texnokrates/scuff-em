@@ -65,10 +65,10 @@ namespace scuff{
 inline int GetSRFluxIndex(int NX, int nt, int nx, int nq)
 { return nt*NX*NUMSRFLUX + nx*NUMSRFLUX + nq; }
 
-HMatrix *GetSRFluxTrace(RWGGeometry *G, HMatrix *XMatrix, cdouble Omega,
-                        HMatrix *DRMatrix, HMatrix *FMatrix,
-                        HMatrix *RFMatrix, bool RFMatrixDirty)
-{ 
+void GetSRFluxTrace(RWGGeometry *G, HMatrix *XMatrix, cdouble Omega,
+                    HMatrix *DRMatrix, HMatrix &FMatrix,
+                    HMatrix *RFMatrix, bool RFMatrixDirty)
+{
   /***************************************************************/
   /* FIXME ? *****************************************************/
   /***************************************************************/
@@ -79,16 +79,14 @@ HMatrix *GetSRFluxTrace(RWGGeometry *G, HMatrix *XMatrix, cdouble Omega,
   bool IsPECB=false;
 
   /***************************************************************/
-  /* (re)allocate FMatrix as necessary ***************************/
+  /* the caller's FMatrix must have the right dimensions; use    */
+  /* the allocating overload if you don't have a correctly       */
+  /* sized matrix                                                */
   /***************************************************************/
   int NX = XMatrix->NR;
-  if ( FMatrix && ( (FMatrix->NR != NX) || (FMatrix->NC != NUMSRFLUX) ) )
-   { Warn("Wrong-size FMatrix in GetSRFluxTrace (reallocating...)");
-     delete FMatrix;
-     FMatrix=nullptr;
-   };
-  if (FMatrix==nullptr)
-   FMatrix = new HMatrix(NX, NUMSRFLUX, LHM_REAL);
+  if ( (FMatrix.NR != NX) || (FMatrix.NC != NUMSRFLUX) )
+   ErrExit("wrong-size FMatrix (%ix%i) passed to GetSRFluxTrace (expected %ix%i)",
+            FMatrix.NR,FMatrix.NC,NX,NUMSRFLUX);
 
   Log("Computing spatially-resolved fluxes at %i evaluation points...",NX);
 
@@ -223,18 +221,25 @@ HMatrix *GetSRFluxTrace(RWGGeometry *G, HMatrix *XMatrix, cdouble Omega,
   /*--------------------------------------------------------------*/
   /*- sum contributions of all threads ---------------------------*/
   /*--------------------------------------------------------------*/
-  FMatrix->Zero();
+  FMatrix.Zero();
   for(int nx=0; nx<NX; nx++)
    for(int nq=0; nq<NUMSRFLUX; nq++)
     for(int nt=0; nt<NumThreads; nt++)
-     FMatrix->AddEntry(nx, nq, real(DeltaSRFlux[ GetSRFluxIndex(NX, nt, nx, nq)] ));
-
-  /*--------------------------------------------------------------*/
-  /*--------------------------------------------------------------*/
-  /*--------------------------------------------------------------*/
-  return FMatrix;
+     FMatrix.AddEntry(nx, nq, real(DeltaSRFlux[ GetSRFluxIndex(NX, nt, nx, nq)] ));
 
 } // routine GetSRFlux
+
+/***************************************************************/
+/* allocating entry point: create the FMatrix and delegate.    */
+/***************************************************************/
+std::unique_ptr<HMatrix> GetSRFluxTrace(RWGGeometry *G, HMatrix *XMatrix,
+                                        cdouble Omega, HMatrix *DRMatrix,
+                                        HMatrix *RFMatrix, bool RFMatrixDirty)
+{
+  auto FMatrix=std::make_unique<HMatrix>(XMatrix->NR, NUMSRFLUX, LHM_REAL);
+  GetSRFluxTrace(G, XMatrix, Omega, DRMatrix, *FMatrix, RFMatrix, RFMatrixDirty);
+  return FMatrix;
+}
 
 /***************************************************************/
 /* SCR matrix stands for 'surface cubature rule matrix.'       */
@@ -609,8 +614,8 @@ void GetDSIPFTTrace(RWGGeometry *G, cdouble Omega, HMatrix *DRMatrix,
   /*--------------------------------------------------------------*/
   /*--------------------------------------------------------------*/
   HMatrix *SCRMatrix = GetSCRMatrix(DSIMesh, DSIRadius, DSIPoints, GT1, GT2);
-  HMatrix *SRMatrix  = GetSRFluxTrace(G, SCRMatrix, Omega, DRMatrix, nullptr,
-                                      RFMatrix, RFMatrixDirty); 
+  auto SRMatrix  = GetSRFluxTrace(G, SCRMatrix, Omega, DRMatrix,
+                                  RFMatrix, RFMatrixDirty);
 
   /*--------------------------------------------------------------*/
   /*--------------------------------------------------------------*/
@@ -726,7 +731,6 @@ void GetDSIPFTTrace(RWGGeometry *G, cdouble Omega, HMatrix *DRMatrix,
    }; // if (DSIMesh && PlotFileName)
 
   delete SCRMatrix;
-  delete SRMatrix;
 
 }
 

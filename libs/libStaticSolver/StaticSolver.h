@@ -104,8 +104,8 @@ class StaticSolver
 
    /* routines for allocating, and then filling in, the RHS vector */
    std::unique_ptr<HVector> AllocateRHSVector();
-   HVector *AssembleRHSVector(StaticExcitation *SE, HVector *RHS = nullptr);
-   HVector *AssembleRHSVector(double *Potentials, HVector *RHS = nullptr);
+   void AssembleRHSVector(StaticExcitation *SE, HVector &RHS);
+   void AssembleRHSVector(double *Potentials, HVector &RHS);
 
    /* routine for calculating electric dipole moment */
    HMatrix *GetCartesianMoments(HVector *Sigma, HMatrix *Moments);

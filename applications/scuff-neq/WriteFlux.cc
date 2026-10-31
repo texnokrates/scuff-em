@@ -368,7 +368,7 @@ void WriteFlux(SNEQData *SNEQD, cdouble Omega, double *kBloch)
             HMatrix *SRXMatrix = SNEQD->SRXMatrix;
             HMatrix *SRFMatrix = SNEQD->SRFMatrix;
             HMatrix *DRMatrix  = SNEQD->DRMatrix;
-            GetSRFluxTrace(G, SRXMatrix, Omega, DRMatrix, SRFMatrix);
+            GetSRFluxTrace(G, SRXMatrix, Omega, DRMatrix, *SRFMatrix);
 
             FILE *f=vfopen("%s.SRFlux","a",FileBase);
             for(int nx=0; nx<SRXMatrix->NR; nx++)

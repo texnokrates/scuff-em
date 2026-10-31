@@ -264,23 +264,19 @@ std::unique_ptr<HVector> StaticSolver::AllocateRHSVector()
 /***********************************************************************/
 /***********************************************************************/
 /***********************************************************************/
-HVector *StaticSolver::AssembleRHSVector(StaticExcitation *SE,
-                                     HVector *RHS)
+void StaticSolver::AssembleRHSVector(StaticExcitation *SE,
+                                     HVector &RHS)
 {
   int Dim = G->TotalPanels;
 
   /***************************************************************/
-  /* (re)allocate the vector as necessary                        */
+  /* the caller's RHS must have the right dimensions             */
   /***************************************************************/
-  if ( (RHS->N!=Dim) )
-   { Warn("wrong-size vector passed to AssembleRHSVector (resizing...)");
-     delete RHS;
-     RHS=nullptr;
-   };
-  if (!RHS)
-   RHS = new HVector(Dim);
+  if ( RHS.N!=Dim )
+   ErrExit("wrong-size vector passed to AssembleRHSVector (%i; expected %i)",
+            RHS.N,Dim);
 
-  RHS->Zero();
+  RHS.Zero();
   Log("Computing RHS vector...");
 
   /***************************************************************/
@@ -331,24 +327,22 @@ HVector *StaticSolver::AssembleRHSVector(StaticExcitation *SE,
      double *Potentials = SE->Potentials;
      if ( Potentials && IntType!=ENORMALINTEGRAL )
       for(int np=0; np<S->NumPanels; np++)
-       RHS->AddEntry(Offset+np, PotentialPreFactor*(S->Panels[np]->Area)*Potentials[ns]);
+       RHS.AddEntry(Offset+np, PotentialPreFactor*(S->Panels[np]->Area)*Potentials[ns]);
 
      /*--------------------------------------------------------------*/
      /*- contributions of external field sources if present ---------*/
      /*--------------------------------------------------------------*/
      if (SE->NumSFs>0)
       for(int np=0; np<S->NumPanels; np++)
-       RHS->AddEntry(Offset+np, IntegralPreFactor*GetRHSIntegral(S,np,SE,IntType) );
+       RHS.AddEntry(Offset+np, IntegralPreFactor*GetRHSIntegral(S,np,SE,IntType) );
 
    };
 
-  return RHS;
-
 }
 
-HVector *StaticSolver::AssembleRHSVector(double *Potentials, HVector *RHS)
+void StaticSolver::AssembleRHSVector(double *Potentials, HVector &RHS)
  { StaticExcitation SE={nullptr, Potentials, nullptr, nullptr, 0};
-   return AssembleRHSVector(&SE, RHS);
+   AssembleRHSVector(&SE, RHS);
  }
 
 /***********************************************************************/

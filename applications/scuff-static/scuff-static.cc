@@ -331,7 +331,7 @@ int main(int argc, char *argv[])
         Log("Handling excitation %s",SE->Label ? SE->Label : "(default)");
         if (!HaveSolution)
          {
-           SS->AssembleRHSVector(SE, Sigma.get());
+           SS->AssembleRHSVector(SE, *Sigma);
            M->LUSolve(Sigma.get());
            if (!SolutionFile.empty())
             FileOp(FILEOP_WRITE, Sigma.get(), SolutionFile.c_str(),

@@ -252,7 +252,7 @@ std::unique_ptr<HMatrix> StaticSolver::GetCapacitanceMatrix(HMatrix *M,
 
      Potentials.assign(NS, 0.0);
      Potentials[ns]=1.0;
-     AssembleRHSVector(Potentials.data(), Sigma);
+     AssembleRHSVector(Potentials.data(), *Sigma);
      M->LUSolve(Sigma);
      GetCartesianMoments(Sigma, QP.get());
 
