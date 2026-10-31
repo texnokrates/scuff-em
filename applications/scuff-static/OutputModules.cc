@@ -51,11 +51,11 @@ void WriteFields(StaticSolver *SS, HVector *Sigma, StaticExcitation *SE,
   bool Separate         = SS->SeparateOutputFiles;
   for(int nepf=0; nepf<nEPFiles; nepf++)
    {
-     HMatrix *X = new HMatrix(EPFiles[nepf]);
+     auto X = std::make_unique<HMatrix>(EPFiles[nepf]);
      if (X->ErrMsg)
       ErrExit(X->ErrMsg);
 
-     HMatrix *PhiE = SS->GetFields(SE, Sigma, X);
+     auto PhiE = SS->GetFields(SE, Sigma, X.get());
 
      char FileName[MAXSTR];
      if (Separate && TransformLabel && ExcitationLabel)

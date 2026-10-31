@@ -142,7 +142,7 @@ void ProcessEPFile(RWGGeometry *G, HVector *KN, cdouble Omega,
   /* call the usual scuff-EM routine to get the contribution of  */
   /* the main structure to the fields                            */
   /***************************************************************/
-  HMatrix *FMatrix=G->GetFields(nullptr,KN,Omega,XMatrix);
+  auto FMatrix=G->GetFields(nullptr,KN,Omega,XMatrix);
 
   /***************************************************************/
   /* now go through the list of evaluation points and add the    */
@@ -212,7 +212,7 @@ HMatrix *RFFluxMDF(void *UserData, HMatrix *XMatrix,
   /***************************************************************/
   auto XTMatrix = XMatrix->Copy();
   XTMatrix->Transpose();
-  HMatrix *FMatrix=G->GetFields(nullptr,KN,Omega,XTMatrix.get());
+  auto FMatrix=G->GetFields(nullptr,KN,Omega,XTMatrix.get());
 
   /***************************************************************/
   /* now go through the list of evaluation points and add the    */
@@ -248,7 +248,6 @@ HMatrix *RFFluxMDF(void *UserData, HMatrix *XMatrix,
      DataMatrix->SetEntry(nx, 5, Pr );
    };
 
-  delete FMatrix;
   return DataMatrix;
 }
 

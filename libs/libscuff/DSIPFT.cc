@@ -483,23 +483,14 @@ void GetDSIPFT(RWGGeometry *G, cdouble Omega, double *kBloch,
   /***************************************************************/
   /* get the scattered and total fields at the cubature points   */
   /***************************************************************/
-  HMatrix *FMatrixScat;
-/*
-  if (FarField && kBloch==0)
-   FMatrixScat = GetFarFields(G, 0, KN, Omega, SCRMatrix);
-  else
-   FMatrixScat = G->GetFields(0, KN, Omega, kBloch, SCRMatrix);
-*/
-  FMatrixScat = G->GetFields(nullptr, KN, Omega, kBloch, SCRMatrix);
+  auto FMatrixScat = G->GetFields(nullptr, KN, Omega, kBloch, SCRMatrix);
 
-  HMatrix *FMatrix;
-  if (IF==nullptr)
-   { 
-     FMatrix = FMatrixScat;
-   }
-  else
-   { FMatrix = G->GetFields(IF, nullptr, Omega, kBloch, SCRMatrix);
-     FMatrix->AddBlock(FMatrixScat, 0, 0);
+  HMatrix *FMatrix=FMatrixScat.get();
+  std::unique_ptr<HMatrix> FMatrixTot;
+  if (IF)
+   { FMatrixTot = G->GetFields(IF, nullptr, Omega, kBloch, SCRMatrix);
+     FMatrix   = FMatrixTot.get();
+     FMatrixTot->AddBlock(FMatrixScat.get(), 0, 0);
    };
 
   /***************************************************************/
@@ -562,8 +553,6 @@ void GetDSIPFT(RWGGeometry *G, cdouble Omega, double *kBloch,
       };
    };
 
-  if (FMatrix!=FMatrixScat) delete FMatrix;
-  delete FMatrixScat;
   delete SCRMatrix;
 
   /***************************************************************/

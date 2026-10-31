@@ -198,7 +198,7 @@ void GetEPFT(RWGGeometry *G, int DestSurface, cdouble Omega,
   /***************************************************************/
   /***************************************************************/
   /***************************************************************/
-  HMatrix *FMatrix=G->GetFields(IF, KNVector, Omega, XCCMatrix);
+  auto FMatrix=G->GetFields(IF, KNVector, Omega, XCCMatrix);
 
   /***************************************************************/
   /*- initialize edge-by-edge contributions to zero -------------*/
@@ -292,7 +292,6 @@ void GetEPFT(RWGGeometry *G, int DestSurface, cdouble Omega,
   /***************************************************************/
   /***************************************************************/
   /***************************************************************/
-  delete FMatrix;
   delete XCCMatrix;
 
 }

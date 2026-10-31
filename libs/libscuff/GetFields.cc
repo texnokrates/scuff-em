@@ -371,32 +371,30 @@ HMatrix *RWGGeometry::GetRFMatrix(cdouble Omega, double *kBloch0,
 /***************************************************************/
 /***************************************************************/
 /***************************************************************/
-HMatrix *RWGGeometry::GetFields(IncField *IFList, HVector *KN,
-                                cdouble Omega, double *kBloch,
-                                HMatrix *XMatrix, HMatrix *FMatrix)
-{ 
+void RWGGeometry::GetFields(IncField *IFList, HVector *KN,
+                            cdouble Omega, double *kBloch,
+                            HMatrix *XMatrix, HMatrix &FMatrix)
+{
   /***************************************************************/
   /***************************************************************/
   /***************************************************************/
-  if ( XMatrix==0 || XMatrix->NC<3 || XMatrix->NR==0 )
+  if ( XMatrix==nullptr || XMatrix->NC<3 || XMatrix->NR==0 )
    ErrExit("wrong-size XMatrix (%ix%i) passed to GetFields",
-            XMatrix->NR,XMatrix->NC);
+            XMatrix ? XMatrix->NR : 0, XMatrix ? XMatrix->NC : 0);
 
   int NX=XMatrix->NR;
   if (LogLevel >= SCUFF_VERBOSELOGGING)
    Log("Computing fields at %i evaluation points...",NX);
 
   /***************************************************************/
-  /* (re)allocate output matrix as necessary *********************/
+  /* the caller's FMatrix must have the right dimensions for the */
+  /* evaluation points; use the allocating overload instead if   */
+  /* you don't have a correctly sized matrix.                    */
   /***************************************************************/
-  if (FMatrix==0 || FMatrix->NR!=NX || FMatrix->NC!=NUMFIELDS)
-   { if (FMatrix)
-      { Warn(" ** warning: wrong-size FMatrix passed to GetFields(); reallocating");
-        delete FMatrix;
-      };
-     FMatrix=new HMatrix(NX, NUMFIELDS, LHM_COMPLEX);
-   };
-  FMatrix->Zero();
+  if ( FMatrix.NR!=NX || FMatrix.NC!=NUMFIELDS )
+   ErrExit("wrong-size FMatrix (%ix%i) passed to GetFields() (expected %ix%i)",
+            FMatrix.NR,FMatrix.NC,NX,NUMFIELDS);
+  FMatrix.Zero();
 
   /***************************************************************/
   /* the incident fields will most likely have been updated at   */
@@ -416,14 +414,13 @@ HMatrix *RWGGeometry::GetFields(IncField *IFList, HVector *KN,
    {
      HMatrix *RFMatrix = GetRFMatrix(Omega, kBloch, XMatrix, 0, true);
      HMatrix KNMatrix(1, TotalBFs, LHM_COMPLEX, LHM_NORMAL, (void *)KN->ZV);
-     HMatrix *FMatrixT = new HMatrix(1, 6*NX, LHM_COMPLEX);
-     KNMatrix.Multiply(RFMatrix, FMatrixT);
+     auto FMatrixT = std::make_unique<HMatrix>(1, 6*NX, LHM_COMPLEX);
+     KNMatrix.Multiply(RFMatrix, FMatrixT.get());
      for(int nx=0; nx<NX; nx++)
       for(int Mu=0; Mu<6; Mu++)
-       FMatrix->SetEntry(nx, Mu, FMatrixT->GetEntry(0, 6*nx + Mu));
+       FMatrix.SetEntry(nx, Mu, FMatrixT->GetEntry(0, 6*nx + Mu));
 
      delete RFMatrix;
-     delete FMatrixT;
    };
 
   /***************************************************************/
@@ -431,7 +428,7 @@ HMatrix *RWGGeometry::GetFields(IncField *IFList, HVector *KN,
   /***************************************************************/
   if (IFList)
    for(int nx=0; nx<NX; nx++)
-    { 
+    {
       double X[3];
       XMatrix->GetEntriesD(nx,"0:2",X);
       int RegionIndex = GetRegionIndex(X);
@@ -442,32 +439,47 @@ HMatrix *RWGGeometry::GetFields(IncField *IFList, HVector *KN,
         { cdouble EH[6];
           IF->GetFields(X, EH);
           for(int Mu=0; Mu<6; Mu++)
-           FMatrix->AddEntry(nx, Mu, EH[Mu]);
+           FMatrix.AddEntry(nx, Mu, EH[Mu]);
         };
     };
+}
 
+/***************************************************************/
+/* allocating entry point: create the FMatrix and delegate.    */
+/***************************************************************/
+std::unique_ptr<HMatrix> RWGGeometry::GetFields(IncField *IFList, HVector *KN,
+                                                cdouble Omega, double *kBloch,
+                                                HMatrix *XMatrix)
+{
+  if ( XMatrix==nullptr || XMatrix->NC<3 || XMatrix->NR==0 )
+   ErrExit("wrong-size XMatrix (%ix%i) passed to GetFields",
+            XMatrix ? XMatrix->NR : 0, XMatrix ? XMatrix->NC : 0);
+  auto FMatrix=std::make_unique<HMatrix>(XMatrix->NR, NUMFIELDS, LHM_COMPLEX);
+  GetFields(IFList, KN, Omega, kBloch, XMatrix, *FMatrix);
   return FMatrix;
-         
 }
 
 /***************************************************************/
 /* alternative entry points to GetFields                       */
 /***************************************************************/
-HMatrix *RWGGeometry::GetFields(IncField *IF, HVector *KN, cdouble Omega,
-                                HMatrix *XMatrix, HMatrix *FMatrix)
-{ return GetFields(IF, KN, Omega, 0, XMatrix, FMatrix); }
+std::unique_ptr<HMatrix> RWGGeometry::GetFields(IncField *IF, HVector *KN,
+                                                cdouble Omega, HMatrix *XMatrix)
+{ return GetFields(IF, KN, Omega, nullptr, XMatrix); }
 
+void RWGGeometry::GetFields(IncField *IF, HVector *KN, cdouble Omega,
+                            HMatrix *XMatrix, HMatrix &FMatrix)
+{ GetFields(IF, KN, Omega, nullptr, XMatrix, FMatrix); }
 
-void RWGGeometry::GetFields(IncField *IF, HVector *KN, cdouble Omega, 
+void RWGGeometry::GetFields(IncField *IF, HVector *KN, cdouble Omega,
                             double *kBloch, double *X, cdouble *EH)
 {
   HMatrix XMatrix(1, 3, LHM_REAL, LHM_NORMAL, (void *)X);
   HMatrix FMatrix(1, 6, LHM_COMPLEX, LHM_NORMAL, (void *)EH);
-  GetFields(IF, KN, Omega, kBloch, &XMatrix, &FMatrix);
-} 
+  GetFields(IF, KN, Omega, kBloch, &XMatrix, FMatrix);
+}
 
-void RWGGeometry::GetFields(IncField *IF, HVector *KN, cdouble Omega, 
+void RWGGeometry::GetFields(IncField *IF, HVector *KN, cdouble Omega,
                             double *X, cdouble *EH)
-{ GetFields(IF, KN, Omega, 0, X, EH); }
+{ GetFields(IF, KN, Omega, nullptr, X, EH); }
 
 } // namespace scuff

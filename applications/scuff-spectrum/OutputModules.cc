@@ -59,7 +59,7 @@ void ProcessEPFile(RWGGeometry *G, HVector *KN, cdouble Omega, double *kBloch,
      return;
    };
   Log("Evaluating fields at points in file %s...",EPFileName);
-  HMatrix *FMatrix = G->GetFields( nullptr, KN, Omega, kBloch, XMatrix);
+  auto FMatrix = G->GetFields( nullptr, KN, Omega, kBloch, XMatrix);
 
   /*--------------------------------------------------------------*/
   /*- get components of fields radiated by eigenmode currents    -*/
@@ -93,7 +93,6 @@ void ProcessEPFile(RWGGeometry *G, HVector *KN, cdouble Omega, double *kBloch,
   fclose(f);
 
   delete XMatrix;
-  delete FMatrix;
 
 }
 
@@ -176,7 +175,7 @@ void WriteFVMesh(RWGGeometry *G, HVector *KN, cdouble Omega, double *kBloch,
   /*--------------------------------------------------------------*/
   /*- get the total fields at the panel vertices                 -*/
   /*--------------------------------------------------------------*/
-  HMatrix *FMatrix=G->GetFields(nullptr, KN, Omega, kBloch, XMatrix);
+  auto FMatrix=G->GetFields(nullptr, KN, Omega, kBloch, XMatrix);
   for(int nff=0; nff<NUMFIELDFUNCS; nff++)
    { 
      fprintf(f,"View \"%s (Omega%s)",FieldFunctionNames[nff],z2s(Omega));
@@ -209,7 +208,6 @@ void WriteFVMesh(RWGGeometry *G, HVector *KN, cdouble Omega, double *kBloch,
   /*--------------------------------------------------------------*/
   /*--------------------------------------------------------------*/
   /*--------------------------------------------------------------*/
-  delete FMatrix;
   delete XMatrix;
 }
 
@@ -303,7 +301,7 @@ void VisualizeSurfaceFields(RWGGeometry *G, HVector *KN, cdouble Omega, double *
   for(int ns=0, ntp=0; ns<G->NumSurfaces; ns++)
    for(int np=0; np<G->Surfaces[ns]->NumPanels; np++, ntp++)
     XMatrix->SetEntriesD(ntp,":",G->Surfaces[ns]->Panels[np]->Centroid);
-  HMatrix *FMatrix=G->GetFields(nullptr, KN, Omega, kBloch, XMatrix);
+  auto FMatrix=G->GetFields(nullptr, KN, Omega, kBloch, XMatrix);
 
   int PlotType=0, AveragingMethod=1;
   CheckEnv("SCUFF_AVERAGING_METHOD", &AveragingMethod);
@@ -323,7 +321,6 @@ void VisualizeSurfaceFields(RWGGeometry *G, HVector *KN, cdouble Omega, double *
       }
      delete[] Values;
    }
-  delete FMatrix;
   delete XMatrix;
 }
 

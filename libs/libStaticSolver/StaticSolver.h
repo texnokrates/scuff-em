@@ -32,6 +32,7 @@
 #include <stdarg.h>
 #include <complex>
 #include <cmath>
+#include <memory>
 
 #include <libhrutil.h>
 #include <libhmat.h>
@@ -108,9 +109,13 @@ class StaticSolver
    HVector *GetSphericalMoments(HVector *Sigma, int WhichSurface, 
                                 int lMax, HVector *Moments);
 
-   /* compute fields */
-   HMatrix *GetFields(StaticExcitation *SE, HVector *Sigma, HMatrix *X, HMatrix *PhiE=nullptr);
-   HMatrix *GetFields(HVector *Sigma, HMatrix *X, HMatrix *PhiE=nullptr);
+   /* compute fields; the allocating form returns a newly allocated
+      NXx4 matrix, the filling form stores into a caller-owned PhiE
+      which must have exactly NX rows and 4 columns                  */
+   std::unique_ptr<HMatrix> GetFields(StaticExcitation *SE, HVector *Sigma, HMatrix *X);
+   void GetFields(StaticExcitation *SE, HVector *Sigma, HMatrix *X, HMatrix &PhiE);
+   std::unique_ptr<HMatrix> GetFields(HVector *Sigma, HMatrix *X);
+   void GetFields(HVector *Sigma, HMatrix *X, HMatrix &PhiE);
 
    /* compute capacitance matrix */
    HMatrix *GetCapacitanceMatrix(HMatrix *M=nullptr, HVector *Sigma=nullptr,

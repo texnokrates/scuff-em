@@ -385,10 +385,19 @@ class RWGGeometry
    /*--------------------------------------------------------------*/
    int UpdateIncFields(IncField *IF, cdouble Omega, double *kBloch=nullptr);
 
-   HMatrix *GetFields(IncField *IF, HVector *KN, cdouble Omega, 
-                      double *kBloch, HMatrix *XMatrix, HMatrix *FMatrix=nullptr);
-   HMatrix *GetFields(IncField *IF, HVector *KN, cdouble Omega,
-                      HMatrix *XMatrix, HMatrix *FMatrix=nullptr);
+   /* GetFields comes in two forms.  The allocating form returns a
+      newly allocated NX x NUMFIELDS matrix of E/H fields at the NX
+      evaluation points (rows of XMatrix).  The filling form stores
+      into a caller-owned FMatrix, which must have exactly NX rows
+      and NUMFIELDS columns.                                      */
+   std::unique_ptr<HMatrix> GetFields(IncField *IF, HVector *KN, cdouble Omega,
+                                      double *kBloch, HMatrix *XMatrix);
+   std::unique_ptr<HMatrix> GetFields(IncField *IF, HVector *KN, cdouble Omega,
+                                      HMatrix *XMatrix);
+   void GetFields(IncField *IF, HVector *KN, cdouble Omega,
+                  double *kBloch, HMatrix *XMatrix, HMatrix &FMatrix);
+   void GetFields(IncField *IF, HVector *KN, cdouble Omega,
+                  HMatrix *XMatrix, HMatrix &FMatrix);
 
    void GetFields(IncField *IF, HVector *KN, cdouble Omega,
                   double *kBloch, double *X, cdouble *EH);

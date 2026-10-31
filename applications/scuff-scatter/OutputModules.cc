@@ -68,8 +68,8 @@ void ProcessEPFile(SSData *SSD, const char *EPFileName)
   /*--------------------------------------------------------------*/
   Log("Evaluating fields at points in file %s...",EPFileName);
 
-  HMatrix *SFMatrix = G->GetFields( nullptr, KN, Omega, kBloch, XMatrix); // scattered
-  HMatrix *IFMatrix = G->GetFields(IF,  nullptr, Omega, kBloch, XMatrix); // incident
+  auto SFMatrix = G->GetFields( nullptr, KN, Omega, kBloch, XMatrix); // scattered
+  auto IFMatrix = G->GetFields(IF,  nullptr, Omega, kBloch, XMatrix); // incident
 
   /*--------------------------------------------------------------*/
   /*- create .scattered and .total output files and write fields -*/
@@ -118,8 +118,6 @@ void ProcessEPFile(SSData *SSD, const char *EPFileName)
    };
 
   delete XMatrix;
-  delete SFMatrix;
-  delete IFMatrix;
 
 }
 
@@ -167,8 +165,8 @@ void WriteFVMesh(SSData *SSD, RWGSurface *S, FILE *f, const char *FuncString)
   /*--------------------------------------------------------------*/
   /*- get the total fields at the panel vertices                 -*/
   /*--------------------------------------------------------------*/
-  HMatrix *FMatrix=SSD->G->GetFields(SSD->IF, SSD->KN, SSD->Omega, SSD->kBloch, 
-                                     XMatrix);
+  auto FMatrix=SSD->G->GetFields(SSD->IF, SSD->KN, SSD->Omega, SSD->kBloch,
+                                 XMatrix);
 
   /*--------------------------------------------------------------*/
   /*--------------------------------------------------------------*/
@@ -222,7 +220,6 @@ void WriteFVMesh(SSData *SSD, RWGSurface *S, FILE *f, const char *FuncString)
   /*--------------------------------------------------------------*/
   /*--------------------------------------------------------------*/
   /*--------------------------------------------------------------*/
-  delete FMatrix;
   delete XMatrix;
 }
 

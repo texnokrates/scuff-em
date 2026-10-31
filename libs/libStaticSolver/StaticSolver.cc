@@ -490,31 +490,29 @@ HVector *StaticSolver::GetSphericalMoments(HVector *Sigma,
 /***********************************************************************/
 /***********************************************************************/
 /***********************************************************************/
-HMatrix *StaticSolver::GetFields(StaticExcitation *SE, HVector *Sigma, 
-                             HMatrix *X, HMatrix *PhiE)
+void StaticSolver::GetFields(StaticExcitation *SE, HVector *Sigma,
+                             HMatrix *X, HMatrix &PhiE)
 {
   /*--------------------------------------------------------------*/
-  /*- (re)allocate PhiE matrix as necessary ----------------------*/
+  /*- the caller's PhiE must have the right dimensions; use the  -*/
+  /*- allocating overload if you don't have a correctly sized    -*/
+  /*- matrix                                                     -*/
   /*--------------------------------------------------------------*/
   int NX = X->NR;
-  if ( PhiE && (PhiE->NR!=NX || PhiE->NC!=4) )
-   { Warn("GetFields() called with incorrect PhiE matrix (reallocating)");
-     delete PhiE;
-     PhiE=nullptr;
-   };
-  if (PhiE==nullptr)
-   PhiE = new HMatrix(NX, 4);
-  
+  if ( PhiE.NR!=NX || PhiE.NC!=4 )
+   ErrExit("GetFields() called with wrong-size PhiE matrix (%ix%i; expected %ix%i)",
+            PhiE.NR,PhiE.NC,NX,4);
+
   /*--------------------------------------------------------------*/
   /*--------------------------------------------------------------*/
   /*--------------------------------------------------------------*/
-  PhiE->Zero();
+  PhiE.Zero();
 #ifdef USE_OPENMP
   int NumThreads = GetNumThreads();
 #pragma omp parallel for schedule(dynamic,1), num_threads(NumThreads)
 #endif
   for(int nx=0; nx<NX; nx++)
-   { 
+   {
      double R[3];
      R[0]=X->GetEntryD(nx,0);
      R[1]=X->GetEntryD(nx,1);
@@ -526,10 +524,10 @@ HMatrix *StaticSolver::GetFields(StaticExcitation *SE, HVector *Sigma,
      if (SE && SE->NumSFs)
       { double DeltaPhiE[4];
         EvalStaticField(SE, R, DeltaPhiE);
-        PhiE->SetEntry(nx, 0, DeltaPhiE[0] );
-        PhiE->SetEntry(nx, 1, DeltaPhiE[1] );
-        PhiE->SetEntry(nx, 2, DeltaPhiE[2] );
-        PhiE->SetEntry(nx, 3, DeltaPhiE[3] );
+        PhiE.SetEntry(nx, 0, DeltaPhiE[0] );
+        PhiE.SetEntry(nx, 1, DeltaPhiE[1] );
+        PhiE.SetEntry(nx, 2, DeltaPhiE[2] );
+        PhiE.SetEntry(nx, 3, DeltaPhiE[3] );
       };
 
      /*--------------------------------------------------------------*/
@@ -537,24 +535,34 @@ HMatrix *StaticSolver::GetFields(StaticExcitation *SE, HVector *Sigma,
      /*--------------------------------------------------------------*/
      for(int nbf=0, ns=0; ns<G->NumSurfaces; ns++)
       for(int np=0; np<G->Surfaces[ns]->NumPanels; np++, nbf++)
-       {  
+       {
          double DeltaPhiE[4];
          GetPhiE(ns,np,R,DeltaPhiE);
          double ChargeDensity=Sigma->GetEntryD(nbf);
-         PhiE->AddEntry(nx, 0, ChargeDensity * DeltaPhiE[0] );
-         PhiE->AddEntry(nx, 1, ChargeDensity * DeltaPhiE[1] );
-         PhiE->AddEntry(nx, 2, ChargeDensity * DeltaPhiE[2] );
-         PhiE->AddEntry(nx, 3, ChargeDensity * DeltaPhiE[3] );
+         PhiE.AddEntry(nx, 0, ChargeDensity * DeltaPhiE[0] );
+         PhiE.AddEntry(nx, 1, ChargeDensity * DeltaPhiE[1] );
+         PhiE.AddEntry(nx, 2, ChargeDensity * DeltaPhiE[2] );
+         PhiE.AddEntry(nx, 3, ChargeDensity * DeltaPhiE[3] );
        };
 
      };
 
-  return PhiE;
-  
 }
 
-HMatrix *StaticSolver::GetFields(HVector *Sigma, HMatrix *X, HMatrix *PhiE)
-{ return GetFields(nullptr, Sigma, X, PhiE);
+std::unique_ptr<HMatrix> StaticSolver::GetFields(StaticExcitation *SE,
+                                                 HVector *Sigma, HMatrix *X)
+{
+  auto PhiE=std::make_unique<HMatrix>(X->NR, 4);
+  GetFields(SE, Sigma, X, *PhiE);
+  return PhiE;
+}
+
+std::unique_ptr<HMatrix> StaticSolver::GetFields(HVector *Sigma, HMatrix *X)
+{ return GetFields(nullptr, Sigma, X);
+}
+
+void StaticSolver::GetFields(HVector *Sigma, HMatrix *X, HMatrix &PhiE)
+{ GetFields(nullptr, Sigma, X, PhiE);
 }
 
 /***************************************************************/

@@ -93,12 +93,11 @@ zVec scuffSolver::GetFields(dVec X, const char *WhichFields)
   for(int nx=0; nx<NX; nx++)
    XMatrix.SetEntriesD(nx, ":", &(X[3*nx]));
 
-  HMatrix *FMatrix=G->GetFields(RetainIncident  ? CachedIF : nullptr,
-                                RetainScattered ? KN : nullptr, OmegaSIE, &XMatrix);
+  auto FMatrix=G->GetFields(RetainIncident  ? CachedIF : nullptr,
+                            RetainScattered ? KN : nullptr, OmegaSIE, &XMatrix);
 
   for(int nfc=0; nfc<6*NX; nfc++)
    Fields.push_back(FMatrix->ZM[nfc]);
-  delete FMatrix;
   return Fields;
 }
 

@@ -109,13 +109,13 @@ void GetFlux(RWGGeometry *G, IncField *IF, HVector *KN,
   /* on the first invocation we allocate space for the matrices  */
   /* of evaluation points and fields.                            */
   /***************************************************************/
-  static HMatrix *XMatrixAbove = nullptr, *XMatrixBelow = nullptr;
-  static HMatrix *FMatrixAbove = nullptr, *FMatrixBelow = nullptr;
+  static std::unique_ptr<HMatrix> XMatrixAbove, XMatrixBelow;
+  static std::unique_ptr<HMatrix> FMatrixAbove, FMatrixBelow;
   if (XMatrixAbove==nullptr)
-   { XMatrixAbove = new HMatrix(NCP, 3 );
-     XMatrixBelow = new HMatrix(NCP, 3 );
-     FMatrixAbove = new HMatrix(NCP, 6, LHM_COMPLEX);
-     FMatrixBelow = new HMatrix(NCP, 6, LHM_COMPLEX);
+   { XMatrixAbove = std::make_unique<HMatrix>(NCP, 3 );
+     XMatrixBelow = std::make_unique<HMatrix>(NCP, 3 );
+     FMatrixAbove = std::make_unique<HMatrix>(NCP, 6, LHM_COMPLEX);
+     FMatrixBelow = std::make_unique<HMatrix>(NCP, 6, LHM_COMPLEX);
    }
 
   /***************************************************************/
@@ -161,8 +161,8 @@ void GetFlux(RWGGeometry *G, IncField *IF, HVector *KN,
   /***************************************************************/
   /* get scattered fields at all cubature points                 */
   /***************************************************************/
-  G->GetFields(IF, KN, Omega, kBloch, XMatrixAbove, FMatrixAbove);
-  G->GetFields(IF, KN, Omega, kBloch, XMatrixBelow, FMatrixBelow);
+  G->GetFields(IF, KN, Omega, kBloch, XMatrixAbove.get(), *FMatrixAbove);
+  G->GetFields(IF, KN, Omega, kBloch, XMatrixBelow.get(), *FMatrixBelow);
 
   /***************************************************************/
   /* integrate poynting vector over upper and lower surfaces.    */

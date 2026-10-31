@@ -88,7 +88,7 @@ int main()
      int Row, Col;
      if (NumTokens==1)
       { 
-        HMatrix *B=M->ExtractEntries(Tokens[0], 0);
+        auto B=M->ExtractEntries(Tokens[0]);
         for(int nr=0; nr<B->NR; nr++)
          for(int nc=0; nc<B->NC; nc++)
           printf("%+.2e %s",B->GetEntryD(nr,nc),(nc==(B->NC-1)) ? "\n" : "");
