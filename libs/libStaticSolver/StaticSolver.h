@@ -109,9 +109,10 @@ class StaticSolver
 
    /* routine for calculating electric dipole moment */
    HMatrix *GetCartesianMoments(HVector *Sigma, HMatrix *Moments);
-   HVector *GetSphericalMoments(HVector *Sigma, int lMax, HVector *Moments);
-   HVector *GetSphericalMoments(HVector *Sigma, int WhichSurface, 
-                                int lMax, HVector *Moments);
+   /* filling forms: Moments must have exactly (lMax+1)^2 entries */
+   void GetSphericalMoments(HVector *Sigma, int lMax, HVector &Moments);
+   void GetSphericalMoments(HVector *Sigma, int WhichSurface,
+                            int lMax, HVector &Moments);
 
    /* compute fields; the allocating form returns a newly allocated
       NXx4 matrix, the filling form stores into a caller-owned PhiE

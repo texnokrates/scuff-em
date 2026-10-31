@@ -304,7 +304,7 @@ void PolModel::InitPolModel_UD(const char *FileName)
      MP=nullptr;
    };
 
-  HMatrix *PolData = new HMatrix(FileName,LHM_TEXT,"--ncol 2 --strict");
+  auto PolData = std::make_unique<HMatrix>(FileName,LHM_TEXT,"--ncol 2 --strict");
   if (PolData->ErrMsg)
    ErrExit(PolData->ErrMsg);
 

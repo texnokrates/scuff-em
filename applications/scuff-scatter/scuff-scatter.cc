@@ -453,15 +453,15 @@ int main(int argc, char *argv[])
          TBlocks[ns] = TBlocks[nsMate];
         else
          { int NBF=G->Surfaces[ns]->NumBFs;
-           TBlocks[ns] = new HMatrix(NBF, NBF, M->RealComplex);
-           TBlockOwner.emplace_back(TBlocks[ns]);
+           TBlockOwner.push_back(std::make_unique<HMatrix>(NBF, NBF, M->RealComplex));
+           TBlocks[ns] = TBlockOwner.back().get();
          };
 
         for(int nsp=ns+1; nsp<NS; nsp++, nb++)
          { int NBF=G->Surfaces[ns]->NumBFs;
            int NBFp=G->Surfaces[nsp]->NumBFs;
-           UBlocks[nb] = new HMatrix(NBF, NBFp, M->RealComplex);
-           UBlockOwner.emplace_back(UBlocks[nb]);
+           UBlockOwner.push_back(std::make_unique<HMatrix>(NBF, NBFp, M->RealComplex));
+           UBlocks[nb] = UBlockOwner.back().get();
          };
       };
    };

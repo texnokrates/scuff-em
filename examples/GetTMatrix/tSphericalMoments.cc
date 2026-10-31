@@ -53,8 +53,10 @@ int main(int argc, char *argv[])
   SW.Eps=SW.Mu=1.0;
   G->ExpandCurrentDistribution(&SW, KN);
 
-  int nm, NumMoments = 2*(lMax+1)*(lMax+1);
-  HVector *AVector=GetSphericalMoments(G->Objects[0], Omega, lMax, KN, 0);
+  int nm=0, NumMoments = NumMomentsObj;
+  int NumMomentsObj = 2*(lMax+1)*(lMax+1);
+  auto AVector=std::make_unique<HVector>(NumMomentsObj, LHM_COMPLEX);
+  GetSphericalMoments(G->Objects[0], Omega, lMax, KN, 0, *AVector);
 
   /*--------------------------------------------------------------*/
   /*--------------------------------------------------------------*/

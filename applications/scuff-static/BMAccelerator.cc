@@ -63,7 +63,7 @@ int OffDiagonalBlockIndex(int NS, int ns, int nsp)
 /*                                                             */
 /* (with NS==number of surfaces)                               */
 /***************************************************************/
-HMatrix *GetEquivalentPairMatrix(RWGGeometry *G, HMatrix *M=0)
+std::unique_ptr<HMatrix> GetEquivalentPairMatrix(RWGGeometry *G)
 {
   int NS    = G->NumSurfaces;
   int *Mate = G->Mate;
@@ -71,12 +71,7 @@ HMatrix *GetEquivalentPairMatrix(RWGGeometry *G, HMatrix *M=0)
   /***************************************************************/
   /***************************************************************/
   /***************************************************************/
-  if (M && ((M->NR!=NS) || (M->NC!=NS)) )
-   { delete M;
-     M=0;
-   }
-  if (!M)
-   M=new HMatrix(NS, NS);
+  auto M=std::make_unique<HMatrix>(NS, NS);
 
   /***************************************************************/
   /***************************************************************/
@@ -146,7 +141,7 @@ HMatrix *GetEquivalentPairMatrix(RWGGeometry *G, HMatrix *M=0)
 /***************************************************************/
 /***************************************************************/
 /***************************************************************/
-BMAccelerator *CreateBMAccelerator(StaticSolver *SS, const GTCList &GTCs,
+std::unique_ptr<BMAccelerator> CreateBMAccelerator(StaticSolver *SS, const GTCList &GTCs,
                                    bool UsePairEquivalence)
 {
   RWGGeometry *G     = SS->G;
@@ -154,9 +149,9 @@ BMAccelerator *CreateBMAccelerator(StaticSolver *SS, const GTCList &GTCs,
   int NADB           = NS*(NS-1)/2; // number of above-diagonal blocks
   int NT             = GTCs.size();
 
-  BMAccelerator *BMA = (BMAccelerator *)mallocEC(sizeof *BMA);
-  BMA->TBlocks       = (HMatrix **)mallocEC(NS*sizeof(HMatrix *));
-  BMA->UBlocks       = (HMatrix **)mallocEC(NADB*sizeof(HMatrix *));
+  auto BMA  = std::make_unique<BMAccelerator>();
+  BMA->TBlocks.resize(NS);
+  BMA->UBlocks.resize(NADB);
   
   /***************************************************************/
   /***************************************************************/
@@ -171,14 +166,15 @@ BMAccelerator *CreateBMAccelerator(StaticSolver *SS, const GTCList &GTCs,
      if ( nsMate!=-1 )
       BMA->TBlocks[ns] = BMA->TBlocks[nsMate];
      else
-      BMA->TBlocks[ns] = new HMatrix(NBF, NBF, LHM_REAL);
+      { BMA->TBlockStorage.push_back(std::make_unique<HMatrix>(NBF, NBF, LHM_REAL));
+        BMA->TBlocks[ns] = BMA->TBlockStorage.back().get(); }
 
      // allocate off-diagonal blocks for surfaces ns,nsp>ns
      // TODO exploit pair equivalence to reduce number of 
      // blocks allocated
      for(int nsp=ns+1; nsp<NS; nsp++, nb++)
       { int NBFp = G->Surfaces[nsp]->NumPanels;
-        BMA->UBlocks[nb] = new HMatrix(NBF, NBFp, LHM_REAL);
+        BMA->UBlocks[nb] = std::make_unique<HMatrix>(NBF, NBFp, LHM_REAL);
       };
    };
   
@@ -186,12 +182,12 @@ BMAccelerator *CreateBMAccelerator(StaticSolver *SS, const GTCList &GTCs,
   /***************************************************************/
   /***************************************************************/
   if( !UsePairEquivalence )
-   { 
-     BMA->PairMatrices=0;
+   {
+     BMA->PairMatrices.clear();
    }
   else
-   { 
-     BMA->PairMatrices = (HMatrix **)mallocEC(NT*sizeof(HMatrix *));
+   {
+     BMA->PairMatrices.resize(NT);
      for(int nt=0; nt<NT; nt++)
       { Log("Looking for equivalent surface pairs (transform %s)...",GTCs[nt]->Tag);
         G->Transform(GTCs[nt].get());
@@ -229,9 +225,10 @@ void ReassembleBEMMatrix(StaticSolver *SS, HMatrix **pM,
      Log("Assembling BEM matrix blocks...");
      RWGGeometry *G      = SS->G;
      int NS              = G->NumSurfaces;
-     HMatrix **TBlocks   = BMA->TBlocks;
-     HMatrix **UBlocks   = BMA->UBlocks;
-     HMatrix *PairMatrix = (BMA->PairMatrices ? BMA->PairMatrices[nt] : 0);
+     HMatrix *const *TBlocks = BMA->TBlocks.data();
+     auto &UBlocks           = BMA->UBlocks;
+     HMatrix *PairMatrix     = (BMA->PairMatrices.empty() ? nullptr
+                                                         : BMA->PairMatrices[nt].get());
  
      /*******************************************************************/
      /* recompute T blocks only on first transformation *****************/
@@ -254,7 +251,7 @@ void ReassembleBEMMatrix(StaticSolver *SS, HMatrix **pM,
             continue;
           };
          if (nt==0 || G->SurfaceMoved[ns] || G->SurfaceMoved[nsp] )
-          SS->AssembleBEMMatrixBlock(ns, nsp, UBlocks[nb]);
+          SS->AssembleBEMMatrixBlock(ns, nsp, UBlocks[nb].get());
        };
 
      /*******************************************************************/
@@ -275,12 +272,12 @@ void ReassembleBEMMatrix(StaticSolver *SS, HMatrix **pM,
             }
 
            if (Flip)
-            { M->InsertBlockTranspose(UBlocks[nbEffective], RowOffset, ColOffset);
-              M->InsertBlock(UBlocks[nbEffective], ColOffset, RowOffset);
+            { M->InsertBlockTranspose(UBlocks[nbEffective].get(), RowOffset, ColOffset);
+              M->InsertBlock(UBlocks[nbEffective].get(), ColOffset, RowOffset);
             }
            else
-            { M->InsertBlock(UBlocks[nbEffective], RowOffset, ColOffset);
-              M->InsertBlockTranspose(UBlocks[nbEffective], ColOffset, RowOffset);
+            { M->InsertBlock(UBlocks[nbEffective].get(), RowOffset, ColOffset);
+              M->InsertBlockTranspose(UBlocks[nbEffective].get(), ColOffset, RowOffset);
             }
          }
       }

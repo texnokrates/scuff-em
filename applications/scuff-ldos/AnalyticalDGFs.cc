@@ -461,10 +461,10 @@ void ProcessHalfSpaceDGFs(HVector *OmegaPoints,
 
   for(int nep=0; nep<nEPFiles; nep++)
    { 
-     HMatrix *XMatrix = new HMatrix(EPFiles[nep]);
+     auto XMatrix = std::make_unique<HMatrix>(EPFiles[nep]);
      int NX = XMatrix->NR;
      bool TwoPointDGF = (XMatrix->NC==6);
-     HMatrix *GMatrix = new HMatrix(NX, 18, LHM_COMPLEX);
+     auto GMatrix = std::make_unique<HMatrix>(NX, 18, LHM_COMPLEX);
      
      FILE *f=vfopen("%s.%s.DGFs","w",GetFileBase(EPFiles[nep]),Label);
      fprintf(f,"# scuff-ldos ran on %s (%s)\n",GetHostName(),GetTimeString());
@@ -500,10 +500,10 @@ void ProcessHalfSpaceDGFs(HVector *OmegaPoints,
       { cdouble Omega = OmegaPoints->GetEntry(nOmega);
 LogFile=fopen("/tmp/ADGFs.log","w");
         if (HalfSpace)
-         GetHalfSpaceDGFs_Polar(XMatrix, Omega, MP,
-                                RelTol, AbsTol, MaxEvals, GMatrix);
+         GetHalfSpaceDGFs_Polar(XMatrix.get(), Omega, MP,
+                                RelTol, AbsTol, MaxEvals, GMatrix.get());
         else
-         GetGroundPlaneDGFs(XMatrix, Omega, nullptr, nullptr, GMatrix);
+         GetGroundPlaneDGFs(XMatrix.get(), Omega, nullptr, nullptr, GMatrix.get());
 fclose(LogFile);
 
         double PreFac = abs(Omega)/M_PI;
@@ -529,8 +529,6 @@ fclose(LogFile);
         fflush(f);
       };
 
-     delete XMatrix; 
-     delete GMatrix; 
      fclose(f);
 
    };

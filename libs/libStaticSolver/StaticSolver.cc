@@ -398,30 +398,26 @@ HMatrix *StaticSolver::GetCartesianMoments(HVector *Sigma, HMatrix *Moments)
 /***************************************************************/
 /* get the spherical moments of an individual surface **********/
 /***************************************************************/
-HVector *StaticSolver::GetSphericalMoments(HVector *Sigma, int WhichSurface, 
-                                       int lMax, HVector *Moments)
+void StaticSolver::GetSphericalMoments(HVector *Sigma, int WhichSurface,
+                                       int lMax, HVector &Moments)
 {
   int NAlpha = (lMax+1)*(lMax+1);
 
   /*--------------------------------------------------------------*/
-  /*- (re)allocate output vector as necessary --------------------*/
+  /*- the caller's Moments vector must have the right size        -*/
   /*--------------------------------------------------------------*/
-  if (Moments && Moments->N != NAlpha)
-   { Warn("incorrect Moments matrix passed to GetSphericalMoments (reallocating...)");
-     delete Moments;
-     Moments=nullptr;
-   };
-  if (!Moments)
-   Moments=new HVector(NAlpha);
+  if (Moments.N != NAlpha)
+   ErrExit("wrong-size Moments vector (%i entries) passed to "
+           "GetSphericalMoments (expected %i)",Moments.N,NAlpha);
 
   /*--------------------------------------------------------------*/
   /*--------------------------------------------------------------*/
   /*--------------------------------------------------------------*/
   RWGSurface *S=G->Surfaces[WhichSurface];
   int Offset = G->PanelIndexOffset[WhichSurface];
-  double *Ylm = new double[NAlpha];
-  double *rlArray= new double[NAlpha];
-  Moments->Zero();
+  auto Ylm = std::make_unique<double[]>(NAlpha);
+  auto rlArray = std::make_unique<double[]>(NAlpha);
+  Moments.Zero();
   for(int np=0; np<S->NumPanels; np++)
    { 
      double Charge = Sigma->GetEntryD(Offset + np) * S->Panels[np]->Area;
@@ -429,7 +425,7 @@ HVector *StaticSolver::GetSphericalMoments(HVector *Sigma, int WhichSurface,
      double *X0    = S->Panels[np]->Centroid;
      double r, Theta, Phi;
      CoordinateC2S(X0, &r, &Theta, &Phi);
-     GetRealYlmArray(lMax, Theta, Phi, Ylm);
+     GetRealYlmArray(lMax, Theta, Phi, Ylm.get());
 
      double rl=1.0;
      for(int l=0, Alpha=0; l<=lMax; l++, rl*=r)
@@ -437,48 +433,36 @@ HVector *StaticSolver::GetSphericalMoments(HVector *Sigma, int WhichSurface,
        rlArray[Alpha] = rl / (2.0*l+1.0);
 
      for(int Alpha=0; Alpha<NAlpha; Alpha++)
-      Moments->AddEntry(Alpha, Charge*rlArray[Alpha]*Ylm[Alpha]);
+      Moments.AddEntry(Alpha, Charge*rlArray[Alpha]*Ylm[Alpha]);
    };
-  delete[] Ylm;
-  delete[] rlArray;
-
-  return Moments;
-  
 }
 
 /***************************************************************/
 /* get spherical moments of entire geometry                    */
 /***************************************************************/
-HVector *StaticSolver::GetSphericalMoments(HVector *Sigma, 
-                                       int lMax, 
-                                       HVector *Moments)
+void StaticSolver::GetSphericalMoments(HVector *Sigma,
+                                       int lMax,
+                                       HVector &Moments)
 {
   int NAlpha = (lMax+1)*(lMax+1);
 
   /*--------------------------------------------------------------*/
-  /*- (re)allocate output vector as necessary --------------------*/
+  /*- the caller's Moments vector must have the right size        -*/
   /*--------------------------------------------------------------*/
-  if (Moments && Moments->N != NAlpha)
-   { Warn("incorrect Moments matrix passed to GetSphericalMoments (reallocating...)");
-     delete Moments;
-     Moments=nullptr;
-   };
-  if (!Moments)
-   Moments=new HVector(NAlpha);
-  Moments->Zero();
+  if (Moments.N != NAlpha)
+   ErrExit("wrong-size Moments vector (%i entries) passed to "
+           "GetSphericalMoments (expected %i)",Moments.N,NAlpha);
+  Moments.Zero();
 
   /*--------------------------------------------------------------*/
   /*--------------------------------------------------------------*/
   /*--------------------------------------------------------------*/
-  HVector *PartialMoments = new HVector(NAlpha);
+  auto PartialMoments = std::make_unique<HVector>(NAlpha);
   for(int ns=0; ns<G->NumSurfaces; ns++)
-   { GetSphericalMoments(Sigma, ns, lMax, PartialMoments);
+   { GetSphericalMoments(Sigma, ns, lMax, *PartialMoments);
      for(int Alpha=0; Alpha<NAlpha; Alpha++)
-      Moments->AddEntry(Alpha,PartialMoments->GetEntry(Alpha));
+      Moments.AddEntry(Alpha,PartialMoments->GetEntry(Alpha));
    };
-
-  delete PartialMoments;
-  return Moments;
 }
 
 /***********************************************************************/

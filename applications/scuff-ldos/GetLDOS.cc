@@ -40,7 +40,7 @@ void WriteData(SLDData *Data, cdouble Omega, double *kBloch,
                double *Result, double *Error)
 {
   int LDim         = Data->G->LDim;
-  HMatrix *XMatrix = Data->XMatrices[WhichMatrix];
+  HMatrix *XMatrix = Data->XMatrices[WhichMatrix].get();
   char *EPFileBase = Data->EPFileBases[WhichMatrix];
   const char *FileBase   = Data->FileBase;
 
@@ -120,9 +120,9 @@ void GetLDOS(void *pData, cdouble Omega, double *kBloch,
   /*--------------------------------------------------------------*/
   SLDData *Data        = (SLDData *)pData;
   RWGGeometry *G       = Data->G;
-  HMatrix *M           = Data->M;
-  HMatrix **XMatrices  = Data->XMatrices;
-  HMatrix **GMatrices  = Data->GMatrices;
+  HMatrix *M           = Data->M.get();
+  auto *XMatrices      = Data->XMatrices.data();
+  auto *GMatrices      = Data->GMatrices.data();
   int NumXMatrices     = Data->NumXMatrices;
   void **ABMBCache     = Data->ABMBCache;
   MatProp *HalfSpaceMP = Data->HalfSpaceMP;
@@ -152,16 +152,16 @@ void GetLDOS(void *pData, cdouble Omega, double *kBloch,
   if (HalfSpaceMP) 
    {
      for(int nm=0; nm<NumXMatrices; nm++)
-      GetHalfSpaceDGFs_BZ(XMatrices[nm], Omega, kBloch,
+      GetHalfSpaceDGFs_BZ(XMatrices[nm].get(), Omega, kBloch,
                           RLBasis, BZVolume, HalfSpaceMP,
                           RelTol, AbsTol, MaxEvals,
-                          GMatrices[nm]);
+                          GMatrices[nm].get());
    }
   else if (GroundPlane)
    {
      for(int nm=0; nm<NumXMatrices; nm++)
-      GetGroundPlaneDGFs(XMatrices[nm], Omega, kBloch,
-                         LBasis, GMatrices[nm]);
+      GetGroundPlaneDGFs(XMatrices[nm].get(), Omega, kBloch,
+                         LBasis, GMatrices[nm].get());
    }
   else if (NumTransforms==1)
    { 
@@ -186,13 +186,13 @@ void GetLDOS(void *pData, cdouble Omega, double *kBloch,
       };
      M->LUFactorize();
      for(int nm=0; nm<NumXMatrices; nm++)
-      G->GetDyadicGFs(Omega, kBloch, XMatrices[nm], M, *GMatrices[nm],
-                      ScatteringOnly);
+      G->GetDyadicGFs(Omega, kBloch, XMatrices[nm].get(), M,
+                      *GMatrices[nm], ScatteringOnly);
    }
   else 
    {
-     HMatrix **TBlocks   = Data->TBlocks;
-     HMatrix **UBlocks   = Data->UBlocks;
+     HMatrix *const *TBlocks = Data->TBlocks.data();
+     auto &UBlocks           = Data->UBlocks;
 
      // assemble diagonal blocks
      for(int ns=0; ns<G->NumSurfaces; ns++)
@@ -207,7 +207,7 @@ void GetLDOS(void *pData, cdouble Omega, double *kBloch,
         // assemble off-diagonal blocks
         for(int ns=0, nb=0; ns<G->NumSurfaces; ns++)
          for(int nsp=ns+1; nsp<G->NumSurfaces; nsp++, nb++)
-          G->AssembleBEMMatrixBlock(ns, nsp, Omega, kBloch, UBlocks[nb]);
+          G->AssembleBEMMatrixBlock(ns, nsp, Omega, kBloch, UBlocks[nb].get());
 
         // assemble and factorize BEM matrix
         for(int ns=0, nb=0; ns<G->NumSurfaces; ns++)
@@ -215,15 +215,15 @@ void GetLDOS(void *pData, cdouble Omega, double *kBloch,
            M->InsertBlock(TBlocks[ns], RowOffset, RowOffset);
            for(int nsp=ns+1; nsp<G->NumSurfaces; nsp++, nb++)
             { int ColOffset=G->BFIndexOffset[nsp];
-              M->InsertBlock(UBlocks[nb], RowOffset, ColOffset);
-              M->InsertBlockAdjoint(UBlocks[nb], ColOffset, RowOffset);
+              M->InsertBlock(UBlocks[nb].get(), RowOffset, ColOffset);
+              M->InsertBlockAdjoint(UBlocks[nb].get(), ColOffset, RowOffset);
             };
          };
         M->LUFactorize();
 
         // get LDOS 
         for(int nm=0; nm<NumXMatrices; nm++)
-         G->GetDyadicGFs(Omega, kBloch, XMatrices[nm], M,
+         G->GetDyadicGFs(Omega, kBloch, XMatrices[nm].get(), M,
                          *GMatrices[nt*NumXMatrices + nm],
                          ScatteringOnly);
 
@@ -241,8 +241,8 @@ void GetLDOS(void *pData, cdouble Omega, double *kBloch,
   for(int nt=0; nt<NumTransforms; nt++)
    for(int nm=0; nm<NumXMatrices; nm++)
     { 
-      HMatrix *XMatrix = Data->XMatrices[nm];
-      HMatrix *GMatrix = Data->GMatrices[nt*NumXMatrices + nm];
+      HMatrix *XMatrix = Data->XMatrices[nm].get();
+      HMatrix *GMatrix = Data->GMatrices[nt*NumXMatrices + nm].get();
       for(int nx=0; nx<XMatrix->NR; nx++)
        { cdouble GE[3][3], GM[3][3];
          for(int i=0; i<3; i++)

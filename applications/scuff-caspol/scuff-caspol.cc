@@ -211,7 +211,7 @@ int main(int argc, char *argv[])
   /*******************************************************************/
   /*******************************************************************/
   /*******************************************************************/
-  SCPData *SCPD=CreateSCPData(GeoFile.empty() ? nullptr : GeoFile.c_str(),
+  auto SCPD     = CreateSCPData(GeoFile.empty() ? nullptr : GeoFile.c_str(),
                               AtomPtrs.data(), (int)Atoms.size(),
                               ParticlePtrs.data(), (int)Particles.size(),
                               EPFile.c_str(),
@@ -226,16 +226,16 @@ int main(int argc, char *argv[])
   if (SCPD->G && SCPD->G->LDim>=1)
    { UpdateBZIArgs(BZIArgs, SCPD->G->RLBasis, SCPD->G->RLVolume);
      BZIArgs->BZIFunc  = GetCPIntegrand;
-     BZIArgs->UserData = (void *)SCPD;
+     BZIArgs->UserData = reinterpret_cast<void *>(SCPD.get());
      BZIArgs->FDim     = NumAtoms * (SCPD->EPMatrix)->NR;
      SCPD->BZIArgs=BZIArgs;
    };
 
-  WriteFilePreamble(SCPD, SCPD->ByXiFileName, argc, argv,
+  WriteFilePreamble(SCPD.get(), SCPD->ByXiFileName, argc, argv,
                     FILETYPE_BYXI);
 
   if (SCPD->ByXikFileName)
-   WriteFilePreamble(SCPD, SCPD->ByXikFileName, argc, argv,
+   WriteFilePreamble(SCPD.get(), SCPD->ByXikFileName, argc, argv,
                      FILETYPE_BYXIK);
 
   /*******************************************************************/
@@ -247,15 +247,15 @@ int main(int argc, char *argv[])
   if ( !XikBlochFile.empty() )
    { if (LDim==0)
       ErrExit("--XikBloch file cannot be used with non-periodic geometries");
-     XikList.reset(new HMatrix(XikBlochFile.c_str()));
+     XikList = std::make_unique<HMatrix>(XikBlochFile.c_str());
      Log("Read %i (Xi,kBloch) points from file %s.",XikList->NR, XikBlochFile.c_str());
    }
   else if (!XiFile.empty())
-   { XiList.reset(new HVector(XiFile.c_str()));
+   { XiList = std::make_unique<HVector>(XiFile.c_str());
      Log("Read %i Xi points from file %s.",XiList->N, XiFile.c_str());
    }
   else if ( XiVals.size()>0 )
-   { XiList.reset(new HVector((int)XiVals.size()));
+   { XiList = std::make_unique<HVector>(static_cast<int>(XiVals.size()));
      for(size_t n=0; n<XiVals.size(); n++)
       XiList->SetEntry((int)n,XiVals[n]);
    };
@@ -301,21 +301,21 @@ int main(int argc, char *argv[])
         if (LDim>1)
          kBloch[1] = XikList->GetEntryD(n,2);
 
-        GetCPIntegrand((void *)SCPD, cdouble(0.0,Xi), kBloch, U.data());
+        GetCPIntegrand(reinterpret_cast<void *>(SCPD.get()), cdouble(0.0,Xi), kBloch, U.data());
       }
    }
   if (XiList.get()!=nullptr)
    {
      for(int nXi=0; nXi<XiList->N; nXi++)
-      GetXiIntegrand(SCPD, XiList->GetEntryD(nXi), U.data());
+      GetXiIntegrand(SCPD.get(), XiList->GetEntryD(nXi), U.data());
    }
   else if ( Temperature != 0.0 )
    {
-     EvaluateMatsubaraSum(SCPD, Temperature, U.data());
+     EvaluateMatsubaraSum(SCPD.get(), Temperature, U.data());
    }
   else
    {
-     EvaluateFrequencyIntegral(SCPD, U.data());
+     EvaluateFrequencyIntegral(SCPD.get(), U.data());
    };
 
   /***************************************************************/
@@ -326,10 +326,10 @@ int main(int argc, char *argv[])
    {
      std::string OutFileName=std::string(GetFileBase(GeoFile.empty()
                                 ? "PECPlate" : GeoFile.c_str())) + ".out";
-     WriteFilePreamble(SCPD, OutFileName.c_str(), argc, argv, FILETYPE_OUT);
+     WriteFilePreamble(SCPD.get(), OutFileName.c_str(), argc, argv, FILETYPE_OUT);
 
      FILE *f=fopen(OutFileName.c_str(),"a");
-     HMatrix *EPMatrix=SCPD->EPMatrix;
+     HMatrix *EPMatrix=SCPD->EPMatrix.get();
      for(int nep=0; nep<EPMatrix->NR; nep++)
       { fprintf(f,"%e %e %e ", EPMatrix->GetEntryD(nep,0),
                                EPMatrix->GetEntryD(nep,1),

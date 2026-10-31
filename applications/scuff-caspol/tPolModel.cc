@@ -56,7 +56,7 @@ int main(int argc, char *argv[])
    { PolModels[na] = new PolModel(Atoms[na]);
      if (PolModels[na]->ErrMsg)
       ErrExit(PolModels[na]->ErrMsg);
-     Alphas[na] = new HMatrix(3,3);
+     Alphas[na] = std::make_unique<HMatrix>(3,3);
    };
 
   /*******************************************************************/

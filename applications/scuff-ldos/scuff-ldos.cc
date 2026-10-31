@@ -162,7 +162,7 @@ differential Green's functions of a compact or periodic object"};
   std::unique_ptr<HMatrix> OkBPoints;
   std::unique_ptr<HVector> OmegaPoints;
   if (!OkBFile.empty())
-   { OkBPoints.reset(new HMatrix(OkBFile.c_str()));
+   { OkBPoints = std::make_unique<HMatrix>(OkBFile.c_str());
      if (OkBPoints->ErrMsg)
       ErrExit("%s",OkBPoints->ErrMsg);
    }
@@ -194,7 +194,7 @@ differential Green's functions of a compact or periodic object"};
   /* create the SLDData structure that will be passed to all     */
   /* computational routines                                      */
   /***************************************************************/
-  SLDData *Data     = CreateSLDData(GeoFile.c_str(),
+  auto Data        = CreateSLDData(GeoFile.c_str(),
                                     TransFile.empty() ? nullptr : TransFile.c_str(),
                                     EPFilePtrs.data(), (int)EPFiles.size());
   Data->RelTol      = RelTol;
@@ -247,7 +247,7 @@ differential Green's functions of a compact or periodic object"};
   if (LDim==0)
    {
      for(int no=0; no<OmegaPoints->N; no++)
-      GetLDOS( (void *)Data, OmegaPoints->GetEntry(no), nullptr, Result.data());
+      GetLDOS( reinterpret_cast<void *>(Data.get()), OmegaPoints->GetEntry(no), nullptr, Result.data());
    }
   /*--------------------------------------------------------------*/
   /*- PBC structure with specified kBloch points: do a periodic   */
@@ -263,7 +263,7 @@ differential Green's functions of a compact or periodic object"};
         for(int d=0; d<LDim; d++)
          kBloch[d]=OkBPoints->GetEntryD(nokb,1+d);
 
-        GetLDOS( (void *)Data, Omega, kBloch, Result.data());
+        GetLDOS( reinterpret_cast<void *>(Data.get()), Omega, kBloch, Result.data());
       };
    }
   /*--------------------------------------------------------------*/
@@ -277,7 +277,7 @@ differential Green's functions of a compact or periodic object"};
      /* that we started to initialize above                         */
      /***************************************************************/
      BZIArgs->BZIFunc     = GetLDOS;
-     BZIArgs->UserData    = (void *)Data;
+     BZIArgs->UserData    = reinterpret_cast<void *>(Data.get());
      BZIArgs->FDim        = FDim;
      UpdateBZIArgs(BZIArgs, Data->G->RLBasis, Data->G->RLVolume);
 
@@ -288,7 +288,7 @@ differential Green's functions of a compact or periodic object"};
       { cdouble Omega=OmegaPoints->GetEntry(no);
         Log("Evaluating Brillouin-zone integral at omega=%s",z2s(Omega));
         GetBZIntegral(BZIArgs, Omega, Result.data());
-        WriteData(Data, Omega, nullptr, FILETYPE_LDOS, Result.data(), BZIArgs->BZIError);
+        WriteData(Data.get(), Omega, nullptr, FILETYPE_LDOS, Result.data(), BZIArgs->BZIError);
       };
    };
 

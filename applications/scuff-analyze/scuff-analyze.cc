@@ -504,7 +504,7 @@ int main(int argc, char *argv[])
   if (!MeshFile.empty())
    {
      RWGGeometry::UseHRWGFunctions=false;
-     S.reset(new RWGSurface(MeshFile.c_str(), PhysicalRegion));
+     S = std::make_unique<RWGSurface>(MeshFile.c_str(), PhysicalRegion);
      if (S->ErrMsg)
       ErrExit("%s",S->ErrMsg);
      AnalyzeSurface(S.get());
@@ -517,7 +517,7 @@ int main(int argc, char *argv[])
 
    }
   else
-   { G.reset(new RWGGeometry(GeoFile.c_str()));
+   { G = std::make_unique<RWGGeometry>(GeoFile.c_str());
 
      AnalyzeGeometry(G.get());
 
@@ -568,7 +568,7 @@ int main(int argc, char *argv[])
   /***************************************************************/
   /***************************************************************/
   if (!EPFile.empty())
-   { std::unique_ptr<HMatrix> XMatrix(new HMatrix(EPFile.c_str()));
+   { auto XMatrix = std::make_unique<HMatrix>(EPFile.c_str());
      char PPFileName[MAXSTR];
      if (!MeshFile.empty())
       snprintf(PPFileName,MAXSTR,"%s.pp",GetFileBase(S->MeshFileName));
@@ -620,7 +620,7 @@ int main(int argc, char *argv[])
      if (!MeshFile.empty())
       { char GeoFileName[100];
         snprintf(GeoFileName,100,"MESH__%s",GetFileBase(MeshFile.c_str()));
-        G.reset(new RWGGeometry(GeoFileName));
+        G = std::make_unique<RWGGeometry>(GeoFileName);
         if (!G) ErrExit("Could not open %s",GeoFileName);
         snprintf(EEPFileName,100,"%s.%i.%i.EEPs",GetFileBase(MeshFile.c_str()),EEPs[0],EEPs[1]);
       }

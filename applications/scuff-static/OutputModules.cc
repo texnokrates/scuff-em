@@ -98,7 +98,7 @@ void WritePolarizabilities(StaticSolver *SS, HMatrix *M, HVector *Sigma, const c
   RWGGeometry *G = SS->G;
   int NS = G->NumSurfaces;
 
-  HMatrix *PolMatrix = new HMatrix(NS, 9);
+  auto PolMatrix = std::make_unique<HMatrix>(NS, 9);
 
   ConstantSFData Data;
   StaticField SFs[1] = {ConstantStaticField};
@@ -114,7 +114,7 @@ void WritePolarizabilities(StaticSolver *SS, HMatrix *M, HVector *Sigma, const c
   /*--------------------------------------------------------------*/
   /*--------------------------------------------------------------*/
   /*--------------------------------------------------------------*/
-  HMatrix *QP        = new HMatrix(NS, 4);
+  auto QP        = std::make_unique<HMatrix>(NS, 4);
   for(int Mu=0; Mu<3; Mu++)
    { 
      Data.E0[0]=Data.E0[1]=Data.E0[2]=0.0;
@@ -122,14 +122,13 @@ void WritePolarizabilities(StaticSolver *SS, HMatrix *M, HVector *Sigma, const c
   
      SS->AssembleRHSVector(&SE, *Sigma);
      M->LUSolve(Sigma);
-     SS->GetCartesianMoments(Sigma, QP);
+     SS->GetCartesianMoments(Sigma, QP.get());
      for(int ns=0; ns<NS; ns++)
       { PolMatrix->SetEntry(ns, 0*3+Mu, QP->GetEntryD(ns,1));
         PolMatrix->SetEntry(ns, 1*3+Mu, QP->GetEntryD(ns,2));
         PolMatrix->SetEntry(ns, 2*3+Mu, QP->GetEntryD(ns,3));
       };
    };
-  delete QP;
 
   /*--------------------------------------------------------------*/
   /*--------------------------------------------------------------*/
@@ -172,7 +171,6 @@ void WritePolarizabilities(StaticSolver *SS, HMatrix *M, HVector *Sigma, const c
               PolMatrix->GetEntryD(ns,7),
               PolMatrix->GetEntryD(ns,8));
 ;
-  delete PolMatrix;
  	
 }
 
@@ -234,8 +232,8 @@ void WriteCMatrix(StaticSolver *SS, HMatrix *M, HVector *Sigma,
   /***************************************************************/
   /***************************************************************/
   int NAlpha = (lMax+1)*(lMax+1);
-  HVector *Moments = new HVector(NAlpha);
-  HMatrix *CMatrix=new HMatrix(NAlpha, NAlpha);
+  auto Moments   = std::make_unique<HVector>(NAlpha);
+  auto CMatrix   = std::make_unique<HMatrix>(NAlpha, NAlpha);
   for(int l=0, Alpha=0; l<=lMax; l++)
    for(int m=-l; m<=l; m++, Alpha++)
     { 
@@ -254,19 +252,18 @@ void WriteCMatrix(StaticSolver *SS, HMatrix *M, HVector *Sigma,
       /*--------------------------------------------------------------*/
       /*--------------------------------------------------------------*/
       /*--------------------------------------------------------------*/
-      SS->GetSphericalMoments(Sigma, lMax, Moments);
+      SS->GetSphericalMoments(Sigma, lMax, *Moments);
       for(int lp=0, AlphaP=0; lp<=lMax; lp++)
        for(int mp=-lp; mp<=lp; mp++, AlphaP++)
         CMatrix->SetEntry(AlphaP,Alpha,Moments->GetEntry(AlphaP));
 
     };
-  delete Moments;
 
   /***************************************************************/
   /* 20131219 there is unquestionably a very much more efficient */
   /* way to do this...                                           */
   /***************************************************************/
-  HMatrix *Gamma=new HMatrix(NAlpha, NAlpha, LHM_COMPLEX);
+  auto Gamma     = std::make_unique<HMatrix>(NAlpha, NAlpha, LHM_COMPLEX);
   Gamma->Zero();
   cdouble OORT2(0.7071067811865475, 0.0);
   cdouble OORT2I(0.0,-0.7071067811865475);
@@ -286,7 +283,7 @@ void WriteCMatrix(StaticSolver *SS, HMatrix *M, HVector *Sigma,
        Gamma->SetEntry( Alpha, Alpha, 1.0 );
     };
 
-  HMatrix *CBarMatrix=new HMatrix(NAlpha, NAlpha, LHM_COMPLEX);
+  auto CBarMatrix= std::make_unique<HMatrix>(NAlpha, NAlpha, LHM_COMPLEX);
   for(int Alpha=0; Alpha<NAlpha; Alpha++)
    for(int AlphaP=0; AlphaP<NAlpha; AlphaP++)
     { cdouble Sum=0.0;
@@ -336,8 +333,5 @@ void WriteCMatrix(StaticSolver *SS, HMatrix *M, HVector *Sigma,
      HMatrix::CloseHDF5Context(pHC);
    };
 
-  delete CMatrix;
-  delete CBarMatrix;
-  delete Gamma;
 
 }

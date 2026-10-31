@@ -119,8 +119,8 @@ void GetCPIntegrand(void *pSCPD, cdouble Omega, double *kBloch, double *U)
   HMatrix *M           = SCPD->M;
   HVector *KN          = SCPD->KN;
   int NumAtoms         = SCPD->NumAtoms;
-  HMatrix **Alphas     = SCPD->Alphas;   
-  HMatrix *EPMatrix    = SCPD->EPMatrix;
+  auto *Alphas         = SCPD->Alphas.data();
+  HMatrix *EPMatrix    = SCPD->EPMatrix.get();
   void **ABMBCache     = SCPD->ABMBCache;
 
   if (imag(Omega) < XIMIN)
@@ -187,7 +187,7 @@ void GetCPIntegrand(void *pSCPD, cdouble Omega, double *kBloch, double *U)
       if (G && G->LDim==2) fprintf(f,"%e ",kBloch[1]);
       for(int na=0; na<NumAtoms; na++)
        { 
-         HMatrix *Alpha = Alphas[na];
+         HMatrix *Alpha = Alphas[na].get();
          double UValue=0.0;
          for(int i=0; i<3; i++)
           for(int j=0; j<3; j++)
@@ -211,8 +211,8 @@ void GetXiIntegrand(SCPData *SCPD, double Xi, double *U)
   RWGGeometry *G       = SCPD->G;
   int NumAtoms         = SCPD->NumAtoms;
   PolModel **PolModels = SCPD->PolModels;
-  HMatrix **Alphas     = SCPD->Alphas;   
-  HMatrix *EPMatrix    = SCPD->EPMatrix;
+  auto *Alphas         = SCPD->Alphas.data();
+  HMatrix *EPMatrix    = SCPD->EPMatrix.get();
 
   if (Xi<=XIMIN)
    Xi=XIMIN;
@@ -222,7 +222,7 @@ void GetXiIntegrand(SCPData *SCPD, double Xi, double *U)
   /* at this frequency                                           */
   /***************************************************************/
   for(int na=0; na<NumAtoms; na++)
-   PolModels[na]->GetPolarizability(Xi, Alphas[na]);
+   PolModels[na]->GetPolarizability(Xi, Alphas[na].get());
 
   /***************************************************************/ 
   /***************************************************************/ 
@@ -230,7 +230,7 @@ void GetXiIntegrand(SCPData *SCPD, double Xi, double *U)
   cdouble Omega=cdouble(0.0,Xi);
   int LDim = G ? G->LDim : 0;
   if (LDim==0)
-   GetCPIntegrand((void *)SCPD, Omega, 0, U);
+   GetCPIntegrand(reinterpret_cast<void *>(SCPD), Omega, nullptr, U);
   else 
    GetBZIntegral(SCPD->BZIArgs, Omega, U);
 
@@ -401,7 +401,7 @@ void EvaluateFrequencyIntegral(SCPData *SCPD, double *U)
   int fdim = (SCPD->EPMatrix->NR * SCPD->NumAtoms);
   double *Error = new double[fdim];
 
-  pcubature_log(fdim, SGJCIntegrand, (void *)SCPD, 1, 
+  pcubature_log(fdim, SGJCIntegrand, reinterpret_cast<void *>(SCPD), 1, 
                 &Lower, &Upper, 0, ABSTOL, SCPD->RelTol,
                 ERROR_INDIVIDUAL, U, Error, "pcubature.log");
 

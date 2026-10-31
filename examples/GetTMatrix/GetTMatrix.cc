@@ -51,11 +51,11 @@ int main(int argc, char *argv[])
   /*--------------------------------------------------------------*/
   /*- process frequency options ----------------------------------*/
   /*--------------------------------------------------------------*/
-  HVector *OmegaVector=0;
+  std::unique_ptr<HVector> OmegaVector;
   if (!OmegaFile.empty())
-   OmegaVector=new HVector(OmegaFile.c_str());
+   OmegaVector=std::make_unique<HVector>(OmegaFile.c_str());
   else if ( Omega!=0.0 )
-   { OmegaVector=new HVector(1, LHM_COMPLEX);
+   { OmegaVector=std::make_unique<HVector>(1, LHM_COMPLEX);
      OmegaVector->SetEntry(0,Omega);
    }
   else
@@ -84,7 +84,7 @@ int main(int argc, char *argv[])
   /*- preallocate an HMatrix to store the T-matrix data           */
   /*--------------------------------------------------------------*/
   int NumMoments= 2*(lMax+1)*(lMax+1);
-  HMatrix *TMatrix = new HMatrix(NumMoments, NumMoments, LHM_COMPLEX);
+  auto TMatrix = std::make_unique<HMatrix>(NumMoments, NumMoments, LHM_COMPLEX);
   auto AVector = std::make_unique<HVector>(NumMoments, LHM_COMPLEX);
 
   /*--------------------------------------------------------------*/

@@ -106,9 +106,9 @@ typedef struct SCPData
 
    int NumAtoms;
    PolModel **PolModels;
-   HMatrix **Alphas;
+   std::vector<std::unique_ptr<HMatrix>> Alphas;
 
-   HMatrix *EPMatrix;
+   std::unique_ptr<HMatrix> EPMatrix;
 
    double RelTol;
    double AbsTol;
@@ -128,7 +128,7 @@ typedef struct SCPData
 /***************************************************************/
 /***************************************************************/
 /***************************************************************/
-SCPData *CreateSCPData(const char *GeoFile,
+std::unique_ptr<SCPData> CreateSCPData(const char *GeoFile,
                        const char **Atoms, int NumBIAtoms,
                        const char **Particles, int NumParticles,
                        const char *EPFile, const char *FileBase);

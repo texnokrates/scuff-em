@@ -56,11 +56,10 @@ void ProcessEPFile(SSData *SSD, const char *EPFileName)
   /*--------------------------------------------------------------*/
   /*- try to read eval points from file --------------------------*/
   /*--------------------------------------------------------------*/
-  HMatrix *XMatrix=new HMatrix(EPFileName,LHM_TEXT,"-ncol 3");
+  auto XMatrix=std::make_unique<HMatrix>(EPFileName,LHM_TEXT,"-ncol 3");
   if (XMatrix->ErrMsg)
    { fprintf(stderr,"Error processing EP file: %s\n",XMatrix->ErrMsg);
-     delete XMatrix;
-     return;
+        return;
    };
 
   /*--------------------------------------------------------------*/
@@ -68,8 +67,8 @@ void ProcessEPFile(SSData *SSD, const char *EPFileName)
   /*--------------------------------------------------------------*/
   Log("Evaluating fields at points in file %s...",EPFileName);
 
-  auto SFMatrix = G->GetFields( nullptr, KN, Omega, kBloch, XMatrix); // scattered
-  auto IFMatrix = G->GetFields(IF,  nullptr, Omega, kBloch, XMatrix); // incident
+  auto SFMatrix = G->GetFields( nullptr, KN, Omega, kBloch, XMatrix.get()); // scattered
+  auto IFMatrix = G->GetFields(IF,  nullptr, Omega, kBloch, XMatrix.get()); // incident
 
   /*--------------------------------------------------------------*/
   /*- create .scattered and .total output files and write fields -*/
@@ -117,7 +116,6 @@ void ProcessEPFile(SSData *SSD, const char *EPFileName)
      fclose(f);
    };
 
-  delete XMatrix;
 
 }
 
@@ -137,7 +135,7 @@ void WriteFVMesh(SSData *SSD, RWGSurface *S, FILE *f, const char *FuncString)
   /*- create an Nx3 HMatrix whose columns are the coordinates of  */
   /*- the flux mesh panel vertices                                */
   /*--------------------------------------------------------------*/
-  HMatrix *XMatrix=new HMatrix(S->NumVertices, 3);
+  auto XMatrix=std::make_unique<HMatrix>(S->NumVertices, 3);
   for(int nv=0; nv<S->NumVertices; nv++)
    XMatrix->SetEntriesD(nv, ":", S->Vertices + 3*nv);
 
@@ -166,7 +164,7 @@ void WriteFVMesh(SSData *SSD, RWGSurface *S, FILE *f, const char *FuncString)
   /*- get the total fields at the panel vertices                 -*/
   /*--------------------------------------------------------------*/
   auto FMatrix=SSD->G->GetFields(SSD->IF, SSD->KN, SSD->Omega, SSD->kBloch,
-                                 XMatrix);
+                                 XMatrix.get());
 
   /*--------------------------------------------------------------*/
   /*--------------------------------------------------------------*/
@@ -220,7 +218,6 @@ void WriteFVMesh(SSData *SSD, RWGSurface *S, FILE *f, const char *FuncString)
   /*--------------------------------------------------------------*/
   /*--------------------------------------------------------------*/
   /*--------------------------------------------------------------*/
-  delete XMatrix;
 }
 
 /***************************************************************/

@@ -306,7 +306,7 @@ int main(int argc, char *argv[])
      ThetaVector = LinSpace(ThetaMin*DEG2RAD, ThetaMax*DEG2RAD, ThetaPoints);
    }
   else
-   { ThetaVector.reset(new HVector(1));
+   { ThetaVector      = std::make_unique<HVector>(1);
      ThetaVector->SetEntry(0,Theta*DEG2RAD);
    };
   if (ThetaPoints==1)
@@ -328,9 +328,9 @@ int main(int argc, char *argv[])
 
   std::array<std::unique_ptr<PlaneWave>, NUMPOLS> IncidentPW, ReflectedPW, TransmittedPW;
   for(int np=0; np<NUMPOLS; np++)
-   { IncidentPW[np].reset(new PlaneWave(E0, nHat, G->RegionLabels[SourceRegionIndex]));
-     ReflectedPW[np].reset(new PlaneWave(E0, nHat, G->RegionLabels[SourceRegionIndex]));
-     TransmittedPW[np].reset(new PlaneWave(E0, nHat, G->RegionLabels[DestRegionIndex]));
+   { IncidentPW[np]    = std::make_unique<PlaneWave>(E0, nHat, G->RegionLabels[SourceRegionIndex]);
+     ReflectedPW[np]    = std::make_unique<PlaneWave>(E0, nHat, G->RegionLabels[SourceRegionIndex]);
+     TransmittedPW[np]  = std::make_unique<PlaneWave>(E0, nHat, G->RegionLabels[DestRegionIndex]);
    };
 
   /*******************************************************************/

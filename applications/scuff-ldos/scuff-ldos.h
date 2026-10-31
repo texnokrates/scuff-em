@@ -44,17 +44,20 @@ typedef struct SLDData
  {
    // data on the BEM geometry and linear algebra workspaces
    RWGGeometry *G;
-   HMatrix *M;
+   std::unique_ptr<HMatrix> M;
 
    // data on evaluation points and DGFs at evaluation points
-   HMatrix **XMatrices, **GMatrices;
-   char **EPFileBases;
+   std::vector<std::unique_ptr<HMatrix>> XMatrices, GMatrices;
+   std::vector<char *> EPFileBases;
    bool *WrotePreamble[2];
    int NumXMatrices;
    int TotalEvalPoints;
 
-   // fields relevant for geometrical transformations
-   HMatrix **TBlocks, **UBlocks;
+   // fields relevant for geometrical transformations.
+   // Mated surfaces share diagonal blocks: only the Mate[ns]==-1
+   // slots are owned (TBlockStorage); TBlocks holds views.
+   std::vector<HMatrix *> TBlocks;
+   std::vector<std::unique_ptr<HMatrix>> TBlockStorage, UBlocks;
    GTCList GTCs;
    int NumTransforms;
 
@@ -83,7 +86,7 @@ typedef struct SLDData
 // CreateLDOSData.cc
 void WriteFilePreamble(char *FileName, int FileType, int LDim, 
                        bool HaveGTCList, bool TwoPointDGF);
-SLDData *CreateSLDData(const char *GeoFile, const char *TransFile,
+std::unique_ptr<SLDData> CreateSLDData(const char *GeoFile, const char *TransFile,
                        const char **EPFiles, int nEPFiles);
 
 // GetLDOS.cc

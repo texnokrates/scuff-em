@@ -42,14 +42,10 @@ class SphericalWave : public IncField
 /**********************************************************************/
 /**********************************************************************/
 /**********************************************************************/
-HVector *GetSphericalMoments(RWGObject *O, cdouble k, int lMax,
-                             HVector *KNVector, int BFIndexOffset, 
-                             HVector *AVector=0);
+void GetSphericalMoments(RWGObject *O, cdouble k, int lMax,
+                         HVector *KNVector, int BFIndexOffset,
+                         HVector &AVector);
 
-std::unique_ptr<HVector> GetSphericalMoments(RWGGeometry *O, cdouble k, int lMax,
-                             HVector *KNVector);
-void GetSphericalMoments(RWGGeometry *O, cdouble k, int lMax,
-                         HVector *KNVector, HVector &AVector);
 
 
 #endif // #ifndef GETTMATRIX_H

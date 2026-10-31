@@ -30,12 +30,12 @@
 /***************************************************************/
 /***************************************************************/
 /***************************************************************/
-SCPData *CreateSCPData(const char *GeoFileIn,
+std::unique_ptr<SCPData> CreateSCPData(const char *GeoFileIn,
                        const char **Atoms, int NumBIAtoms,
                        const char **Particles, int NumParticles,
                        const char *EPFile, const char *FileBase)
 {
-  SCPData *SCPD=(SCPData *)mallocEC(sizeof(SCPData));
+  auto SCPD=std::make_unique<SCPData>();
 
   /***************************************************************/
   /* create the RWGGeometry, allocate BEM matrix and RHS vector, and */
@@ -58,28 +58,28 @@ SCPData *CreateSCPData(const char *GeoFileIn,
   /*******************************************************************/
   int NumAtoms = SCPD->NumAtoms = NumBIAtoms + NumParticles;
   SCPD->PolModels    = (PolModel **)malloc(NumAtoms * sizeof(PolModel *));
-  SCPD->Alphas       = (HMatrix **) malloc(NumAtoms * sizeof(HMatrix *) );
+  SCPD->Alphas.resize(NumAtoms);
 
   int na=0;
   for(int nbi=0; nbi<NumBIAtoms; nbi++)
    { SCPD->PolModels[na] = new PolModel(Atoms[nbi], PM_BUILTIN);
      if (SCPD->PolModels[na]->ErrMsg)
       ErrExit("%s",SCPD->PolModels[na]->ErrMsg);
-     SCPD->Alphas[na] = new HMatrix(3,3);
+     SCPD->Alphas[na] = std::make_unique<HMatrix>(3,3);
      na++;
    };
   for(int np=0; np<NumParticles; np++)
    { SCPD->PolModels[na] = new PolModel(Particles[np], PM_FILE);
      if (SCPD->PolModels[na]->ErrMsg)
       ErrExit("%s",SCPD->PolModels[na]->ErrMsg);
-     SCPD->Alphas[na] = new HMatrix(3,3);
+     SCPD->Alphas[na] = std::make_unique<HMatrix>(3,3);
      na++;
    };
 
   /*******************************************************************/
   /* process list of evaluation points *******************************/
   /*******************************************************************/
-  SCPD->EPMatrix = new HMatrix(EPFile);
+  SCPD->EPMatrix = std::make_unique<HMatrix>(EPFile);
 
   /*******************************************************************/
   /*******************************************************************/

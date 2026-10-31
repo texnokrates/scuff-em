@@ -92,12 +92,12 @@ void WriteFilePreamble(char *FileName, int FileType, int LDim,
 /***************************************************************/
 /***************************************************************/
 /***************************************************************/
-SLDData *CreateSLDData(const char *GeoFile, const char *TransFile,
+std::unique_ptr<SLDData> CreateSLDData(const char *GeoFile, const char *TransFile,
                        const char **EPFiles, int nEPFiles)
 {
   SetDefaultCD2SFormat("%.8e %.8e");
 
-  SLDData *Data=(SLDData *)mallocEC(sizeof(*Data));
+  auto Data=std::make_unique<SLDData>();
   Data->RelTol      = 1.0e-2;
   Data->AbsTol      = 1.0e-8;
   Data->MaxEvals    = 100000;
@@ -108,7 +108,7 @@ SLDData *CreateSLDData(const char *GeoFile, const char *TransFile,
   /* read in geometry and allocate BEM matrix and RHS vector     */
   /***************************************************************/
   RWGGeometry *G = Data->G = new RWGGeometry(GeoFile);
-  Data->M = G->AllocateBEMMatrix().release();
+  Data->M = G->AllocateBEMMatrix();
 
   /***************************************************************/
   /* read in geometrical transformation file if any **************/
@@ -120,26 +120,26 @@ SLDData *CreateSLDData(const char *GeoFile, const char *TransFile,
    ErrExit("file %s: %s",TransFile,ErrMsg);
   bool HaveGTCList = (TransFile!=nullptr);
 
-  Data->TBlocks=Data->UBlocks=nullptr;
   if (HaveGTCList)
    { int NS=G->NumSurfaces;
      int NADB = NS*(NS-1)/2; // number of above-diagonal blocks
-     HMatrix **TBlocks = Data->TBlocks = (HMatrix **)mallocEC(NS*sizeof(HMatrix *));
-     HMatrix **UBlocks = Data->UBlocks = (HMatrix **)mallocEC(NADB*sizeof(HMatrix *));
+     Data->TBlocks.resize(NS);
+     Data->UBlocks.resize(NADB);
      for(int ns=0, nb=0; ns<NS; ns++)
-      { 
+      {
         int nsMate = G->Mate[ns];
         if ( nsMate!=-1 )
-         TBlocks[ns] = TBlocks[nsMate];
+         Data->TBlocks[ns] = Data->TBlocks[nsMate];
         else
          { int NBF=G->Surfaces[ns]->NumBFs;
-           TBlocks[ns] = new HMatrix(NBF, NBF, Data->M->RealComplex);
+           Data->TBlockStorage.push_back(std::make_unique<HMatrix>(NBF, NBF, Data->M->RealComplex));
+           Data->TBlocks[ns] = Data->TBlockStorage.back().get();
          };
 
         for(int nsp=ns+1; nsp<NS; nsp++, nb++)
          { int NBF=G->Surfaces[ns]->NumBFs;
            int NBFp=G->Surfaces[nsp]->NumBFs;
-           UBlocks[nb] = new HMatrix(NBF, NBFp, Data->M->RealComplex);
+           Data->UBlocks[nb] = std::make_unique<HMatrix>(NBF, NBFp, Data->M->RealComplex);
          };
       };
    };
@@ -147,23 +147,20 @@ SLDData *CreateSLDData(const char *GeoFile, const char *TransFile,
   /***************************************************************/
   /* read in lists of evaluation points **************************/
   /***************************************************************/
-  HMatrix **XMatrices=nullptr;
-  char **EPFileBases=nullptr;
+  std::vector<std::unique_ptr<HMatrix>> XMatrices;
+  std::vector<char *> EPFileBases;
   int NumXMatrices=0, TotalEvalPoints=0;
   for(int n=0; n<nEPFiles; n++)
    { 
-     HMatrix *XMatrix = new HMatrix(EPFiles[n]);
+     auto XMatrix = std::make_unique<HMatrix>(EPFiles[n]);
      if (XMatrix->ErrMsg)
       { Warn("%s (skipping file)",XMatrix->ErrMsg);
         continue;
       };
      int NX = XMatrix->NR;
 
-     XMatrices = (HMatrix **)reallocEC(XMatrices, (NumXMatrices+1)*sizeof(HMatrix *));
-     EPFileBases = (char **)reallocEC(EPFileBases, (NumXMatrices+1)*sizeof(char *));
-
-     XMatrices[NumXMatrices]   = XMatrix;
-     EPFileBases[NumXMatrices] = strdup(GetFileBase(EPFiles[n]));
+     XMatrices.push_back(std::move(XMatrix));
+     EPFileBases.push_back(strdup(GetFileBase(EPFiles[n])));
    
      NumXMatrices++;
      TotalEvalPoints+=NX;
@@ -171,8 +168,8 @@ SLDData *CreateSLDData(const char *GeoFile, const char *TransFile,
      Log("Read %i evaluation points from file %s.",NX,EPFiles[n]);
    };
   Log("%i total evaluation points from %i files.",TotalEvalPoints,NumXMatrices);
-  Data->XMatrices       = XMatrices;
-  Data->EPFileBases     = EPFileBases;
+  Data->XMatrices       = std::move(XMatrices);
+  Data->EPFileBases     = std::move(EPFileBases);
   Data->NumXMatrices    = NumXMatrices;
   Data->TotalEvalPoints = TotalEvalPoints;
 
@@ -186,13 +183,11 @@ SLDData *CreateSLDData(const char *GeoFile, const char *TransFile,
   /***************************************************************/
   int NumTransforms = Data->NumTransforms;
   int NumGMatrices = NumXMatrices * NumTransforms;
-  HMatrix **GMatrices = 
-   (HMatrix **)mallocEC(NumGMatrices*sizeof(HMatrix *));
+  Data->GMatrices.resize(NumGMatrices);
   for(int nt=0; nt<NumTransforms; nt++)
    for(int nm=0; nm<NumXMatrices; nm++)
-    GMatrices[nt*NumXMatrices + nm]
-     = new HMatrix(XMatrices[nm]->NR, 18, LHM_COMPLEX);
-  Data->GMatrices = GMatrices;
+    Data->GMatrices[nt*NumXMatrices + nm]
+     = std::make_unique<HMatrix>(Data->XMatrices[nm]->NR, 18, LHM_COMPLEX);
 
   /***************************************************************/
   /* For PBC geometries we need to do some preliminary setup     */

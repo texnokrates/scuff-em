@@ -41,11 +41,14 @@ using namespace scuff;
 /***************************************************************/
 typedef struct BMAccelerator
  {
-   HMatrix **TBlocks;
-   HMatrix **UBlocks;
-   HMatrix **PairMatrices;
+   /* mated surfaces share diagonal blocks: only the Mate[ns]==-1
+      slots are owned (TBlockStorage); TBlocks holds views.         */
+   std::vector<HMatrix *> TBlocks;
+   std::vector<std::unique_ptr<HMatrix>> TBlockStorage;
+   std::vector<std::unique_ptr<HMatrix>> UBlocks;
+   std::vector<std::unique_ptr<HMatrix>> PairMatrices;
  } BMAccelerator;
-BMAccelerator *CreateBMAccelerator(StaticSolver *SS,
+std::unique_ptr<BMAccelerator> CreateBMAccelerator(StaticSolver *SS,
                                    const GTCList &GTCs,
                                    bool UsePairEquivalence);
 void ReassembleBEMMatrix(StaticSolver *SS, HMatrix **pM,

@@ -280,7 +280,7 @@ int main(int argc, char *argv[])
   //BMAccelerator *BMA = (NT==1) ? 0 : CreateBMAccelerator(SS);
   // TODO figure out interaction between transfiles and equivalent pairs
   if (NT>1) DisableEquivalentPairs=true;
-  BMAccelerator *BMA = CreateBMAccelerator(SS.get(), GTCs, !DisableEquivalentPairs);
+  auto BMA = CreateBMAccelerator(SS.get(), GTCs, !DisableEquivalentPairs);
 
   /*******************************************************************/
   /* loop over transformations.                                      */
@@ -305,7 +305,7 @@ int main(int argc, char *argv[])
                           SolutionName.c_str(), SS->TransformLabel);
 
      if (!HaveSolution)
-      ReassembleBEMMatrix(SS.get(), &M, BMA, nt);
+      ReassembleBEMMatrix(SS.get(), &M, BMA.get(), nt);
 
      /*******************************************************************/
      /* now switch off depending on the type of calculation the user    */

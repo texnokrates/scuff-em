@@ -101,9 +101,9 @@ int main(int argc, char *argv[])
   /*--------------------------------------------------------------*/
   std::unique_ptr<HVector> OmegaVector;
   if (!OmegaFile.empty())
-   OmegaVector.reset(new HVector(OmegaFile.c_str()));
+   OmegaVector = std::make_unique<HVector>(OmegaFile.c_str());
   else if ( Omega!=0.0 )
-   { OmegaVector.reset(new HVector(1, LHM_COMPLEX));
+   { OmegaVector = std::make_unique<HVector>(1, LHM_COMPLEX);
      OmegaVector->SetEntry(0,Omega);
    }
   else
@@ -132,7 +132,7 @@ int main(int argc, char *argv[])
   /*--------------------------------------------------------------*/
   int NumLMs = (LMax+1)*(LMax+1) - 1;
   int NumMoments= 2*NumLMs;
-  HMatrix *TMatrix = new HMatrix(NumMoments, NumMoments, LHM_COMPLEX);
+  auto TMatrix = std::make_unique<HMatrix>(NumMoments, NumMoments, LHM_COMPLEX);
 
   /*--------------------------------------------------------------*/
   /* instantiate a SphericalWave structure (we will set the L, M, */
