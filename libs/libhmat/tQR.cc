@@ -32,7 +32,7 @@ int main(int argc, char *argv[])
   /*--------------------------------------------------------------*/
   /*--------------------------------------------------------------*/
   /*--------------------------------------------------------------*/
-  HMatrix *M = new HMatrix(MatrixFile.c_str());
+  auto M=std::make_unique<HMatrix>(MatrixFile.c_str());
   if (M->ErrMsg)
    ErrExit(M->ErrMsg);
   

@@ -396,7 +396,7 @@ void MatProp::ReadInterpolationTable(const char *FileName)
   char FullFileName[MAXSTR];
   snprintf(FullFileName,MAXSTR,"%s/%s",Dir,FileName);
   Log("Found material data file %s in directory %s.",FileName,Dir);
-  HMatrix *Data = new HMatrix(FullFileName, LHM_TEXT, "--strict");
+  auto Data = std::make_unique<HMatrix>(FullFileName, LHM_TEXT, "--strict");
   if (Data->ErrMsg)
    ErrExit(Data->ErrMsg);
 
@@ -459,7 +459,6 @@ void MatProp::ReadInterpolationTable(const char *FileName)
   /***************************************************************/
   free(XPoints);
   free(YPoints);
-  delete Data;
   
 } 
 

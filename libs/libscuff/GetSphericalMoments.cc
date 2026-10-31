@@ -86,8 +86,8 @@ void VSWDotRWGIntegrand(double x[3], double b[3], double Divb,
   // get components of VSWs at cubature point
   // MWMatrix[i][nmw] = ith component of nmw#th VSW
   bool ConjugateRFactor=true;
-  GetMWMatrix(r, Theta, Phi, k, lMax, LS_REGULAR, 
-              MWMatrix, Workspace, ConjugateRFactor);
+  GetMWMatrix(r, Theta, Phi, k, lMax, LS_REGULAR,
+              *MWMatrix, Workspace, ConjugateRFactor);
   
   cdouble *zIntegral=(cdouble *)Integral;
   for(int nmw=0; nmw<MWMatrix->NC; nmw++)

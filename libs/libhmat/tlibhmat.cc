@@ -42,13 +42,13 @@ int main()
   /*--------------------------------------------------------------*/
   void *pCC = HMatrix::OpenMATLABContext("tlibhmat");
 
-  MNorm=new HMatrix(DIM,DIM,LHM_COMPLEX);
-  MHerm=new HMatrix(DIM,DIM,LHM_COMPLEX,LHM_HERMITIAN);
-  MCSym=new HMatrix(DIM,DIM,LHM_COMPLEX,LHM_SYMMETRIC);
+  MNorm=std::make_unique<HMatrix>(DIM,DIM,LHM_COMPLEX);
+  MHerm=std::make_unique<HMatrix>(DIM,DIM,LHM_COMPLEX,LHM_HERMITIAN);
+  MCSym=std::make_unique<HMatrix>(DIM,DIM,LHM_COMPLEX,LHM_SYMMETRIC);
 
-  B=new HVector(DIM,LHM_COMPLEX);
-  XNormal=new HVector(DIM,LHM_COMPLEX);
-  XPacked=new HVector(DIM,LHM_COMPLEX);
+  B=std::make_unique<HVector>(DIM,LHM_COMPLEX);
+  XNormal=std::make_unique<HVector>(DIM,LHM_COMPLEX);
+  XPacked=std::make_unique<HVector>(DIM,LHM_COMPLEX);
 
   srand48(time(0));
 
@@ -83,12 +83,12 @@ int main()
   info=MNorm->LUFactorize();
   printf("LU(Normal 1) : info = %i \n",info); 
   memcpy(XNormal->ZV,B->ZV,DIM*sizeof(double));
-  MNorm->LUSolve(XNormal);
+  MNorm->LUSolve( XNormal.get());
 
   info=MHerm->LUFactorize();
   printf("LU(Herm   1) : info = %i \n",info); 
   memcpy(XPacked->ZV,B->ZV,DIM*sizeof(double));
-  MHerm->LUSolve(XPacked);
+  MHerm->LUSolve( XPacked.get());
 
   for(Norm=DNorm=0.0, n=0; n<DIM; n++)
    { Norm += norm( XNormal->ZV[n] );
@@ -123,12 +123,12 @@ int main()
   info=MNorm->LUFactorize();
   printf("LU(Normal 2) : info = %i \n",info); 
   memcpy(XNormal->ZV,B->ZV,DIM*sizeof(double));
-  MNorm->LUSolve(XNormal);
+  MNorm->LUSolve( XNormal.get());
 
   info=MCSym->LUFactorize();
   printf("LU(CSym   2) : info = %i \n",info); 
   memcpy(XPacked->ZV,B->ZV,DIM*sizeof(double));
-  MCSym->LUSolve(XPacked);
+  MCSym->LUSolve( XPacked.get());
 
   for(Norm=DNorm=0.0, n=0; n<DIM; n++)
    { Norm += norm( XNormal->ZV[n] );
@@ -166,12 +166,12 @@ int main()
   info=MNorm->CholFactorize();
   printf("Chol(Normal 3) : info = %i \n",info); 
   memcpy(XNormal->ZV,B->ZV,DIM*sizeof(double));
-  MNorm->CholSolve(XNormal);
+  MNorm->CholSolve( XNormal.get());
 
   info=MHerm->CholFactorize();
   printf("Chol(Herm   3) : info = %i \n",info); 
   memcpy(XPacked->ZV,B->ZV,DIM*sizeof(double));
-  MHerm->CholSolve(XPacked);
+  MHerm->CholSolve( XPacked.get());
 
   for(Norm=DNorm=0.0, n=0; n<DIM; n++)
    { Norm += norm( XNormal->ZV[n] );
@@ -209,12 +209,12 @@ int main()
   printf("Chol(Normal 4) : info = %i \n",info); 
   MNorm->ExportToMATLAB(pCC,"M4_Normal_Chol");
   memcpy(XNormal->ZV,B->ZV,DIM*sizeof(double));
-  MNorm->CholSolve(XNormal);
+  MNorm->CholSolve( XNormal.get());
 
   info=MCSym->CholFactorize();
   printf("Chol(CSym   4) : info = %i \n",info); 
   memcpy(XPacked->ZV,B->ZV,DIM*sizeof(double));
-  MCSym->CholSolve(XPacked);
+  MCSym->CholSolve( XPacked.get());
 
   for(Norm=DNorm=0.0, n=0; n<DIM; n++)
    { Norm += norm( XNormal->ZV[n] );

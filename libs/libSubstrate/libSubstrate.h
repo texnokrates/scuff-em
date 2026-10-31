@@ -202,9 +202,10 @@ public:
    /* dyadic GF for eval point #n stored in column-major order,    */
    /* i.e. as a fortran/lapack/libhmat style array, not a C array. */
    /*--------------------------------------------------------------*/
-   HMatrix *GetSubstrateDGF(cdouble Omega, HMatrix *XMatrix, HMatrix *GMatrix=nullptr, 
-                            bool AddHomogeneousDGF=false,
-                            bool SubtractQS=false);
+   /* filling form: GMatrix must be a 36xNX matrix (NX = XMatrix->NC) */
+   void GetSubstrateDGF(cdouble Omega, HMatrix *XMatrix, HMatrix &GMatrix,
+                        bool AddHomogeneousDGF=false,
+                        bool SubtractQS=false);
    void GetSubstrateDGF(cdouble Omega, double XD[3], double XS[3],
                         cdouble ScriptG[6][6], bool AddHomogeneousDGF=false,
                         bool SubtractQS=false);

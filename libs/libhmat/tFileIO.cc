@@ -41,12 +41,12 @@ int main()
   /***************************************************************/
   /***************************************************************/
   /***************************************************************/
-  M1=new HMatrix(DIM,DIM,LHM_COMPLEX,LHM_SYMMETRIC);
+  M1=std::make_unique<HMatrix>(DIM,DIM,LHM_COMPLEX,LHM_SYMMETRIC);
   for(nr=0; nr<DIM; nr++) 
    for(nc=nr; nc<DIM; nc++) 
     M1->SetEntry(nr,nc,drand48() + II*drand48());
 
-  V1=new HVector(DIM,LHM_COMPLEX);
+  V1=std::make_unique<HVector>(DIM,LHM_COMPLEX);
   for(nr=0; nr<DIM; nr++) 
    V1->SetEntry(nr,drand48() + II*drand48());
 
@@ -61,15 +61,15 @@ int main()
   /***************************************************************/
   /***************************************************************/
   /***************************************************************/
-  M2=new HMatrix("MV.hdf5",LHM_HDF5, "M1");
+  M2=std::make_unique<HMatrix>("MV.hdf5",LHM_HDF5, "M1");
   if (M2->ErrMsg)
    printf("Error 1: %s \n",M2->ErrMsg);
 
-  V2=new HVector("MV.hdf5",LHM_HDF5, "V2");
+  V2=std::make_unique<HVector>("MV.hdf5",LHM_HDF5, "V2");
   if (V2->ErrMsg)
    printf("This should say error: %s \n",V2->ErrMsg);
 
-  V2=new HVector("MV.hdf5",LHM_HDF5,"V1");
+  V2=std::make_unique<HVector>("MV.hdf5",LHM_HDF5,"V1");
 
   /***************************************************************/
   /***************************************************************/

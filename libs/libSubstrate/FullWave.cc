@@ -279,11 +279,11 @@ void LayeredSubstrate::GetSubstrateDGF_SurfaceCurrent(cdouble Omega,
 /***************************************************************/
 /* switchboard routine *****************************************/
 /***************************************************************/
-HMatrix *LayeredSubstrate::GetSubstrateDGF(cdouble Omega,
-                                           HMatrix *XMatrix,
-                                           HMatrix *GMatrix,
-                                           bool AddHomogeneousDGF,
-                                           bool SubtractQS)
+void LayeredSubstrate::GetSubstrateDGF(cdouble Omega,
+                                        HMatrix *XMatrix,
+                                        HMatrix &GMatrix,
+                                        bool AddHomogeneousDGF,
+                                        bool SubtractQS)
 {
   int NX=XMatrix->NR;
   Log("Computing substrate DGF at %i points...",NX);
@@ -291,13 +291,9 @@ HMatrix *LayeredSubstrate::GetSubstrateDGF(cdouble Omega,
   /*--------------------------------------------------------------*/
   /*--------------------------------------------------------------*/
   /*--------------------------------------------------------------*/
-  if ( GMatrix && (GMatrix->NR!=36 || GMatrix->NC!=NX) )
-   { Warn("wrong-size GMatrix passed to GetSubstrateDGF: (%i,%i)!=(%i,%i) reallocating...",GMatrix->NR,GMatrix->NC,36,NX);
-     delete GMatrix;
-     GMatrix=0;
-   };
-  if (GMatrix==0)
-   GMatrix = new HMatrix(36, NX, LHM_COMPLEX);
+  if ( GMatrix.NR!=36 || GMatrix.NC!=NX )
+   ErrExit("wrong-size GMatrix (%ix%i) passed to GetSubstrateDGF "
+           "(expected 36x%i)",GMatrix.NR,GMatrix.NC,NX);
 
   /*--------------------------------------------------------------*/
   /*--------------------------------------------------------------*/
@@ -305,7 +301,7 @@ HMatrix *LayeredSubstrate::GetSubstrateDGF(cdouble Omega,
 #if 0
   if (    ForceMethod==AUTO 
        && GetSubstrateDGF_Interp(Omega, XMatrix, GMatrix)
-     ) return GMatrix;
+     ) { }
 #endif
 
   /*--------------------------------------------------------------*/
@@ -317,13 +313,13 @@ HMatrix *LayeredSubstrate::GetSubstrateDGF(cdouble Omega,
   switch(Method)
    { 
      case STATIC_LIMIT:
-       GetSubstrateDGF_StaticLimit(Omega, XMatrix, GMatrix);
+       GetSubstrateDGF_StaticLimit(Omega, XMatrix, &GMatrix);
        break;
 
      case SURFACE_CURRENT:
      case AUTO:
      default:
-       GetSubstrateDGF_SurfaceCurrent(Omega, XMatrix, GMatrix, SubtractQS);
+       GetSubstrateDGF_SurfaceCurrent(Omega, XMatrix, &GMatrix, SubtractQS);
        break;
    };
 
@@ -371,14 +367,13 @@ HMatrix *LayeredSubstrate::GetSubstrateDGF(cdouble Omega,
       if (nl!=GetLayerIndex(XDS[5])) continue;
       cdouble EpsRel=EpsLayer[nl], MuRel=MuLayer[nl];
       double MyzGP = (nl==NumInterfaces ? zGP : -1.0*HUGE_VAL);
-      AddGamma0(XDS+0, XDS+3, Omega, EpsRel, MuRel, GMatrix->ZM + nx*36, MyzGP);
+      AddGamma0(XDS+0, XDS+3, Omega, EpsRel, MuRel, GMatrix.ZM + static_cast<size_t>(nx)*36, MyzGP);
     };
 #endif
     
     
      
-  return GMatrix;
-}  
+}
 
 /***************************************************************/
 /***************************************************************/
@@ -395,7 +390,7 @@ void LayeredSubstrate::GetSubstrateDGF(cdouble Omega, double XD[3], double XS[3]
   cdouble GBuffer[36];
   HMatrix GMatrix(36,1,LHM_COMPLEX,GBuffer);
 
-  GetSubstrateDGF(Omega, &XMatrix, &GMatrix, AddHomogeneousDGF, SubtractQS);
+  GetSubstrateDGF(Omega, &XMatrix, GMatrix, AddHomogeneousDGF, SubtractQS);
 
   HMatrix ScriptGMatrix(6,6,LHM_COMPLEX,GBuffer);
   for(int Mu=0; Mu<6; Mu++)

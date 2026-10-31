@@ -1,4 +1,4 @@
-/* Copyright (C) 2005-2011 M. T. Homer Reid
+/* Copyright ( C.get()) 2005-2011 M. T. Homer Reid
  *
  * This file is part of SCUFF-EM.
  *
@@ -313,7 +313,7 @@ void Interp1D::InitInterp1D(Phi1D PhiFunc, void *UserData)
    /*- the inner loop runs over the NCOEFF monomials in the       -*/
    /*- interpolating polynomial.                                  -*/
    /*--------------------------------------------------------------*/
-   HMatrix *M=new HMatrix(NEQUATIONS, NCOEFF);
+   auto M=std::make_unique<HMatrix>(NEQUATIONS, NCOEFF);
    M->Zero();
 
    /* XPowers[p] = 0        ,  p==0 */
@@ -344,7 +344,7 @@ void Interp1D::InitInterp1D(Phi1D PhiFunc, void *UserData)
    /*--------------------------------------------------------------*/
    if (LogLevel>=LMDI_LOGLEVEL_TERSE)
     Log("Computing coefficients of interpolating polynomials...");
-   HVector *C = new HVector(NCOEFF);
+   auto C=std::make_unique<HVector>(NCOEFF);
    for(int n=0, nPoints=0; n<(N-1); n++)
     { 
       if( LogLevel>=LMDI_LOGLEVEL_VERBOSE )
@@ -365,7 +365,7 @@ void Interp1D::InitInterp1D(Phi1D PhiFunc, void *UserData)
           };
 
          /* solve the 4x4 system */
-         M->LUSolve(C);
+         M->LUSolve( C.get());
 
          /* store the coefficients in the appropriate place in CTable */
          double *P=CTable + GetCTableOffset(nf, nFun, n);
@@ -377,8 +377,6 @@ void Interp1D::InitInterp1D(Phi1D PhiFunc, void *UserData)
    /*--------------------------------------------------------------*/
    /*--------------------------------------------------------------*/
    /*--------------------------------------------------------------*/
-   delete C;
-   delete M;
    free(PhiVDTable);
    if( LogLevel>=LMDI_LOGLEVEL_VERBOSE )
     Log("...done!");
@@ -450,8 +448,8 @@ Interp1D::Interp1D(double *pXPoints, double *YPoints,
    /*-    a cubic polynomial in X that matches the function values */ 
    /*-    at points X_{n-1}, X_n, X_{n+1}, and X_{n+2}.            */ 
    /*--------------------------------------------------------------*/ 
-   HMatrix *M = new HMatrix(NEQUATIONS,NCOEFF);
-   HVector *C = new HVector(NCOEFF);
+   auto M=std::make_unique<HMatrix>(NEQUATIONS,NCOEFF);
+   auto C=std::make_unique<HVector>(NCOEFF);
    int n, nf;
    double Xm1, Xp2, *P;
    for(n=0; n<N-1; n++)
@@ -505,14 +503,12 @@ Interp1D::Interp1D(double *pXPoints, double *YPoints,
 
           /* */
           M->LUFactorize();
-          M->LUSolve(C);
+          M->LUSolve( C.get());
 
           /* store the coefficients in the appropriate place in CTable */
           memcpy(P, C->DV, NCOEFF*sizeof(double));
         };
      };
-   delete M;
-   delete C;
 
 }
 

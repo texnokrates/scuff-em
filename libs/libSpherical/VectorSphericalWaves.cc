@@ -210,10 +210,10 @@ void GetVSWRadialFunctions(int LMax, cdouble k, double r,
 /* If Workspace is non-null, it should satisfy                 */
 /* sizeof(Workspace) >= (7*LMax+7)*(LMax+1) * sizeof(cdouble)  */
 /***************************************************************/
-HMatrix *GetWaveMatrix(double r, double Theta, double Phi,
-                       cdouble k, int LMax, int WaveType,
-                       HMatrix *WaveMatrix, bool MaxwellWaves,
-                       cdouble *Workspace, bool RConjugate)
+void GetWaveMatrix(double r, double Theta, double Phi,
+                   cdouble k, int LMax, int WaveType,
+                   HMatrix &WaveMatrix, bool MaxwellWaves,
+                   cdouble *Workspace, bool RConjugate)
 {
   int NAlpha = (LMax+1)*(LMax+1);
   int NMW    = 2*(NAlpha-1);
@@ -221,15 +221,11 @@ HMatrix *GetWaveMatrix(double r, double Theta, double Phi,
   int NW     = MaxwellWaves ? NMW : NSW;
 
   /***************************************************************/
+  /* the caller's WaveMatrix must have the right dimensions      */
   /***************************************************************/
-  /***************************************************************/
-  if (WaveMatrix && (WaveMatrix->NR!=3 || WaveMatrix->NC!=NW))
-   { Warn("wrong-size WaveMatrix in GetWaveMatrix (reallocating...)");
-     delete WaveMatrix;
-     WaveMatrix=nullptr;
-   };
-  if (WaveMatrix==nullptr)
-   WaveMatrix = new HMatrix(3, NW, LHM_COMPLEX);
+  if ( WaveMatrix.NR!=3 || WaveMatrix.NC!=NW )
+   ErrExit("wrong-size WaveMatrix (%ix%i) passed to GetWaveMatrix "
+           "(expected 3x%i)",WaveMatrix.NR,WaveMatrix.NC,NW);
 
   /***************************************************************/
   /* fetch radial-function factors  ******************************/
@@ -259,7 +255,7 @@ HMatrix *GetWaveMatrix(double r, double Theta, double Phi,
   if ( fabs(M_PI-Theta)<1.0e-6) Theta=M_PI-1.0e-6;
   GetYlmDerivArray(LMax, Theta, Phi, YArray, dYdThetaArray);
 
-  WaveMatrix->Zero();
+  WaveMatrix.Zero();
   for(int L=1, Alpha=1; L<=LMax; L++)
    {
      double RtLLP1=sqrt(L*(L+1.0));
@@ -284,46 +280,21 @@ HMatrix *GetWaveMatrix(double r, double Theta, double Phi,
                        ?  GetMWIndex(L, M, (P==0) ? 0 : 1)
                        :  GetSWIndex(L, M, P);
            for(int Mu=0; Mu<3; Mu++)
-             WaveMatrix->AddEntry(Mu,Index,RFArray[3*L+P]*AA[P][Mu]);
+             WaveMatrix.AddEntry(Mu,Index,RFArray[3*L+P]*AA[P][Mu]);
          };
       };
    };
   if (OwnsWorkspace) 
    free(Workspace);
-
-  return WaveMatrix;
 }
 
-HMatrix *GetWaveMatrix(double X[3],
-                       cdouble k, int LMax, int WaveType,
-                       HMatrix *WaveMatrix, bool MaxwellWaves,
-                       cdouble *Workspace, bool RConjugate)
+void GetMWMatrix(double r, double Theta, double Phi,
+                 cdouble k, int LMax, int WaveType,
+                 HMatrix &WaveMatrix, cdouble *Workspace,
+                 bool RConjugate)
 {
-  double r, Theta, Phi;
-  CoordinateC2S(X, &r, &Theta, &Phi);
-  HMatrix *WM=GetWaveMatrix(r, Theta, Phi, k, LMax, WaveType, 
-                            WaveMatrix, MaxwellWaves, Workspace,
-                            RConjugate);
-  for(int nc=0; nc<WM->NC; nc++)
-   VectorS2C(Theta, Phi, (cdouble *)WM->GetColumnPointer(nc));
-  return WM;
-}
-
-HMatrix *GetMWMatrix(double r, double Theta, double Phi,
-                     cdouble k, int LMax, int WaveType,
-                     HMatrix *WaveMatrix, cdouble *Workspace,
-                     bool RConjugate)
-{ 
-  return GetWaveMatrix(r, Theta, Phi, k, LMax, WaveType,
-                       WaveMatrix, true, Workspace, RConjugate);
-}
-
-HMatrix *GetMWMatrix(double X[3], cdouble k, int LMax, int WaveType,
-                     HMatrix *WaveMatrix, cdouble *Workspace, 
-                     bool RConjugate)
-{ 
-  return GetWaveMatrix(X, k, LMax, WaveType,
-                       WaveMatrix, true, Workspace, RConjugate);
+  GetWaveMatrix(r, Theta, Phi, k, LMax, WaveType,
+                WaveMatrix, true, Workspace, RConjugate);
 }
 
 /***************************************************************/

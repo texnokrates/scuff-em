@@ -56,7 +56,7 @@
 /***************************************************************/
 int main()
 { 
-  HMatrix *M=new HMatrix(DIM,DIM);
+  auto M=std::make_unique<HMatrix>(DIM,DIM);
 
   for(int nr=0; nr<DIM; nr++)
    for(int nc=0; nc<DIM; nc++)

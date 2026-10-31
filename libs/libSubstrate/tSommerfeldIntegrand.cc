@@ -81,9 +81,9 @@ void RunUnitTest(int NumTest, cdouble Omega, cdouble q,
   SID->q0         = 0.0;
   SID->uTransform = false;
   SID->XMatrix    = &MyXMatrix;
-  SID->RTwiddle   = new HMatrix(6, 4*NumInterfaces, LHM_COMPLEX);
-  SID->WMatrix    = new HMatrix(4*NumInterfaces, 4*NumInterfaces, LHM_COMPLEX);
-  SID->STwiddle   = new HMatrix(4*NumInterfaces, 6,               LHM_COMPLEX);
+  SID->RTwiddle=std::make_unique<HMatrix>(6, 4*NumInterfaces, LHM_COMPLEX);
+  SID->WMatrix=std::make_unique<HMatrix>(4*NumInterfaces, 4*NumInterfaces, LHM_COMPLEX);
+  SID->STwiddle=std::make_unique<HMatrix>(4*NumInterfaces, 6,               LHM_COMPLEX);
   SID->byqFile    = 0;
 
   cdouble TestIntegrand[NUMGSCALAR];
@@ -140,7 +140,7 @@ int main(int argc, char *argv[])
    return *Status;
 
   if (qFile)
-   { HVector *qList = new HVector(qFile);
+   { auto qList=std::make_unique<HVector>(qFile);
 
      FILE *DataFile=fopen("/tmp/tSommerfeldIntegrand.out","w");
      fprintf(DataFile,"# 1-7 qr qi wr wi Rho zDest zSource\n");

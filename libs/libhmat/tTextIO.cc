@@ -32,13 +32,13 @@ int main(int argc, char *argv[])
    ErrExit("usage: %s [--vector | --matrix] MyFile.txt",argv[0]); 
 
   if ( !StrCaseCmp(argv[1],"--vector") )
-   { HVector *V = new HVector(argv[2],LHM_TEXT);
+   { auto V=std::make_unique<HVector>(argv[2],LHM_TEXT);
      printf("%s vector, %i entries.\n",
              V->RealComplex==LHM_REAL ? "real" : "complex",V->N);
      V->ExportToText("tTextIO.out");
    }
   else if ( !StrCaseCmp(argv[1],"--matrix") )
-   { HMatrix *M = new HMatrix(argv[2],LHM_TEXT);
+   { auto M=std::make_unique<HMatrix>(argv[2],LHM_TEXT);
      printf("%s matrix, size %i x %i.\n",
              M->RealComplex==LHM_REAL ? "real" : "complex",M->NR,M->NC);
      M->ExportToText("tTextIO.out");

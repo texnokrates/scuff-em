@@ -1,5 +1,5 @@
 
-/* Copyright (C) 2005-2011 M. T. Homer Reid
+/* Copyright ( C.get()) 2005-2011 M. T. Homer Reid
  *
  * This file is part of SCUFF-EM.
  *
@@ -50,10 +50,10 @@ int main()
   HMatrix *A, *B, *C, *CBF;
   cdouble X;
 
-  A=new HMatrix(NRA,NCA,LHM_COMPLEX);
-  B=new HMatrix(NRB,NCB,LHM_COMPLEX);
-  C=new HMatrix(NRC,NCC,LHM_COMPLEX);
-  CBF=new HMatrix(NRC,NCC,LHM_COMPLEX);
+  A=std::make_unique<HMatrix>(NRA,NCA,LHM_COMPLEX);
+  B=std::make_unique<HMatrix>(NRB,NCB,LHM_COMPLEX);
+  C=std::make_unique<HMatrix>(NRC,NCC,LHM_COMPLEX);
+  CBF=std::make_unique<HMatrix>(NRC,NCC,LHM_COMPLEX);
 
   srand48(time(0));
   for(m=0; m<NRA; m++)
@@ -63,7 +63,7 @@ int main()
    for(n=0; n<NCB; n++)
      B->SetEntry(m,n, cdouble(5.0*(drand48()-2.5), 5.0*(drand48()-2.5) ));
  
-  A->Multiply(B,C);
+  A->Multiply( B.get(), C.get());
 
   if ( NCA!=NRB || NRA!=NRC || NCB!=NCC )
    ErrExit("badcallatage");

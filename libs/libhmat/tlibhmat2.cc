@@ -37,7 +37,7 @@ static double my_drand48(void) {
 
 int main(int argc, char *argv[])
 { 
-  HMatrix *M, *MSymm, *dM, *dMCopy;
+  std::unique_ptr<HMatrix> M, MSymm, dM, dMCopy;
   double Trace1, Trace2, Elapsed;
   int m, n, N;
   
@@ -59,10 +59,10 @@ int main(int argc, char *argv[])
   /*--------------------------------------------------------------*/
   /*- allocate matrices ------------------------------------------*/
   /*--------------------------------------------------------------*/
-  M=new HMatrix(N,N,LHM_REAL);
-  MSymm=new HMatrix(N,N,LHM_REAL,LHM_SYMMETRIC);
-  dM=new HMatrix(N,N/2);
-  dMCopy=new HMatrix(N,N/2);
+  M=std::make_unique<HMatrix>(N,N,LHM_REAL);
+  MSymm=std::make_unique<HMatrix>(N,N,LHM_REAL,LHM_SYMMETRIC);
+  dM=std::make_unique<HMatrix>(N,N/2);
+  dMCopy=std::make_unique<HMatrix>(N,N/2);
 
   /*--------------------------------------------------------------*/
   /*- initialize matrices to random entries ----------------------*/
@@ -78,7 +78,7 @@ int main(int argc, char *argv[])
   for(m=0; m<N; m++)
    for(n=0; n<N/2; n++)
     dM->SetEntry(m,n,drand48());
-  dMCopy->Copy(dM);
+  dMCopy->Copy( dM.get());
 
   /*--------------------------------------------------------------*/
   /*--------------------------------------------------------------*/
@@ -86,22 +86,22 @@ int main(int argc, char *argv[])
   Tic();
   M->LUFactorize();
   Elapsed=Toc();
-  printf("LU(M)        : %9.3e s \n",Elapsed);
+  printf("LU( M.get())        : %9.3e s \n",Elapsed);
 
   Tic();
   MSymm->LUFactorize();
   Elapsed=Toc();
-  printf("LU(MSymm)    : %9.3e s \n",Elapsed);
+  printf("LU( MSymm.get())    : %9.3e s \n",Elapsed);
 
   Tic();
-  M->LUSolve(dM);
+  M->LUSolve( dM.get());
   Elapsed=Toc();
   for(Trace1=0.0, m=0; m<N/2; m++)
    Trace1+=dM->GetEntryD(m,m);
-  printf("Solve(M)     : %9.3e s (%+10.3e)\n",Elapsed,Trace1);
+  printf("Solve( M.get())     : %9.3e s (%+10.3e)\n",Elapsed,Trace1);
 
   Tic();
-  MSymm->LUSolve(dMCopy);
+  MSymm->LUSolve( dMCopy.get());
   Elapsed=Toc();
   for(Trace2=0.0, m=0; m<N/2; m++)
    Trace2+=dMCopy->GetEntryD(m,m);

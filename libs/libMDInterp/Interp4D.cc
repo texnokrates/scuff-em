@@ -1,4 +1,4 @@
-/* Copyright (C) 2005-2011 M. T. Homer Reid
+/* Copyright ( C.get()) 2005-2011 M. T. Homer Reid
  *
  * This file is part of SCUFF-EM.
  *
@@ -410,7 +410,7 @@ void Interp4D::InitInterp4D(Phi4D PhiFunc, void *UserData)
    double X1Bar, X2Bar, X3Bar, X4Bar;
    double X1Powers[5], X2Powers[5], X3Powers[5], X4Powers[5];
    int nm, ncp, p, q, r, s;
-   HMatrix *M=new HMatrix(NEQUATIONS, NCOEFF);
+   auto M=std::make_unique<HMatrix>(NEQUATIONS, NCOEFF);
 
    M->Zero();
 
@@ -467,7 +467,7 @@ void Interp4D::InitInterp4D(Phi4D PhiFunc, void *UserData)
    int n1, dn1, n2, dn2, n3, dn3, n4, dn4;
    int nf;
    double *P;
-   HVector *C = new HVector(NCOEFF);
+   auto C=std::make_unique<HVector>(NCOEFF);
 
    Log("Computing coefficients of interpolating polynomials...");
    for(n1=0; n1<(N1-1); n1++)
@@ -518,7 +518,7 @@ void Interp4D::InitInterp4D(Phi4D PhiFunc, void *UserData)
                  };
 
              /* solve the 256x256 system */
-             M->LUSolve(C);
+             M->LUSolve( C.get());
 
              /* store the coefficients in the appropriate place in CTable */
              P=CTable + GetCTableOffset(nf, nFun, n1, N1, n2, N2, n3, N3, n4, N4);
@@ -530,8 +530,6 @@ void Interp4D::InitInterp4D(Phi4D PhiFunc, void *UserData)
    /*--------------------------------------------------------------*/
    /*--------------------------------------------------------------*/
    /*--------------------------------------------------------------*/
-   delete C;
-   delete M;
    free(PhiVDTable);
    Log("...done!");
 

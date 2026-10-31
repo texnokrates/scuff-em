@@ -52,7 +52,7 @@ class IncField
 
    // lattice basis and Bloch vector for Bloch-periodic case
    // (we also store a basis for the reciprocal lattice)
-   HMatrix *LBasis, *RLBasis;
+   std::unique_ptr<HMatrix> LBasis, RLBasis;
    double LVolume, RLVolume;
    double kBloch[3];
 

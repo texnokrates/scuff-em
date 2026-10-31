@@ -158,7 +158,7 @@ void RWGGeometry::ProcessLATTICESection(FILE *f, char *FileName, int *LineNum)
          for(int i=0; i<3; i++)
           LBasis->SetEntry(i,nd,LBV[nd][i]);
 
-        RLBasis=GetRLBasis(LBasis, &LVolume, &RLVolume);
+        RLBasis=GetRLBasis(LBasis, &LVolume, &RLVolume).release();
         if (LVolume==0.0)
          ErrExit("%s:%i: lattice has empty unit cell",FileName,*LineNum);
 

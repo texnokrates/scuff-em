@@ -151,24 +151,18 @@ void GetVSWRadialFunctions(int LMax, cdouble k, double r,
                            bool TimesrFactor=false,
                            bool Conjugate=false);
 
-HMatrix *GetWaveMatrix(double r, double Theta, double Phi,
-                       cdouble k, int LMax, int WaveType,
-                       HMatrix *WaveMatrix=nullptr, bool MaxwellWaves=true,
-                       cdouble *Workspace=nullptr, bool RConjugate=false);
+/* filling forms: WaveMatrix must have exactly 3 x NW dimensions,
+   where NW = 2*((LMax+1)^2-1) for Maxwell waves or 3*((LMax+1)^2-1)
+   for scalar waves.                                                 */
+void GetWaveMatrix(double r, double Theta, double Phi,
+                   cdouble k, int LMax, int WaveType,
+                   HMatrix &WaveMatrix, bool MaxwellWaves=true,
+                   cdouble *Workspace=nullptr, bool RConjugate=false);
 
-HMatrix *GetWaveMatrix(double X[3],
-                       cdouble k, int LMax, int WaveType,
-                       HMatrix *WaveMatrix=nullptr, bool MaxwellWaves=true,
-                       cdouble *Workspace=nullptr, bool RConjugate=0);
-
-HMatrix *GetMWMatrix(double r, double Theta, double Phi,
-                     cdouble k, int LMax, int WaveType,
-                     HMatrix *WaveMatrix=nullptr, cdouble *Workspace=nullptr,
-                     bool RConjugate=false);
-
-HMatrix *GetMWMatrix(double X[3], cdouble k, int LMax, int WaveType,
-                     HMatrix *WaveMatrix=nullptr, cdouble *Workspace=nullptr, 
-                     bool RConjugate=false);
+void GetMWMatrix(double r, double Theta, double Phi,
+                 cdouble k, int LMax, int WaveType,
+                 HMatrix &WaveMatrix, cdouble *Workspace=nullptr,
+                 bool RConjugate=false);
 
 double GetdzVSWCoefficient(int L,  int M,  int T,
                            int LP, int MP, int TP);

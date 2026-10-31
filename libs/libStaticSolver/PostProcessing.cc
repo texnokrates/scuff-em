@@ -54,7 +54,7 @@ void WriteFVMesh(StaticSolver *SSS, RWGSurface *S, HVector *Sigma,
   /*- create an Nx3 HMatrix whose columns are the coordinates of  */
   /*- the flux mesh panel vertices                                */
   /*--------------------------------------------------------------*/
-  HMatrix *XMatrix=new HMatrix(S->NumVertices, 3);
+  auto XMatrix=std::make_unique<HMatrix>(S->NumVertices, 3);
   for(int nv=0; nv<S->NumVertices; nv++)
    XMatrix->SetEntriesD(nv, ":", S->Vertices + 3*nv);
 
@@ -82,7 +82,7 @@ void WriteFVMesh(StaticSolver *SSS, RWGSurface *S, HVector *Sigma,
   /*--------------------------------------------------------------*/
   /*- get the total fields at the panel vertices                 -*/
   /*--------------------------------------------------------------*/
-  auto PhiE = SSS->GetFields(SE, Sigma, XMatrix);
+  auto PhiE = SSS->GetFields(SE, Sigma, XMatrix.get());
 
   /*--------------------------------------------------------------*/
   /*--------------------------------------------------------------*/
@@ -128,7 +128,6 @@ const char *FieldTitles[]={"Phi","Ex","Ey","Ez"};
   /*--------------------------------------------------------------*/
   /*--------------------------------------------------------------*/
   /*--------------------------------------------------------------*/
-  delete XMatrix;
 }
 
 /***************************************************************/
@@ -254,7 +253,7 @@ std::unique_ptr<HMatrix> StaticSolver::GetCapacitanceMatrix(HMatrix *M,
      Potentials[ns]=1.0;
      AssembleRHSVector(Potentials.data(), *Sigma);
      M->LUSolve(Sigma);
-     GetCartesianMoments(Sigma, QP.get());
+     GetCartesianMoments(Sigma, *QP);
 
      for(int nsp=0, ncsp=-1; nsp<NS; nsp++)
       { if ( !(G->Surfaces[nsp]->IsPEC) )

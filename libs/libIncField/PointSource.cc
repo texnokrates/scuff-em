@@ -316,7 +316,7 @@ void PointSource::Get2DPeriodicFields_Fourier(const double X[3], cdouble EH[6])
   XDest[1]=X[1];
   XDest[2]=X[2];
   cdouble G[3][3], C[3][3];
-  scuff::GetGCBar2D_Fourier(k, kBloch, RLBasis, RLVolume,
+  scuff::GetGCBar2D_Fourier(k, kBloch, RLBasis.get(), RLVolume,
                             XDest, XSource, G, C);
 
   memset(EH, 0, 6*sizeof(cdouble));

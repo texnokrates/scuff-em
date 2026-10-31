@@ -100,7 +100,7 @@ void UpdateBZIArgs(GetBZIArgStruct *BZIArgs, HMatrix *RLBasis,
 /***************************************************************/
 /***************************************************************/
 /***************************************************************/
-HMatrix *GetRLBasis(HMatrix *LBasis,
+std::unique_ptr<HMatrix> GetRLBasis(HMatrix *LBasis,
                     double *pLVolume,
                     double *pRLVolume);
 

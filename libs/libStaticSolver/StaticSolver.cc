@@ -348,21 +348,17 @@ void StaticSolver::AssembleRHSVector(double *Potentials, HVector &RHS)
 /***********************************************************************/
 /***********************************************************************/
 /***********************************************************************/
-HMatrix *StaticSolver::GetCartesianMoments(HVector *Sigma, HMatrix *Moments)
+void StaticSolver::GetCartesianMoments(HVector *Sigma, HMatrix &Moments)
 {
   int NS = G->NumSurfaces;
   int NM = 4;
 
   /*--------------------------------------------------------------*/
+  /*- the caller's Moments matrix must have the right dimensions  -*/
   /*--------------------------------------------------------------*/
-  /*--------------------------------------------------------------*/
-  if (Moments && (Moments->NR != NS || Moments->NC < NM ) )
-   { Warn("invalid matrix passed to GetCartesianMoments (reallocating)");
-     delete Moments;
-     Moments=nullptr;
-   };
-  if (Moments==nullptr) 
-   Moments = new HMatrix(NS, NM);
+  if (Moments.NR != NS || Moments.NC < NM )
+   ErrExit("wrong-size Moments matrix (%ix%i) passed to GetCartesianMoments "
+           "(expected %ix>=%i)",Moments.NR,Moments.NC,NS,NM);
 
   /*--------------------------------------------------------------*/
   /*--------------------------------------------------------------*/
@@ -382,17 +378,11 @@ HMatrix *StaticSolver::GetCartesianMoments(HVector *Sigma, HMatrix *Moments)
         QP[2] += Charge * X0[1];
         QP[3] += Charge * X0[2];
       };
-     Moments->SetEntry(ns, 0, QP[0]);
-     Moments->SetEntry(ns, 1, QP[1]);
-     Moments->SetEntry(ns, 2, QP[2]);
-     Moments->SetEntry(ns, 3, QP[3]);
+     Moments.SetEntry(ns, 0, QP[0]);
+     Moments.SetEntry(ns, 1, QP[1]);
+     Moments.SetEntry(ns, 2, QP[2]);
+     Moments.SetEntry(ns, 3, QP[3]);
    };
-
-  /*--------------------------------------------------------------*/
-  /*--------------------------------------------------------------*/
-  /*--------------------------------------------------------------*/
-  return Moments;
-  
 }
 
 /***************************************************************/

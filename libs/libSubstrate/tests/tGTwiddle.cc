@@ -318,7 +318,7 @@ int main(int argc, char *argv[])
   /***************************************************************/
   /***************************************************************/
   if(XDSFile)
-   { HMatrix *XDSMatrix=new HMatrix(XDSFile);
+   { auto XDSMatrix=std::make_unique<HMatrix>(XDSFile);
      FILE *f=fopen("/tmp/tGTwiddle.out","w");
      for(int nx=0; nx<XDSMatrix->NR; nx++)
       { double zDest = XDSMatrix->GetEntryD(nx,2), zSource = XDSMatrix->GetEntryD(nx,5);

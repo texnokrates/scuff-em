@@ -45,7 +45,6 @@ IncField::IncField()
   Omega=-1.0;
 
   // incident fields are non-periodic by default
-  LBasis=RLBasis=nullptr;
   LVolume=RLVolume=0;
   kBloch[0]=kBloch[1]=kBloch[2]=0.0;
 
@@ -63,12 +62,6 @@ IncField::~IncField()
 {
   if (RegionLabel)
    free(RegionLabel);
-  /* LBasis and RLBasis are new-allocated HMatrix objects (see
-     SetLattice / GetRLBasis), so they must be deleted, not freed. */
-  if (LBasis)
-   delete LBasis;
-  if (RLBasis)
-   delete RLBasis;
 }
 
 /***************************************************************/
@@ -120,18 +113,15 @@ void IncField::SetFrequencyAndEpsMu(cdouble pOmega,
 void IncField::SetLattice(HMatrix *NewLBasis, bool Traverse)
 {
   if (LBasis==nullptr || LBasis->NR!=3 || LBasis->NC != NewLBasis->NC)
-   { if (LBasis) delete LBasis;
-     LBasis = new HMatrix(*NewLBasis);
-   };
-  
+   LBasis = std::make_unique<HMatrix>(*NewLBasis);
+
   LBasis->Copy(NewLBasis);
 
-  if (RLBasis) delete RLBasis;
-  RLBasis=GetRLBasis(LBasis, &LVolume, &RLVolume);
+  RLBasis=GetRLBasis(LBasis.get(), &LVolume, &RLVolume);
 
   if (Traverse)
    for(IncField *IFD=this->Next; IFD; IFD=IFD->Next)
-    IFD->SetLattice(LBasis,false);
+    IFD->SetLattice(LBasis.get(),false);
 }
 
 /***************************************************************/

@@ -29,8 +29,8 @@ int main(int argc, char *argv[])
   if (auto Status=scuff::cli::Parse(App,argc,argv))
    return *Status;
 
-  HMatrix *A=new HMatrix(N2,N1,LHM_COMPLEX);
-  HMatrix *B=new HMatrix(N2,N3,LHM_COMPLEX);
+  auto A=std::make_unique<HMatrix>(N2,N1,LHM_COMPLEX);
+  auto B=std::make_unique<HMatrix>(N2,N3,LHM_COMPLEX);
 
   srand48(time(0));
   for(int m=0; m<A->NR; m++)
@@ -43,7 +43,7 @@ int main(int argc, char *argv[])
   /***************************************************************/
   /***************************************************************/
   /***************************************************************/
-  HMatrix *C1=new HMatrix(N1,N3,LHM_COMPLEX);
+  auto C1=std::make_unique<HMatrix>(N1,N3,LHM_COMPLEX);
   C1->Zero();
   for(int i=0; i<N1; i++)
    for(int j=0; j<N3; j++)
@@ -53,7 +53,7 @@ int main(int argc, char *argv[])
   /***************************************************************/
   /***************************************************************/
   /***************************************************************/
-  HMatrix *C2=new HMatrix(N1,N3,LHM_COMPLEX);
+  auto C2=std::make_unique<HMatrix>(N1,N3,LHM_COMPLEX);
   int LDA = A->NR;
   int LDB = B->NR;
   int LDC = C2->NR;

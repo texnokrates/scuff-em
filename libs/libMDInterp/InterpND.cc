@@ -307,7 +307,7 @@ void InterpND::Initialize(PhiVDFunc UserFunc, void *UserData, bool Verbose)
    /*- a single grid cell                                          */
    /*--------------------------------------------------------------*/
    int NumEQs = NumCoeffs;     // # matching equations per grid cell
-   HMatrix *M = new HMatrix(NumEQs, NumCoeffs);
+   auto M=std::make_unique<HMatrix>(NumEQs, NumCoeffs);
    M->Zero();
    iVec Twos(D,2), Fours(D,4);
    // yPowers[0,1][p] = (\pm 1)^p
@@ -373,7 +373,6 @@ void InterpND::Initialize(PhiVDFunc UserFunc, void *UserData, bool Verbose)
      }
 
    free(PhiVDTable);
-   delete M;
 }
 
 /****************************************************************/

@@ -103,7 +103,7 @@ int BZIntegrand_CCCubature(unsigned ndim, const double *u,
   cdouble Omega          = Args->Omega;
   BZIFunction BZIFunc    = Args->BZIFunc;
   void *UserData         = Args->UserData;
-  HMatrix *RLBasis       = Args->RLBasis;
+  std::unique_ptr<HMatrix> RLBasis;
   int SymmetryFactor     = Args->SymmetryFactor;
   int LDim               = RLBasis->NC;
 
@@ -164,7 +164,7 @@ void GetBZIntegral_CC(GetBZIArgStruct *Args,
   /***************************************************************/
   /***************************************************************/
   /***************************************************************/
-  HMatrix *RLBasis    = Args->RLBasis;
+  std::unique_ptr<HMatrix> RLBasis;
   int LDim            = RLBasis->NC;
   int FDim            = Args->FDim;
   int Order           = Args->Order;
@@ -213,7 +213,7 @@ void BZIntegrand_TC(double *u, void *pArgs, double *BZIntegrand)
   void *UserData         = Args->UserData;
   int FDim               = Args->FDim;
   int SymmetryFactor     = Args->SymmetryFactor;
-  HMatrix *RLBasis       = Args->RLBasis;
+  std::unique_ptr<HMatrix> RLBasis;
   int LDim               = RLBasis->NC;
   double **DataBuffer    = Args->DataBuffer;
 
@@ -309,7 +309,7 @@ int BZIntegrand_Angular(unsigned ndim, const double *u, void *pArgs,
   void *UserData      = Args->UserData;
   int FDim            = Args->FDim;
   double kRhoHat      = Args->kRhoHat;
-  HMatrix *RLBasis    = Args->RLBasis;
+  std::unique_ptr<HMatrix> RLBasis;
   int SymmetryFactor  = Args->SymmetryFactor;
   cdouble Omega       = Args->Omega;
   double *DeltaBZI    = Args->DataBuffer[2];
@@ -616,11 +616,11 @@ double SetRLBasis(HMatrix *LBasis, HMatrix *RLBasis,
 /***************************************************************/
 /***************************************************************/
 /***************************************************************/
-HMatrix *GetRLBasis(HMatrix *LBasis,
-                    double *pLVolume, double *pRLVolume)
+std::unique_ptr<HMatrix> GetRLBasis(HMatrix *LBasis,
+                                    double *pLVolume, double *pRLVolume)
 {
-  HMatrix *RLBasis = new HMatrix(*LBasis);
-  SetRLBasis(LBasis, RLBasis, pLVolume, pRLVolume);
+  auto RLBasis=std::make_unique<HMatrix>(*LBasis);
+  SetRLBasis(LBasis, RLBasis.get(), pLVolume, pRLVolume);
   return RLBasis;
 }
 
@@ -816,7 +816,7 @@ void UpdateBZIArgs(GetBZIArgStruct *Args,
   Args->BZVolume        = RLVolume;
   
   if (    (Args->BZIMethod==BZI_TC || Args->BZIMethod==BZI_POLAR || Args->BZIMethod==BZI_POLAR2)
-       && !LatticeIsSquare(RLBasis)
+       && !LatticeIsSquare( RLBasis )
      ) 
    { Warn("BZ integration scheme %s is only for 2D square lattices (switching to default)",BZIMethodNames[Args->BZIMethod]);
      Args->BZIMethod = BZI_DEFAULT;

@@ -42,19 +42,19 @@ int main(int argc, char *argv[])
   /*--------------------------------------------------------------*/
   /*--------------------------------------------------------------*/
   /*--------------------------------------------------------------*/
-  HMatrix *DMNorm=0, *DMSym=0, *ZMNorm=0, *ZMHerm=0, *ZMSym=0;
-  HMatrix *DMCopy=0, *ZMCopy=0;
+  std::unique_ptr<HMatrix> DMNorm;
+  std::unique_ptr<HMatrix> DMCopy;
 
-  DMNorm=new HMatrix(Dim,Dim,LHM_REAL,LHM_NORMAL);
-  ZMNorm=new HMatrix(Dim,Dim,LHM_COMPLEX,LHM_NORMAL);
+  DMNorm=std::make_unique<HMatrix>(Dim,Dim,LHM_REAL,LHM_NORMAL);
+  ZMNorm=std::make_unique<HMatrix>(Dim,Dim,LHM_COMPLEX,LHM_NORMAL);
   if (Symmetric)
-   { DMSym=new HMatrix(Dim,Dim,LHM_REAL,LHM_SYMMETRIC);
-     ZMHerm=new HMatrix(Dim,Dim,LHM_COMPLEX,LHM_HERMITIAN);
-     ZMSym=new HMatrix(Dim,Dim,LHM_COMPLEX,LHM_SYMMETRIC);
+   { DMSym=std::make_unique<HMatrix>(Dim,Dim,LHM_REAL,LHM_SYMMETRIC);
+     ZMHerm=std::make_unique<HMatrix>(Dim,Dim,LHM_COMPLEX,LHM_HERMITIAN);
+     ZMSym=std::make_unique<HMatrix>(Dim,Dim,LHM_COMPLEX,LHM_SYMMETRIC);
    };
 
-  DMCopy=new HMatrix(Dim,Dim,LHM_REAL);
-  ZMCopy=new HMatrix(Dim,Dim,LHM_COMPLEX);
+  DMCopy=std::make_unique<HMatrix>(Dim,Dim,LHM_REAL);
+  ZMCopy=std::make_unique<HMatrix>(Dim,Dim,LHM_COMPLEX);
 
   SetConsoleLogging();
 
@@ -124,7 +124,7 @@ printf("%i threads.\n",NumThreads);
   DMNorm->ExportToHDF5(pCC,"DMNorm");
 
   if(Symmetric)
-   { DMCopy->Copy(DMSym); 
+   { DMCopy->Copy( DMSym.get()); 
      DMCopy->ExportToHDF5(pCC,"DMSym");
    };
 
@@ -196,18 +196,18 @@ printf("%i threads.\n",NumThreads);
   /*--------------------------------------------------------------*/
   printf("\n** Invert 2:   \n");
 
-  HMatrix *DMUnit = new HMatrix(Dim, Dim); 
+  auto DMUnit=std::make_unique<HMatrix>(Dim, Dim); 
   DMUnit->Zero();
   for(int n=0; n<Dim; n++)
    DMUnit->SetEntry(n,n,1.0);
-  Tic(); DMNorm->LUSolve(DMUnit); Elapsed=Toc(); 
+  Tic(); DMNorm->LUSolve( DMUnit.get()); Elapsed=Toc(); 
   printf("double,  normal:    %.3g s\n",Elapsed); 
 
-  HMatrix *ZMUnit = new HMatrix(Dim, Dim, LHM_COMPLEX); 
+  auto ZMUnit=std::make_unique<HMatrix>(Dim, Dim, LHM_COMPLEX); 
   ZMUnit->Zero();
   for(int n=0; n<Dim; n++)
    ZMUnit->SetEntry(n,n,1.0);
-  Tic(); ZMNorm->LUSolve(ZMUnit); Elapsed=Toc(); 
+  Tic(); ZMNorm->LUSolve( ZMUnit.get()); Elapsed=Toc(); 
   printf("complex, normal:    %.3g s\n",Elapsed);
 
   /*--------------------------------------------------------------*/
@@ -216,7 +216,7 @@ printf("%i threads.\n",NumThreads);
 #if 0
   DMNorm->ExportToHDF5(pCC,"InvDMNorm");
 
-  DMCopy->Copy(DMSym); DMCopy->ExportToHDF5(pCC,"InvDMSym");
+  DMCopy->Copy( DMSym.get()); DMCopy->ExportToHDF5(pCC,"InvDMSym");
 
   for(nr=0; nr<Dim; nr++)
    for(nc=0; nc<Dim; nc++)

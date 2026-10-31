@@ -61,7 +61,7 @@ int main(int argc, char *argv[])
   /*--------------------------------------------------------------*/
   /*--------------------------------------------------------------*/
   printf("Creating a random %ix%i matrix ... \n",N,N);
-  HMatrix *M=new HMatrix(N, N, Complex ? LHM_COMPLEX : LHM_REAL);
+  auto M=std::make_unique<HMatrix>(N, N, Complex ? LHM_COMPLEX : LHM_REAL);
 
   cdouble II = Complex ? cdouble(0.0,1.0) : cdouble(0.0,0.0);
   srand48(time(0));

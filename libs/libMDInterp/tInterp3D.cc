@@ -102,21 +102,21 @@ int main(int argc, char *argv[])
       /*--------------------------------------------------------------*/
       if( !X1File )
        ErrExit("--X1Points option is mandatory");
-      HVector *X1Vec=new HVector(X1File,LHM_TEXT);
+      auto X1Vec=std::make_unique<HVector>(X1File,LHM_TEXT);
       if (X1Vec->ErrMsg)
        ErrExit("%s",X1Vec->ErrMsg);
       X1Points=X1Vec->DV; N1=X1Vec->N;
  
       if( !X2File )
        ErrExit("--X2Points option is mandatory");
-      HVector *X2Vec=new HVector(X2File,LHM_TEXT);
+      auto X2Vec=std::make_unique<HVector>(X2File,LHM_TEXT);
       if (X2Vec->ErrMsg)
        ErrExit("%s",X2Vec->ErrMsg);
       X2Points=X2Vec->DV; N2=X2Vec->N;
 
       if( !X3File )
        ErrExit("--X3Points option is mandatory");
-      HVector *X3Vec=new HVector(X3File,LHM_TEXT);
+      auto X3Vec=std::make_unique<HVector>(X3File,LHM_TEXT);
       if (X3Vec->ErrMsg)
        ErrExit("%s",X3Vec->ErrMsg);
       X3Points=X3Vec->DV; N3=X3Vec->N;

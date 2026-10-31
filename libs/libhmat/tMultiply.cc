@@ -54,8 +54,8 @@ int main(int argc, char *argv[])
   if (auto Status=scuff::cli::Parse(App,argc,argv))
    return *Status;
 
-  HMatrix *A=new HMatrix(N2,N1,LHM_COMPLEX);
-  HMatrix *B=new HMatrix(N2,N1,LHM_COMPLEX);
+  auto A=std::make_unique<HMatrix>(N2,N1,LHM_COMPLEX);
+  auto B=std::make_unique<HMatrix>(N2,N1,LHM_COMPLEX);
 
   srand48(time(0));
   for(int m=0; m<A->NR; m++)
@@ -68,15 +68,15 @@ int main(int argc, char *argv[])
   /***************************************************************/
   /* test multiplication with the first factor adjointed *********/
   /***************************************************************/
-  HMatrix *C1=new HMatrix(N1,N1,LHM_COMPLEX);
+  auto C1=std::make_unique<HMatrix>(N1,N1,LHM_COMPLEX);
   Tic();
-  A->Multiply(B,C1,"--transA C");
+  A->Multiply( B.get(), C1.get(),"--transA C");
   printf("--transA C: %e s\n",Toc());
 
-  HMatrix *C2=new HMatrix(N1,N1,LHM_COMPLEX);
+  auto C2=std::make_unique<HMatrix>(N1,N1,LHM_COMPLEX);
   Tic();
   A->Adjoint();
-  A->Multiply(B,C2);
+  A->Multiply( B.get(), C2.get());
   A->Adjoint(); // undo the adjointing
   printf("--notrans:  %e s\n",Toc());
 
@@ -87,22 +87,18 @@ int main(int argc, char *argv[])
       NormError += norm(C1->GetEntry(nr,nc) - C2->GetEntry(nr,nc));
     };
   printf("rel norm error=%e\n",sqrt(NormError/NormC));
-
-  delete C1; 
-  delete C2; 
- 
   /***************************************************************/
   /* test multiplication with the second factor adjointed ********/
   /***************************************************************/
-  C1=new HMatrix(N2,N2,LHM_COMPLEX);
+  C1=std::make_unique<HMatrix>(N2,N2,LHM_COMPLEX);
   Tic();
-  A->Multiply(B,C1,"--transB C");
+  A->Multiply( B.get(), C1.get(),"--transB C");
   printf("--transB C: %e s\n",Toc());
 
-  C2=new HMatrix(N2,N2,LHM_COMPLEX);
+  C2=std::make_unique<HMatrix>(N2,N2,LHM_COMPLEX);
   Tic();
   B->Adjoint();
-  A->Multiply(B,C2);
+  A->Multiply( B.get(), C2.get());
   B->Adjoint(); // undo the adjointing
   printf("--notrans:  %e s\n",Toc());
 
@@ -113,7 +109,4 @@ int main(int argc, char *argv[])
       NormError += norm(C1->GetEntry(nr,nc) - C2->GetEntry(nr,nc));
     };
   printf("rel norm error=%e\n",sqrt(NormError/NormC));
-
-  delete C1; 
-  delete C2; 
 }

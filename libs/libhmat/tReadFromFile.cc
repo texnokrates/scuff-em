@@ -9,7 +9,7 @@
 
 int main(int argc, char *argv[])
 { 
-  HMatrix *M;
+  std::unique_ptr<HMatrix> M;
   int nr, nc, narg;
   char Options[1000];
 
@@ -29,7 +29,7 @@ int main(int argc, char *argv[])
   /***************************************************************/
   /***************************************************************/
   /***************************************************************/
-  M=new HMatrix(argv[1],LHM_TEXT,Options);
+  M=std::make_unique<HMatrix>(argv[1],LHM_TEXT,Options);
   if (M->ErrMsg)
    ErrExit(M->ErrMsg);
 

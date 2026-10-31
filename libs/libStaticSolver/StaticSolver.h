@@ -108,7 +108,8 @@ class StaticSolver
    void AssembleRHSVector(double *Potentials, HVector &RHS);
 
    /* routine for calculating electric dipole moment */
-   HMatrix *GetCartesianMoments(HVector *Sigma, HMatrix *Moments);
+   /* filling form: Moments must have NS rows and >= 4 columns */
+   void GetCartesianMoments(HVector *Sigma, HMatrix &Moments);
    /* filling forms: Moments must have exactly (lMax+1)^2 entries */
    void GetSphericalMoments(HVector *Sigma, int lMax, HVector &Moments);
    void GetSphericalMoments(HVector *Sigma, int WhichSurface,

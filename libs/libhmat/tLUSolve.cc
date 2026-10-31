@@ -61,8 +61,8 @@ int main(int argc, char *argv[])
   /*--------------------------------------------------------------*/
   /*--------------------------------------------------------------*/
   printf("Creating random %ix%i matrices ... \n",N,N);
-  HMatrix *M1=new HMatrix(N, N, Complex ? LHM_COMPLEX : LHM_REAL);
-  HMatrix *M2=new HMatrix(N, N, Complex ? LHM_COMPLEX : LHM_REAL);
+  auto M1=std::make_unique<HMatrix>(N, N, Complex ? LHM_COMPLEX : LHM_REAL);
+  auto M2=std::make_unique<HMatrix>(N, N, Complex ? LHM_COMPLEX : LHM_REAL);
 
   cdouble II = Complex ? cdouble(0.0,1.0) : cdouble(0.0,0.0);
   srand48(time(0));
@@ -92,19 +92,19 @@ int main(int argc, char *argv[])
   /*--------------------------------------------------------------*/
   printf("LU-solving M2 (Flag=%s)...",Flag);
   Tic();
-  M1->LUSolve(M2,Flag[0]);
+  M1->LUSolve( M2.get(),Flag[0]);
   Elapsed=Toc();
   printf("...%.3f s\n",Elapsed);
 
   /*--------------------------------------------------------------*/
   /*--------------------------------------------------------------*/
   /*--------------------------------------------------------------*/
-  HMatrix *M3=new HMatrix(N, N, Complex ? LHM_COMPLEX : LHM_REAL );
-  if (M3)
+  auto M3=std::make_unique<HMatrix>(N, N, Complex ? LHM_COMPLEX : LHM_REAL );
+  if ( M3.get())
    { 
      printf("Multiplying M1*M2 ...\n");
      Tic();
-     M1->Multiply(M2,M3);
+     M1->Multiply( M2.get(), M3.get());
      Elapsed=Toc();
      printf("...%.3f s\n",Elapsed);
    };

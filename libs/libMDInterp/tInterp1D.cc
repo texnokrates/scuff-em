@@ -60,7 +60,7 @@ int main(int argc, char *argv[])
   /*--------------------------------------------------------------*/ 
   if (DataFile)
    { 
-     HMatrix *M=new HMatrix(DataFile,LHM_TEXT);
+     auto M=std::make_unique<HMatrix>(DataFile,LHM_TEXT);
      if (M->ErrMsg)
       ErrExit(M->ErrMsg);
      if (xCol<1 || xCol>M->NC)
