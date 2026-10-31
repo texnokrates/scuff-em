@@ -172,7 +172,7 @@ int main(int argc, char *argv[])
      if (XiVals.size()>0)      ErrExit("--XikBlochFile and --Xi options are mutually exclusive");
      if (TemperatureSpecified) ErrExit("--XikBlochFile and --Temperature options are mutually exclusive");
      if (G->LDim==0)           ErrExit("--XikBlochFile may only be used for periodic geometries");
-     XiKPoints.reset(new HMatrix(XikBlochFile.c_str(),LHM_TEXT,"--nc 3 --strict"));
+     XiKPoints   = std::make_unique<HMatrix>(XikBlochFile.c_str(),LHM_TEXT,"--nc 3 --strict");
      if (XiKPoints->ErrMsg)
       ErrExit("%s",XiKPoints->ErrMsg);
      Log("Read %i (Xi, kBloch) points from file %s.",XiKPoints->NR, XikBlochFile.c_str());
@@ -180,14 +180,14 @@ int main(int argc, char *argv[])
   else if ( !XiFile.empty() )
    { if (XiVals.size()>0)      ErrExit("--XiFile and --Xi options are mutually exclusive");
      if (TemperatureSpecified) ErrExit("--XiFile and --Temperature options are mutually exclusive");
-     XiPoints.reset(new HMatrix(XiFile.c_str(),LHM_TEXT,"--nc 1 --strict"));
+     XiPoints    = std::make_unique<HMatrix>(XiFile.c_str(),LHM_TEXT,"--nc 1 --strict");
      if (XiPoints->ErrMsg)
       ErrExit("%s",XiPoints->ErrMsg);
      Log("Read %i Xi points from file %s.",XiPoints->NR, XiFile.c_str());
    }
   else if ( XiVals.size()>0 )
    { if (TemperatureSpecified) ErrExit("--Xi and --Temperature options are mutually exclusive");
-     XiPoints.reset(new HMatrix((int)XiVals.size(), 1));
+     XiPoints    = std::make_unique<HMatrix>(static_cast<int>(XiVals.size()), 1);
      for(size_t nxv=0; nxv<XiVals.size(); nxv++)
       XiPoints->SetEntry((int)nxv, 0, XiVals[nxv]);
      Log("Performing Casimir calculations at %i command-line Xi points.",(int)XiVals.size());
