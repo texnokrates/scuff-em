@@ -302,7 +302,7 @@ class RWGSurface
    /* undoing it.                                                   */
    /* Origin is the point (0,0,0) in the original mesh file,        */
    /* transformed by OTGT and or any subsequent transformations.    */
-   GTransformation *OTGT, *GT;
+   std::unique_ptr<GTransformation> OTGT, GT;
    double Origin[3];
 
    /* SurfaceZeta, if non-NULL, points to a cevaluator for a      */

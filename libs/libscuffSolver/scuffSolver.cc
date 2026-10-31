@@ -244,9 +244,7 @@ void scuffSolver::AddObject(const char *MeshFile, const char *Material, const ch
 
   // check transformation
   if (!ErrMsg && Transformation)
-   { GTransformation *GT = new GTransformation(Transformation, &ErrMsg);
-     delete GT;
-   }
+   { GTransformation ParseCheck(Transformation, &ErrMsg); }
 
   if (ErrMsg)
    { Warn("AddObject: %s (ignoring)",ErrMsg);

@@ -196,8 +196,8 @@ void RWGGeometry::GetPFT(int SurfaceIndex, HVector *KN,
      int DSIPoints        = Options->DSIPoints;
      bool DSIFarField     = Options->DSIFarField;
      double *kBloch       = Options->kBloch;
-     GTransformation *GT1 = S->OTGT;
-     GTransformation *GT2 = S->GT;
+     GTransformation *GT1 = S->OTGT.get();
+     GTransformation *GT2 = S->GT.get();
 
      if (DSIRadius==0)
       DSIRadius=AutodetectDSIRadius(S, GT1, GT2);

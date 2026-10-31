@@ -175,15 +175,13 @@ char *RWGSurface::ParseOBJECTSURFACESection(FILE *f, int *LineNum)
         // transformations that are applied and later un-applied 
         // during the life of the object/surface.
         int TokensConsumed;
-	GTransformation *NewOTGT = new GTransformation(Tokens, NumTokens, &ErrMsg, &TokensConsumed);
+	auto NewOTGT = std::make_unique<GTransformation>(Tokens, NumTokens, &ErrMsg, &TokensConsumed);
         if (ErrMsg) return ErrMsg;
         if (TokensConsumed!=NumTokens) return strdupEC("junk at end of line");
         if (OTGT==nullptr)
-         OTGT=NewOTGT;
+         OTGT=std::move(NewOTGT);
         else
-         { OTGT->Transform(NewOTGT);
-           delete NewOTGT;
-         }
+         OTGT->Transform(*NewOTGT);
       }
      else if ( !StrCaseCmp(Tokens[0],"SURFACE_IMPEDANCE") )
       { if (NumTokens<2) return strdupEC("no argument specified for SURFACE_CONDUCTIVITY");
@@ -279,7 +277,6 @@ RWGSurface::RWGSurface(FILE *f, const char *pLabel, int *LineNum, char *Keyword)
   MaterialName=nullptr;
   RegionLabels[0]=RegionLabels[1]=nullptr;
   Label = strdupEC(pLabel);
-  OTGT=GT=nullptr;
   IsPEC=true;
   IsObject=!StrCaseCmp(Keyword, "OBJECT");
 
@@ -322,7 +319,6 @@ RWGSurface::RWGSurface(const char *MeshFile, int pMeshTag)
   SurfaceZeta=nullptr;
   MaterialName=RegionLabels[0]=RegionLabels[1]=nullptr;
   IsPEC=true;
-  OTGT=nullptr;
   dVec VertexCoordinates;
   iVec PanelVertexIndices;
   ErrMsg=ParseMeshFile(MeshFileName, MeshTag, &MeshFileDir, VertexCoordinates, PanelVertexIndices);
@@ -347,7 +343,6 @@ RWGSurface::RWGSurface(dVec VertexCoordinates, iVec PanelVertexIndices, char *pL
   SurfaceZeta=nullptr;
   MaterialName=RegionLabels[0]=RegionLabels[1]=nullptr;
   IsPEC=1;
-  OTGT=nullptr;
   ErrMsg=InitRWGSurface(VertexCoordinates,PanelVertexIndices);
 }
 
@@ -386,7 +381,6 @@ RWGSurface::RWGSurface(dVec X0, dVec L1, dVec L2, int N1, int N2, char *pLabel)
   MeshFileDir=MaterialName=RegionLabels[0]=RegionLabels[1]=nullptr;
   MeshTag=0;
   SurfaceZeta=nullptr;
-  OTGT=nullptr;
   IsPEC=IsObject=true;
   ErrMsg=InitRWGSurface(VertexCoordinates,PanelVertexIndices);
 }
@@ -415,7 +409,6 @@ char *RWGSurface::InitRWGSurface(dVec VertexCoordinates, iVec PanelVertexIndices
   NumBCEdges=nullptr;
   WhichBC=nullptr;
   ErrMsg=nullptr;
-  GT=nullptr;
   kdPanels=nullptr;
   NumEdges=TotalStraddlers=0;
   PhasedBFCs=nullptr;
@@ -445,7 +438,6 @@ char *RWGSurface::InitRWGSurface(dVec VertexCoordinates, iVec PanelVertexIndices
   /*- temporary transformation that may be applied and then un- */
   /*- applied to the surface.                                   */
   /*------------------------------------------------------------*/
-  GT=nullptr;
 
   /*------------------------------------------------------------*/
   /* gather necessary edge connectivity info. this is           */
@@ -564,8 +556,6 @@ RWGSurface::~RWGSurface()
   if (MeshFileDir) free(MeshFileDir);
   if (Label) free(Label);
   if (ErrMsg) free(ErrMsg);
-  if (GT) delete GT;
-  if (OTGT) delete OTGT;
 
   if (MaterialName) free(MaterialName);
   if (RegionLabels[0]) free(RegionLabels[0]);
@@ -630,7 +620,7 @@ void RWGSurface::Transform(const GTransformation *DeltaGT)
   /* update the internally stored GTransformation ****************/
   /***************************************************************/
   if (!GT)
-    GT = new GTransformation(DeltaGT);
+    GT = std::make_unique<GTransformation>(DeltaGT);
   else
     GT->Transform(DeltaGT);
 }
