@@ -290,7 +290,7 @@ int main(int argc, char *argv[])
   for(int nt=0; nt<NT; nt++)
   {
      if (!TransFile.empty())
-      { G->Transform(GTCs[nt]);
+      { G->Transform(GTCs[nt].get());
         free(SS->TransformLabel);
         SS->TransformLabel=strdup(GTCs[nt]->Tag);
         Log("Working at transformation %s...",GTCs[nt]->Tag);

@@ -146,7 +146,7 @@ HMatrix *GetEquivalentPairMatrix(RWGGeometry *G, HMatrix *M=0)
 /***************************************************************/
 /***************************************************************/
 /***************************************************************/
-BMAccelerator *CreateBMAccelerator(StaticSolver *SS, GTCList GTCs,
+BMAccelerator *CreateBMAccelerator(StaticSolver *SS, const GTCList &GTCs,
                                    bool UsePairEquivalence)
 {
   RWGGeometry *G     = SS->G;
@@ -194,7 +194,7 @@ BMAccelerator *CreateBMAccelerator(StaticSolver *SS, GTCList GTCs,
      BMA->PairMatrices = (HMatrix **)mallocEC(NT*sizeof(HMatrix *));
      for(int nt=0; nt<NT; nt++)
       { Log("Looking for equivalent surface pairs (transform %s)...",GTCs[nt]->Tag);
-        G->Transform(GTCs[nt]);
+        G->Transform(GTCs[nt].get());
         BMA->PairMatrices[nt]=GetEquivalentPairMatrix(G);
         G->UnTransform();
       }

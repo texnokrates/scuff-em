@@ -1060,7 +1060,7 @@ HMatrix *MakeMeshPlot(MeshDataFunc MDFunc, void *UserData,
   HMatrix *Integrals=0;
   for(int nt=0; nt<NT; nt++)
    { if ( GTCs[nt]->GTs.size() > 0 )
-      S->Transform(GTCs[nt]->GTs[0]);
+      S->Transform(GTCs[nt]->GTs[0].get());
      if (TransFile)
       snprintf(FullFileBase,100,"%s.%s",PPFileBase,GTCs[nt]->Tag);
      HVector *I=S->MakeMeshPlot(MDFunc, UserData, FullFileBase, PPOptions, UseCentroids);

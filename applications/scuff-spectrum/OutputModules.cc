@@ -250,7 +250,7 @@ void VisualizeFields(RWGGeometry *G, HVector *KN, cdouble Omega, double *kBloch,
        continue;
       }
 
-     if (GTCs[nt]->GTs.size()>0) FluxMesh->Transform(GTCs[nt]->GTs[0]);
+     if (GTCs[nt]->GTs.size()>0) FluxMesh->Transform(GTCs[nt]->GTs[0].get());
      WriteFVMesh(G, KN, Omega, kBloch, FluxMesh, f);
      FluxMesh->UnTransform();
 
@@ -258,7 +258,6 @@ void VisualizeFields(RWGGeometry *G, HVector *KN, cdouble Omega, double *kBloch,
    }
 
   delete FluxMesh;
-  DestroyGTCList(GTCs);
 }
 
 /***************************************************************/

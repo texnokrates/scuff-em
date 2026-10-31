@@ -556,7 +556,7 @@ int main(int argc, char *argv[])
 
      for(int ngtc=0; ngtc<NGTC; ngtc++)
       {
-        G->Transform(GTCs[ngtc]);
+        G->Transform(GTCs[ngtc].get());
         G->WritePPMesh(PPFileName, GTCs[ngtc]->Tag);
         G->UnTransform();
       }

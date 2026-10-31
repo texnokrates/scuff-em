@@ -522,7 +522,7 @@ int main(int argc, char *argv[])
       {
         char TransformStr[100]="";
         if ( !TransFile.empty() )
-         { G->Transform(GTCs[nt]);
+         { G->Transform(GTCs[nt].get());
            SSD->TransformLabel=GTCs[nt]->Tag;
            Log("Working at transformation %s...",SSD->TransformLabel);
            snprintf(TransformStr,100,"_%s",SSD->TransformLabel);

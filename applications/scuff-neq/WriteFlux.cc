@@ -262,7 +262,7 @@ void WriteFlux(SNEQData *SNEQD, cdouble Omega, double *kBloch)
      /*- transform the geometry -------------------------------------*/
      /*--------------------------------------------------------------*/
      char *Tag=SNEQD->GTCs[nt]->Tag;
-     G->Transform(SNEQD->GTCs[nt]);
+     G->Transform(SNEQD->GTCs[nt].get());
      Log(" Computing quantities at geometrical transform %s",Tag);
 
      /*--------------------------------------------------------------*/

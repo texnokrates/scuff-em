@@ -262,7 +262,7 @@ void VisualizeFields(SSData *SSD, const char *FVMesh, const char *TransFile, con
        continue;
       }
 
-     if (GTCs[nt]->GTs.size()>0) S->Transform(GTCs[nt]->GTs[0]);
+     if (GTCs[nt]->GTs.size()>0) S->Transform(GTCs[nt]->GTs[0].get());
      WriteFVMesh(SSD, S, f, FuncList);
      S->UnTransform();
 
@@ -270,7 +270,6 @@ void VisualizeFields(SSData *SSD, const char *FVMesh, const char *TransFile, con
    }
 
   delete S;
-  DestroyGTCList(GTCs);
 
 }
 

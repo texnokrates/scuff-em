@@ -615,7 +615,7 @@ void GetXiIntegral_Cliff(SC3Data *SC3D, double *I, double *E)
   RWGGeometry *G = SC3D->G;
   for(int nt=0; nt<SC3D->NumTransformations; nt++)
    { 
-     G->Transform( SC3D->GTCs[nt] );
+     G->Transform( SC3D->GTCs[nt].get() );
 
      for(int ns=0; ns<G->NumSurfaces; ns++)
       for(int nsp=ns+1; nsp<G->NumSurfaces; nsp++)

@@ -27,6 +27,11 @@
 #ifndef GTRANSFORMATION_H
 #define GTRANSFORMATION_H
 
+#include <memory>
+#include <vector>
+
+#include <libhrutil.h>
+
 namespace scuff {
 
 /*****************************************************************/
@@ -102,29 +107,40 @@ public:
      double M[3][3]; // rotation matrix
 };
 
-using GTList = std::vector<GTransformation *>;
+using GTList = std::vector<std::unique_ptr<GTransformation>>;
 
 /***************************************************************/
 /* a GTComplex is collection of GTransformations, each of      */
 /* which is carried out on a specific surface in a geometry.   */
 /***************************************************************/
-using GTComplex = struct GTComplex
+struct GTComplex
  {
    char *Tag;          // a label for this entire complex
    GTList GTs;         // GTs[i] is the transformation applied to the ith surface
    sVec SurfaceLabels; // SurfaceLabel[i] is the label of the ith transformed surface
+
+   GTComplex() { Tag=strdupEC("DEFAULT"); }
+   explicit GTComplex(const char *pTag) { Tag=strdupEC(pTag); }
+   ~GTComplex()
+    {
+      // Tag / SurfaceLabels are C strings (strdupEC); conversion to
+      // std::string is on the containerization backlog.
+      if (Tag) free(Tag); // NOLINT(cppcoreguidelines-no-malloc,cppcoreguidelines-owning-memory)
+      for(auto &Label : SurfaceLabels)
+       if (Label) free(Label); // NOLINT(cppcoreguidelines-no-malloc,cppcoreguidelines-owning-memory)
+    }
+   GTComplex(const GTComplex &) = delete;
+   GTComplex &operator=(const GTComplex &) = delete;
  };
 
 // create a GTComplex that doesn't do anything
-GTComplex *CreateGTComplex(const char *Tag=nullptr);
+std::unique_ptr<GTComplex> CreateGTComplex(const char *Tag=nullptr);
 
-using GTCList = std::vector<GTComplex*>;
+using GTCList = std::vector<std::unique_ptr<GTComplex>>;
 
 // this routine reads a SCUFF-EM transformation (.trans) file
 // and returns an array of GTComplex structures.
 GTCList ReadTransFile(const char *FileName);
-
-void DestroyGTCList(GTCList GTCs);
 
 } // namespace scuff
 

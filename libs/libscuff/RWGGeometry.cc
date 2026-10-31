@@ -940,7 +940,7 @@ void RWGGeometry::Transform(GTComplex *GTC)
 
      // apply the transformation to that surface
      if (S)
-      { S->Transform(GTC->GTs[ns]);
+      { S->Transform(GTC->GTs[ns].get());
         SurfaceMoved[S->Index]=1;
       }
    }
@@ -963,7 +963,7 @@ void RWGGeometry::UnTransform()
 /* geometry.                                                   */
 /* Returns 0 if the check passed, or an error message if not.  */
 /***************************************************************/
-char *RWGGeometry::CheckGTCList(GTCList GTCs)
+char *RWGGeometry::CheckGTCList(const GTCList &GTCs)
 {
   for(unsigned nt=0; nt<GTCs.size(); nt++)
    for (unsigned ns=0; ns<GTCs[nt]->GTs.size(); ns++)

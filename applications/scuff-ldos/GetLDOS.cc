@@ -201,7 +201,7 @@ void GetLDOS(void *pData, cdouble Omega, double *kBloch,
    
      // loop over transformations
      for(int nt=0; nt<NumTransforms; nt++)
-      { G->Transform(Data->GTCs[nt]);
+      { G->Transform(Data->GTCs[nt].get());
         Log("Working at transformation %s...",Data->GTCs[nt]->Tag);
 
         // assemble off-diagonal blocks

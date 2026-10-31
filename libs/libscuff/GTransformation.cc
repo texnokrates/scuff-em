@@ -377,12 +377,12 @@ bool GTransformation::IsIdentical(const GTransformation GT, double LengthScale, 
 /* on entry we have already verified that Tokens[0]==TRANS so that  */
 /* does not need to be checked.                                     */
 /********************************************************************/
-GTComplex *ParseTRANSLine(sVec Tokens, char **ErrMsg)
+std::unique_ptr<GTComplex> ParseTRANSLine(sVec Tokens, char **ErrMsg)
 {
   /***************************************************************/
   /* initialize a bare GTComplex *********************************/
   /***************************************************************/
-  GTComplex *GTC = CreateGTComplex(Tokens[1]);
+  auto GTC = CreateGTComplex(Tokens[1]);
   GTransformation *CurrentGT=nullptr;
 
   /***************************************************************/
@@ -400,8 +400,8 @@ GTComplex *ParseTRANSLine(sVec Tokens, char **ErrMsg)
            return nullptr;
          }
 
-        CurrentGT = new GTransformation();
-        GTC->GTs.push_back(CurrentGT);
+        GTC->GTs.push_back(std::make_unique<GTransformation>());
+        CurrentGT = GTC->GTs.back().get();
         GTC->SurfaceLabels.push_back(strdupEC(Tokens[nt+1]));
         nt+=2;
       }
@@ -411,8 +411,8 @@ GTComplex *ParseTRANSLine(sVec Tokens, char **ErrMsg)
       { 
         // allow transformations with no specified surface
         if ( CurrentGT==nullptr )
-         { CurrentGT = new GTransformation();
-           GTC->GTs.push_back(CurrentGT);
+         { GTC->GTs.push_back(std::make_unique<GTransformation>());
+           CurrentGT = GTC->GTs.back().get();
            GTC->SurfaceLabels.push_back(nullptr);
          }
 
@@ -440,12 +440,12 @@ GTComplex *ParseTRANSLine(sVec Tokens, char **ErrMsg)
 /* newly allocated GTComplex for the specified transformation.      */
 /* if unsuccessful, 0 is returned and *ErrMsg is set.               */
 /********************************************************************/
-GTComplex *ParseTRANSFORMATIONSection(char *Tag, FILE *f, int *pLineNum, char **ErrMsg)
+std::unique_ptr<GTComplex> ParseTRANSFORMATIONSection(char *Tag, FILE *f, int *pLineNum, char **ErrMsg)
 {
   /***************************************************************/
   /* initialize a bare GTComplex *********************************/
   /***************************************************************/
-  GTComplex *GTC = CreateGTComplex(Tag);
+  auto GTC = CreateGTComplex(Tag);
   GTransformation *CurrentGT=nullptr;
 
   /***************************************************************/
@@ -477,8 +477,8 @@ GTComplex *ParseTRANSFORMATIONSection(char *Tag, FILE *f, int *pLineNum, char **
         // save the label of the affected surface and initialize the corresponding 
         // GTransformation to the identity (subsequent DISPLACEMENTs / ROTATIONs will
         // augment this GTransformation)
-        CurrentGT = new GTransformation();
-        GTC->GTs.push_back(CurrentGT);
+        GTC->GTs.push_back(std::make_unique<GTransformation>());
+        CurrentGT = GTC->GTs.back().get();
         GTC->SurfaceLabels.push_back(strdupEC(Tokens[1]));
       }
      else if ( !StrCaseCmp(Tokens[0],"ENDTRANSFORMATION") )
@@ -491,8 +491,8 @@ GTComplex *ParseTRANSFORMATIONSection(char *Tag, FILE *f, int *pLineNum, char **
         /*--------------------------------------------------------------*/
         // allow transformations with no specified surface
         if ( CurrentGT==nullptr )
-         { CurrentGT = new GTransformation();
-           GTC->GTs.push_back(CurrentGT);
+         { GTC->GTs.push_back(std::make_unique<GTransformation>());
+           CurrentGT = GTC->GTs.back().get();
            GTC->SurfaceLabels.push_back(nullptr);
          }
 
@@ -516,11 +516,9 @@ GTComplex *ParseTRANSFORMATIONSection(char *Tag, FILE *f, int *pLineNum, char **
 /***************************************************************/
 /***************************************************************/
 /***************************************************************/
-GTComplex *CreateGTComplex(const char *Tag)
+std::unique_ptr<GTComplex> CreateGTComplex(const char *Tag)
 {
-  GTComplex *GTC=(GTComplex *)mallocEC(sizeof(GTComplex));
-  GTC->Tag=strdupEC(Tag ? Tag : "DEFAULT");
-  return GTC;
+  return std::make_unique<GTComplex>(Tag ? Tag : "DEFAULT");
 }
 
 /***************************************************************/
@@ -561,7 +559,7 @@ GTCList ReadTransFile(const char *FileName)
      //  (a) TRANSFORMATION ... ENDTRANSFORMATION sections
      //  (b) single-line transformations (TRANS ... )
      char *ErrMsg=nullptr;
-     GTComplex *GTC=nullptr;
+     std::unique_ptr<GTComplex> GTC;
      if ( !StrCaseCmp(Tokens[0], "TRANSFORMATION") )
       GTC=ParseTRANSFORMATIONSection(Tokens[1], f, &LineNum, &ErrMsg);
      else if ( !StrCaseCmp(Tokens[0], "TRANS") )
@@ -573,27 +571,12 @@ GTCList ReadTransFile(const char *FileName)
       ErrExit("%s:%i: %s",FileName,LineNum,ErrMsg);
 
      // if that was successful, add the new GTComplex to the list
-     GTCs.push_back(GTC);
+     GTCs.push_back(std::move(GTC));
    } // while(fgets(Line, MAXSTR, f))
 
   fclose(f);
   Log("Read %zu geometrical transformations from file %s.",GTCs.size(),FileName);
   return GTCs;
-}
-
-/***************************************************************/
-/***************************************************************/
-/***************************************************************/
-void DestroyGTCList(GTCList GTCs)
-{
-  for(unsigned nt=0; nt<GTCs.size(); nt++)
-   { GTComplex *GTC=GTCs[nt];
-     free(GTC->Tag);
-     for(unsigned ns=0; ns<GTC->GTs.size(); ns++)
-      { if (GTC->SurfaceLabels[ns]) free(GTC->SurfaceLabels[ns]);
-        delete GTC->GTs[ns];
-      }
-   }
 }
 
 } // namespace scuff

@@ -492,7 +492,7 @@ class RWGGeometry
    /* geometrical transformations */
    void Transform(GTComplex *GTC);
    void UnTransform();
-   char *CheckGTCList(GTCList GTCs);
+   char *CheckGTCList(const GTCList &GTCs);
 
    /*--------------------------------------------------------------------*/
    /*- class methods intended for internal use only, i.e. which          */

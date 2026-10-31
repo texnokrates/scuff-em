@@ -172,8 +172,8 @@ void StaticSolver::VisualizeFields(HVector *Sigma,
    PPFileBase = std::string(OutFileBase) + "." + FVMFileBase;
   for(int nt=0; nt<NT; nt++)
    {
-     GTComplex *GTC=GTCs[nt];
-     GTransformation *GT=GTC->GTs.size() > 0 ? GTC->GTs[0] : nullptr;
+     GTComplex *GTC=GTCs[nt].get();
+     GTransformation *GT=GTC->GTs.size() > 0 ? GTC->GTs[0].get() : nullptr;
      char *Tag = GTC->Tag;
      std::string PPFileName;
      if (NT>1)
@@ -199,7 +199,6 @@ void StaticSolver::VisualizeFields(HVector *Sigma,
    };
 
   delete S;
-  DestroyGTCList(GTCs);
 
 }
 

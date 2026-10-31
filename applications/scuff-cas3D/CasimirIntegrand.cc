@@ -421,7 +421,7 @@ void GetCasimirIntegrand(void *pSC3D, cdouble Omega,
      /* apply the geometrical transform                                */
      /******************************************************************/
      Log("Applying transform %s...",Tag);
-     G->Transform( SC3D->GTCs[nt] );
+     G->Transform( SC3D->GTCs[nt].get() );
      for(int ns=0; ns<G->NumSurfaces; ns++)
       if (G->SurfaceMoved[ns]) SurfaceNeverMoved[ns]=false;
 
