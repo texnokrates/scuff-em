@@ -353,7 +353,7 @@ int main(int argc, char *argv[])
   /***************************************************************/
   /* read in the data and sanity check column specifications     */
   /***************************************************************/
-  std::unique_ptr<HMatrix> DataMatrix(new HMatrix(DataFileName.c_str()));
+  auto DataMatrix=std::make_unique<HMatrix>(DataFileName.c_str());
   int NR = DataMatrix->NR;
   if ( ! (1<=FreqColumn && FreqColumn<=NR) )
    ErrExit("--FreqColumn not in range [1,%i]",NR);
@@ -399,14 +399,14 @@ int main(int argc, char *argv[])
   if ( !TemperatureFile.empty() )
    { if (TempStrings.size()>0)
       ErrExit("--Temperature is incompatible with --TemperatureFile");
-     TemperatureMatrix.reset(new HMatrix(TemperatureFile.c_str()));
+     TemperatureMatrix   = std::make_unique<HMatrix>(TemperatureFile.c_str());
      if ( TemperatureMatrix->NC != (NSource+1) )
       ErrExit("Data file %s describes %i objects, but temperature file %s describes environment plus %i objects",
                DataFileName.c_str(), NSource, DataFileName.c_str(), TemperatureMatrix->NC-1);
    }
   else if ( TempStrings.size()>0 )
    {
-     TemperatureMatrix.reset(new HMatrix(1,NSource+1));
+     TemperatureMatrix   = std::make_unique<HMatrix>(1,NSource+1);
 
      for(size_t nts=0; nts<TempStrings.size()/2; nts++)
       { int Index; 

@@ -84,8 +84,8 @@ typedef struct SNEQData
    /*--------------------------------------------------------------*/
    /*- information on the calculations requested by the user       */
    /*--------------------------------------------------------------*/
-   HMatrix *SRXMatrix; // eval points for spatially-resolved fluxes
-   HMatrix *SRFMatrix; // storage for spatially-resolved fluxes
+   std::unique_ptr<HMatrix> SRXMatrix; // eval points for spatially-resolved fluxes
+   std::unique_ptr<HMatrix> SRFMatrix; // storage for spatially-resolved fluxes
    int NX;             // number of spatially-resolved points
    int NumSRQs;        // number of spatially-resolved quantities
 
@@ -93,8 +93,9 @@ typedef struct SNEQData
    /*- options for computing power, force, torque -----------------*/
    /*--------------------------------------------------------------*/
    PFTOptions PFTOpts;
-   HMatrix *PFTMatrix;
-   HMatrix *PFTByRegion, **RegionRegionPFT;
+   std::unique_ptr<HMatrix> PFTMatrix;
+   std::unique_ptr<HMatrix> PFTByRegion;
+   std::vector<std::unique_ptr<HMatrix>> RegionRegionPFT;
    int NumPFTMethods;
    int PFTMethods[MAXPFTMETHODS];
    char *SIFluxFileNames[MAXPFTMETHODS];
@@ -104,17 +105,21 @@ typedef struct SNEQData
    // Note: Buffer[0..N] are pointers into an internally-allocated */
    // chunk of memory used as a workspace in the GetFlux() routine */
    /*--------------------------------------------------------------*/
-   HMatrix *M;        // BEM matrix 
-   HMatrix *DRMatrix; // dressed Rytov matrix for a given source body
-   HMatrix **TInt;    // TInt[ns], TExt[ns] = interior and exterior
-   HMatrix **TExt;    // contributions to BEM block for surface #ns
-   HMatrix **U;       // U[nb] = // off-diagonal U-matrix block #nb 
+   std::unique_ptr<HMatrix> M;        // BEM matrix
+   std::unique_ptr<HMatrix> DRMatrix; // dressed Rytov matrix for a given source body
+   /* TInt[ns], TExt[ns] = interior and exterior contributions to the
+      BEM block for surface #ns.  Mated surfaces share blocks: only
+      the Mate[ns]==-1 slots are owned (TIntStorage/TExtStorage).
+      U[nb] = off-diagonal U-matrix block #nb.                      */
+   std::vector<HMatrix *> TInt, TExt;
+   std::vector<std::unique_ptr<HMatrix>> TIntStorage, TExtStorage;
+   std::vector<std::unique_ptr<HMatrix>> U;
 
    /*--------------------------------------------------------------*/
    /*- miscellaneous other options                                -*/
    /*--------------------------------------------------------------*/
    char *FileBase;
-   HVector *DSIOmegaPoints;
+   std::unique_ptr<HVector> DSIOmegaPoints;
    bool PlotFlux;       // generate flux plots
    bool OmitSelfTerms;
    int SourceOnly, DestOnly;

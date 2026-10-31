@@ -111,10 +111,9 @@ SNEQData *CreateSNEQData(const char *GeoFile, const char *TransFile,
   /*- figure out which PFT methods were requested and write       */
   /*- SIFlux file preambles                                       */
   /*--------------------------------------------------------------*/
-  SNEQD->PFTMatrix = new HMatrix(G->NumSurfaces, NUMPFT);
+  SNEQD->PFTMatrix = std::make_unique<HMatrix>(G->NumSurfaces, NUMPFT);
   InitPFTOptions( &(SNEQD->PFTOpts) );
   SNEQD->NumPFTMethods = NumPFTMethods;
-  SNEQD->DSIOmegaPoints=nullptr;
   for(int npm=0; npm<NumPFTMethods; npm++)
    { 
      SNEQD->PFTMethods[npm] = PFTMethods[npm];
@@ -146,8 +145,6 @@ SNEQData *CreateSNEQData(const char *GeoFile, const char *TransFile,
   /*- read the list of evaluation points for spatially-resolved  -*/
   /*- quantities                                                 -*/
   /*--------------------------------------------------------------*/
-  SNEQD->SRXMatrix = nullptr;
-  SNEQD->SRFMatrix = nullptr;
   SNEQD->NX        = 0; 
   SNEQD->NumSRQs   = 0;
   if (EPFile)
@@ -158,7 +155,7 @@ SNEQData *CreateSNEQData(const char *GeoFile, const char *TransFile,
      if(!strcasecmp(GetFileExtension(EPFile),"msh"))
       { RWGSurface *S=new RWGSurface(EPFile);
         if(S->ErrMsg) ErrExit(S->ErrMsg);
-        SNEQD->SRXMatrix = new HMatrix(S->NumVertices, 3);
+        SNEQD->SRXMatrix = std::make_unique<HMatrix>(S->NumVertices, 3);
         for(int nv=0; nv<S->NumVertices; nv++)
          SNEQD->SRXMatrix->SetEntriesD(nv,"0:2",S->Vertices + 3*nv);
         Log("Read %i SR eval points from mesh %s",S->NumVertices,EPFile);
@@ -166,13 +163,13 @@ SNEQData *CreateSNEQData(const char *GeoFile, const char *TransFile,
       }
      else
       {
-        SNEQD->SRXMatrix = new HMatrix(EPFile);
+        SNEQD->SRXMatrix = std::make_unique<HMatrix>(EPFile);
         if (SNEQD->SRXMatrix->ErrMsg)
          ErrExit(SNEQD->SRXMatrix->ErrMsg); 
       }
      int NX = SNEQD->NX = SNEQD->SRXMatrix->NR;
      SNEQD->NumSRQs = NT*NS*NX*NUMSRFLUX;
-     SNEQD->SRFMatrix = new HMatrix(NX, NUMSRFLUX);
+     SNEQD->SRFMatrix = std::make_unique<HMatrix>(NX, NUMSRFLUX);
    };
 
   /*--------------------------------------------------------------*/
@@ -180,17 +177,21 @@ SNEQData *CreateSNEQData(const char *GeoFile, const char *TransFile,
   /*- chunks of the BEM matrices for multiple geometrical        -*/
   /*- transformations.                                           -*/
   /*--------------------------------------------------------------*/
-  SNEQD->TExt = (HMatrix **)mallocEC(NS*sizeof(HMatrix *));
-  SNEQD->TInt = (HMatrix **)mallocEC(NS*sizeof(HMatrix *));
-  SNEQD->U = (HMatrix **)mallocEC( ((NS*(NS-1))/2)*sizeof(HMatrix *));
+  SNEQD->TExt.resize(NS);
+  SNEQD->TInt.resize(NS);
+  SNEQD->TExtStorage.clear();
+  SNEQD->TIntStorage.clear();
+  SNEQD->U.resize((NS*(NS-1))/2);
   Log("Before T, U blocks: mem=%3.1f GB",GetMemoryUsage()/1.0e9);
   for(int nb=0, ns=0; ns<NS; ns++)
    { 
      int NBF=G->Surfaces[ns]->NumBFs;
 
      if (G->Mate[ns]==-1)
-      { SNEQD->TExt[ns]  = new HMatrix(NBF, NBF, LHM_COMPLEX);
-        SNEQD->TInt[ns]  = new HMatrix(NBF, NBF, LHM_COMPLEX);
+      { SNEQD->TExtStorage.push_back(std::make_unique<HMatrix>(NBF, NBF, LHM_COMPLEX));
+        SNEQD->TExt[ns]  = SNEQD->TExtStorage.back().get();
+        SNEQD->TIntStorage.push_back(std::make_unique<HMatrix>(NBF, NBF, LHM_COMPLEX));
+        SNEQD->TInt[ns]  = SNEQD->TIntStorage.back().get();
       }
      else
       { SNEQD->TExt[ns] = SNEQD->TExt[ G->Mate[ns] ];
@@ -199,7 +200,7 @@ SNEQData *CreateSNEQData(const char *GeoFile, const char *TransFile,
 
      for(int nsp=ns+1; nsp<G->NumSurfaces; nsp++, nb++)
       { int NBFp=G->Surfaces[nsp]->NumBFs;
-        SNEQD->U[nb] = new HMatrix(NBF, NBFp, LHM_COMPLEX);
+        SNEQD->U[nb] = std::make_unique<HMatrix>(NBF, NBFp, LHM_COMPLEX);
       };
    };
   Log("After T, U blocks: mem=%3.1f GB",GetMemoryUsage()/1.0e9);
@@ -207,8 +208,8 @@ SNEQData *CreateSNEQData(const char *GeoFile, const char *TransFile,
   /*--------------------------------------------------------------*/
   /*- allocate BEM matrix and dressed Rytov matrix ---------------*/
   /*--------------------------------------------------------------*/
-  SNEQD->M        = new HMatrix(G->TotalBFs, G->TotalBFs, LHM_COMPLEX );
-  SNEQD->DRMatrix = new HMatrix(G->TotalBFs, G->TotalBFs, LHM_COMPLEX );
+  SNEQD->M        = std::make_unique<HMatrix>(G->TotalBFs, G->TotalBFs, LHM_COMPLEX );
+  SNEQD->DRMatrix = std::make_unique<HMatrix>(G->TotalBFs, G->TotalBFs, LHM_COMPLEX );
   Log("After W, Rytov: mem=%3.1f GB",GetMemoryUsage()/1.0e9);
 
   /*--------------------------------------------------------------*/
@@ -240,13 +241,11 @@ SNEQData *CreateSNEQData(const char *GeoFile, const char *TransFile,
   /*--------------------------------------------------------------*/
   /*--------------------------------------------------------------*/
   /*--------------------------------------------------------------*/
-  SNEQD->PFTByRegion=nullptr;
-  SNEQD->RegionRegionPFT=nullptr;
   if( NS > (NR-1) ) 
-   { SNEQD->PFTByRegion = new HMatrix(NR, NUMPFT);
-     SNEQD->RegionRegionPFT = (HMatrix **)mallocEC( NumPFTMethods*sizeof(HMatrix *));
+   { SNEQD->PFTByRegion = std::make_unique<HMatrix>(NR, NUMPFT);
+     SNEQD->RegionRegionPFT.resize(NumPFTMethods);
      for(int npm=0; npm<NumPFTMethods; npm++)
-      { SNEQD->RegionRegionPFT[npm]=new HMatrix( (NR+1)*(NR+1), NUMPFT);
+      { SNEQD->RegionRegionPFT[npm]=std::make_unique<HMatrix>( (NR+1)*(NR+1), NUMPFT);
         WriteSIFluxFilePreamble(SNEQD, SNEQD->SIFluxFileNames[npm], true);
       };
    };

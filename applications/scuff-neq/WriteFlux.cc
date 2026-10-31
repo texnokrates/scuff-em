@@ -55,8 +55,8 @@ void ComputeDRMatrix(SNEQData *SNEQD, int SourceSurface)
   Log("...computing DR matrix");
 
   RWGGeometry *G  = SNEQD->G;
-  HMatrix *M      = SNEQD->M;
-  HMatrix *DR     = SNEQD->DRMatrix;
+  HMatrix *M      = SNEQD->M.get();
+  HMatrix *DR     = SNEQD->DRMatrix.get();
 
   int NBFS        = G->Surfaces[SourceSurface]->NumBFs;
   int OffsetS     = G->BFIndexOffset[SourceSurface];
@@ -115,7 +115,7 @@ void ComputeDRMatrix(SNEQData *SNEQD, int SourceSurface)
 /***************************************************************/
 bool DoDSIAtThisFrequency(SNEQData *SNEQD, cdouble Omega)
 {
-  HVector *OmegaPoints=SNEQD->DSIOmegaPoints;
+  HVector *OmegaPoints=SNEQD->DSIOmegaPoints.get();
   if (OmegaPoints==0)
    return true;
   for(int n=0; n<OmegaPoints->N; n++)
@@ -137,7 +137,7 @@ int GetSIFlux(SNEQData *SNEQD, int SourceSurface, cdouble Omega,
   RWGGeometry *G      = SNEQD->G;
   int NumSurfaces     = G->NumSurfaces;
   bool OmitSelfTerms  = SNEQD->OmitSelfTerms;
-  HMatrix *DRMatrix   = SNEQD->DRMatrix;
+  HMatrix *DRMatrix   = SNEQD->DRMatrix.get();
   int DestOnly        = SNEQD->DestOnly;
 
   if (     PFTMethod==SCUFF_PFT_DSI
@@ -206,10 +206,10 @@ void WriteFlux(SNEQData *SNEQD, cdouble Omega, double *kBloch)
   /* extract fields from SNEQData structure **********************/
   /***************************************************************/
   RWGGeometry *G      = SNEQD->G;
-  HMatrix *M          = SNEQD->M;
-  HMatrix **TExt      = SNEQD->TExt;
-  HMatrix **TInt      = SNEQD->TInt; 
-  HMatrix **U         = SNEQD->U;
+  HMatrix *M          = SNEQD->M.get();
+  HMatrix *const *TExt = SNEQD->TExt.data();
+  HMatrix *const *TInt = SNEQD->TInt.data();
+
   int NS              = SNEQD->G->NumSurfaces;
   char *FileBase      = SNEQD->FileBase;
 
@@ -275,7 +275,7 @@ void WriteFlux(SNEQData *SNEQD, cdouble Omega, double *kBloch)
      for(int nb=0, ns=0; ns<NS; ns++)
       for(int nsp=ns+1; nsp<NS; nsp++, nb++)
        if ( nt==0 || G->SurfaceMoved[ns] || G->SurfaceMoved[nsp] )
-        G->AssembleBEMMatrixBlock(ns, nsp, Omega, kBloch, U[nb]);
+        G->AssembleBEMMatrixBlock(ns, nsp, Omega, kBloch, SNEQD->U[nb].get());
      Log("...SN done with ABMB");
 
      /*--------------------------------------------------------------*/
@@ -290,8 +290,8 @@ void WriteFlux(SNEQData *SNEQD, cdouble Omega, double *kBloch)
 
         for(int nsp=ns+1; nsp<NS; nsp++, nb++)
          { int ColOffset=G->BFIndexOffset[nsp];
-           M->InsertBlock(U[nb], RowOffset, ColOffset);
-           M->InsertBlockTranspose(U[nb], ColOffset, RowOffset);
+           M->InsertBlock(SNEQD->U[nb].get(), RowOffset, ColOffset);
+           M->InsertBlockTranspose(SNEQD->U[nb].get(), ColOffset, RowOffset);
          };
       };
      UndoSCUFFMatrixTransformation(M);
@@ -306,9 +306,9 @@ void WriteFlux(SNEQData *SNEQD, cdouble Omega, double *kBloch)
      int SourceOnly            = SNEQD->SourceOnly;
      int NumPFTMethods         = SNEQD->NumPFTMethods;
      int *PFTMethods           = SNEQD->PFTMethods;
-     HMatrix *PFTMatrix        = SNEQD->PFTMatrix;
-     HMatrix *PFTByRegion      = SNEQD->PFTByRegion;
-     HMatrix **RegionRegionPFT = SNEQD->RegionRegionPFT;
+     HMatrix *PFTMatrix        = SNEQD->PFTMatrix.get();
+     HMatrix *PFTByRegion      = SNEQD->PFTByRegion.get();
+     auto *RegionRegionPFT = SNEQD->RegionRegionPFT.data();
      int NR = G->NumRegions;
      if (RegionRegionPFT)
       for(int npm=0; npm<NumPFTMethods; npm++)
@@ -365,9 +365,9 @@ void WriteFlux(SNEQData *SNEQD, cdouble Omega, double *kBloch)
         // all evaluation points
         if (SNEQD->SRXMatrix)
           { 
-            HMatrix *SRXMatrix = SNEQD->SRXMatrix;
-            HMatrix *SRFMatrix = SNEQD->SRFMatrix;
-            HMatrix *DRMatrix  = SNEQD->DRMatrix;
+            HMatrix *SRXMatrix = SNEQD->SRXMatrix.get();
+            HMatrix *SRFMatrix = SNEQD->SRFMatrix.get();
+            HMatrix *DRMatrix  = SNEQD->DRMatrix.get();
             GetSRFluxTrace(G, SRXMatrix, Omega, DRMatrix, *SRFMatrix);
 
             FILE *f=vfopen("%s.SRFlux","a",FileBase);

@@ -173,7 +173,7 @@ int main(int argc, char *argv[])
   /*******************************************************************/
   std::unique_ptr<HMatrix> OmegaKBPoints;
   if (!OmegaKBFile.empty())
-   { OmegaKBPoints.reset(new HMatrix(OmegaKBFile.c_str(),LHM_TEXT,"--ncol 3"));
+   { OmegaKBPoints    = std::make_unique<HMatrix>(OmegaKBFile.c_str(),LHM_TEXT,"--ncol 3");
      if (OmegaKBPoints->ErrMsg)
       ErrExit("%s",OmegaKBPoints->ErrMsg);
    };
@@ -186,7 +186,7 @@ int main(int argc, char *argv[])
   int NumFreqs=0;
   if (!OmegaFile.empty()) // first process --OmegaFile option if present
    {
-     OmegaPoints.reset(new HVector(OmegaFile.c_str(),LHM_TEXT));
+     OmegaPoints       = std::make_unique<HVector>(OmegaFile.c_str(),LHM_TEXT);
      if (OmegaPoints->ErrMsg)
       ErrExit("%s",OmegaPoints->ErrMsg);
      NumFreqs=OmegaPoints->N;
@@ -198,7 +198,7 @@ int main(int argc, char *argv[])
    {
      std::unique_ptr<HVector> OmegaPoints0(std::move(OmegaPoints));
      NumFreqs += (int)OmegaVals.size();
-     OmegaPoints.reset(new HVector(NumFreqs, LHM_COMPLEX));
+     OmegaPoints       = std::make_unique<HVector>(NumFreqs, LHM_COMPLEX);
      int nFreq=0;
      if (OmegaPoints0)
       { for(nFreq=0; nFreq<OmegaPoints0->N; nFreq++)
@@ -224,7 +224,7 @@ int main(int argc, char *argv[])
   SNEQD->PFTOpts.DSIRadius       = DSIRadius;
   SNEQD->PFTOpts.DSIFarField     = DSIFarField;
   SNEQD->DSIOmegaPoints          = DSIOmegaFile.empty() ? nullptr
-                                  : new HVector(DSIOmegaFile.c_str());
+                                  : std::make_unique<HVector>(DSIOmegaFile.c_str());
 
   if (OmegaKBPoints.get()!=nullptr && !G->LBasis)
    ErrExit("--OmegaKBPoints may only be used with extended geometries");
