@@ -58,13 +58,13 @@ using namespace scuff;
 /* inner products of a single RWG function with the M, N       */
 /* vector spherical waves (VSWs)                               */
 /***************************************************************/
-typedef struct IntegrandData
+struct IntegrandData
  {
-   double lMax;
-   cdouble k;
-   HMatrix *MWMatrix;
-   cdouble *Workspace;
- } IntegrandData;
+   double lMax=0.0;
+   cdouble k=0.0;
+   std::unique_ptr<HMatrix> MWMatrix;
+   std::unique_ptr<cdouble[]> Workspace;
+ };
 
 void VSWDotRWGIntegrand(double x[3], double b[3], double Divb,
                         void *UserData, double Weight, 
@@ -75,8 +75,8 @@ void VSWDotRWGIntegrand(double x[3], double b[3], double Divb,
   IntegrandData *Data = (IntegrandData *)UserData;
   double lMax         = Data->lMax;
   cdouble k           = Data->k;
-  HMatrix *MWMatrix   = Data->MWMatrix;
-  cdouble *Workspace  = Data->Workspace;
+  HMatrix *MWMatrix   = Data->MWMatrix.get();
+  cdouble *Workspace  = Data->Workspace.get();
 
   // get spherical vector components of RWG basis function
   double r, Theta, Phi, bS[3];
@@ -154,16 +154,16 @@ HVector *GetSphericalMoments(RWGGeometry *G, int ns,
   /***************************************************************/
   /* allocate per-thread storage buffers to prevent race conditions */
   /***************************************************************/
-  IntegrandData *Data      = (IntegrandData *)mallocEC(NT*sizeof(Data[0]));
-  HVector **PartialMoments = (HVector**)mallocEC(NT*sizeof(HVector *));
-  cdouble *IBuffer         = (cdouble *)mallocEC(NT*NumMoments*sizeof(cdouble));
+  std::vector<IntegrandData> Data(NT);
+  std::vector<std::unique_ptr<HVector>> PartialMoments(NT);
+  auto IBuffer              = std::make_unique<cdouble[]>(static_cast<size_t>(NT)*NumMoments);
   Log("Computing induced spherical moments on surface %s (%i threads)",S->Label,NT);
   for(int nt=0; nt<NT; nt++)
    { Data[nt].lMax      = lMax;
      Data[nt].k         = k;
-     Data[nt].MWMatrix  = new HMatrix(3, NumMoments, LHM_COMPLEX);
-     Data[nt].Workspace = (cdouble *)mallocEC(7*(NumLMs+1)*sizeof(cdouble));
-     PartialMoments[nt] = new HVector(NumMoments, LHM_COMPLEX);
+     Data[nt].MWMatrix   = std::make_unique<HMatrix>(3, NumMoments, LHM_COMPLEX);
+     Data[nt].Workspace  = std::make_unique<cdouble[]>(7*static_cast<size_t>(NumLMs+1));
+     PartialMoments[nt]  = std::make_unique<HVector>(NumMoments, LHM_COMPLEX);
    };
 
   /***************************************************************/
@@ -181,8 +181,8 @@ HVector *GetSphericalMoments(RWGGeometry *G, int ns,
 
      // get projections of this basis function onto M, N spherical waves
      // Integral[nmw] = <W_{nmw} | b>
-     IntegrandData *MyData = Data + nt;
-     cdouble *Integral     = IBuffer + nt*NumMoments;
+     IntegrandData *MyData = &Data[nt];
+     cdouble *Integral     = IBuffer.get() + static_cast<size_t>(nt)*NumMoments;
      GetBFCubature2(G, ns, ne, VSWDotRWGIntegrand, (void *)MyData,
                     2*NumMoments, Order, (double *)Integral);
 
@@ -204,18 +204,6 @@ HVector *GetSphericalMoments(RWGGeometry *G, int ns,
   for(int nt=0; nt<NT; nt++)
    for(int nm=0; nm<MomentVector->N; nm++)
     MomentVector->AddEntry(nm,Sign*PartialMoments[nt]->GetEntry(nm));
-
-  /***************************************************************/
-  /* clean up temporary storage **********************************/
-  /***************************************************************/
-  for(int nt=0; nt<NT; nt++)
-   { delete Data[nt].MWMatrix;
-     free(Data[nt].Workspace);
-     delete PartialMoments[nt];
-   };
-  free(IBuffer);
-  free(PartialMoments);
-  free(Data);
 
   return MomentVector;
 
@@ -244,16 +232,15 @@ HVector *GetSphericalMoments(RWGGeometry *G, cdouble Omega, int lMax,
   /***************************************************************/
   /***************************************************************/
   /***************************************************************/
-  HVector *PartialMoments=new HVector(NumMoments, LHM_COMPLEX);
+  auto PartialMoments=std::make_unique<HVector>(NumMoments, LHM_COMPLEX);
 
   MomentVector->Zero();
   for(int ns=0; ns<G->NumSurfaces; ns++)
    { 
-     GetSphericalMoments(G, ns, Omega, lMax, KN, PartialMoments);
+     GetSphericalMoments(G, ns, Omega, lMax, KN, PartialMoments.get());
      for(int nm=0; nm<NumMoments; nm++)
       MomentVector->AddEntry(nm, PartialMoments->GetEntry(nm));
    }
-  delete PartialMoments;
 
   /***************************************************************/
   /***************************************************************/

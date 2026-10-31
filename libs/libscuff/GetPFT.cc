@@ -212,20 +212,18 @@ void RWGGeometry::GetPFT(int SurfaceIndex, HVector *KN,
                      DSIFarField, FluxFileName, GT1, GT2);
    }
   else if (PFTMethod==SCUFF_PFT_MOMENTS)
-   { 
-     HMatrix *PFTMatrix 
-      = GetMomentPFTMatrix(this, Omega, IF, KN, DRMatrix);
+   {
+     auto PFTMatrix = std::make_unique<HMatrix>(NumSurfaces, NUMPFT);
+     GetMomentPFTMatrix(this, Omega, IF, KN, DRMatrix, PFTMatrix.get());
      PFTMatrix->GetEntriesD(SurfaceIndex, ":", PFT);
-     delete PFTMatrix;
    }
   else if (PFTMethod==SCUFF_PFT_EMT)
    { 
      bool Interior      = Options->Interior;
      int  Method        = Options->EMTPFTIMethod;  
-     HMatrix *PFTMatrix  = new HMatrix(NumSurfaces, NUMPFT);
-     GetEMTPFTMatrix(this, Omega, IF, KN, DRMatrix, PFTMatrix, Interior, Method);
+     auto PFTMatrix = std::make_unique<HMatrix>(NumSurfaces, NUMPFT);
+     GetEMTPFTMatrix(this, Omega, IF, KN, DRMatrix, PFTMatrix.get(), Interior, Method);
      PFTMatrix->GetEntriesD(SurfaceIndex, ":", PFT);
-     delete PFTMatrix;
    }
 
   /***************************************************************/

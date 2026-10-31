@@ -166,9 +166,9 @@ public:
     dVec GetPFT(char *SurfaceLabel, char *Method=nullptr);
     HMatrix *GetPFTMatrix(char *Method=nullptr);
     void ProcessEPFile(char *EPFile, char *OutFileName=nullptr);
-    HMatrix *PlotRFFields();
-    HVector *PlotRFFields(dVec X0, dVec L1, dVec L2, iVec NVec, char *OutFileBase);
-    HMatrix *ProcessFVMesh(char *FVMesh, char *FVMeshTransFile, char *OutFileBase=nullptr);
+    std::unique_ptr<HMatrix> PlotRFFields();
+    std::unique_ptr<HVector> PlotRFFields(dVec X0, dVec L1, dVec L2, iVec NVec, char *OutFileBase);
+    std::unique_ptr<HMatrix> ProcessFVMesh(char *FVMesh, char *FVMeshTransFile, char *OutFileBase=nullptr);
     HMatrix *GetZMatrix(HMatrix *ZMatrix=nullptr, bool AllTerms=false);
     HMatrix *GetFullZMatrix();
 

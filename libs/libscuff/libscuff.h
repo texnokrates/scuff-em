@@ -237,7 +237,7 @@ class RWGSurface
                             const char *ViewNameFormat, ...);
    double PlotVectorDensity(int PlotType, HMatrix *M, int WhichColumn,
                             const char *FileName, const char *ViewNameFormat, ...);
-   HVector *MakeMeshPlot(MeshDataFunc MDFunc, void *UserData=nullptr,
+   std::unique_ptr<HVector> MakeMeshPlot(MeshDataFunc MDFunc, void *UserData=nullptr,
                          const char *OutFileBase=nullptr, const char *PPOptions=nullptr,
                          bool UseCentroids=true);
 
@@ -699,12 +699,12 @@ void PreloadCache(const char *FileName);
 void StoreCache(const char *FileName);
 void CheckLattice(HMatrix *LBasis);
 
-HMatrix *MakeMeshPlot(MeshDataFunc MDFunc, void *UserData,
+std::unique_ptr<HMatrix> MakeMeshPlot(MeshDataFunc MDFunc, void *UserData,
                       const char *MeshFile, const char *TransFile=nullptr,
                       const char *OutFileBase=nullptr, const char *PPOptions=nullptr,
                       bool UseCentroids=true);
 
-HVector *MakeMeshPlot(MeshDataFunc MDFunc, void *UserData,
+std::unique_ptr<HVector> MakeMeshPlot(MeshDataFunc MDFunc, void *UserData,
                       dVec X0, dVec L1, dVec L2, iVec NVec,
                       const char *FileBase, const char *PPOptions=nullptr, bool UseCentroids=false);
                   

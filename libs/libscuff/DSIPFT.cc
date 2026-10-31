@@ -262,10 +262,10 @@ std::unique_ptr<HMatrix> GetSRFluxTrace(RWGGeometry *G, HMatrix *XMatrix,
 /* If GT1 and/or GT2 are non-null, then each cubature point    */
 /* normal vector is transformed by GT1 (first) and then GT2.   */
 /***************************************************************/
-HMatrix *GetSCRMatrix(const char *DSIMesh, double DSIRadius, int DSIPoints,
+std::unique_ptr<HMatrix> GetSCRMatrix(const char *DSIMesh, double DSIRadius, int DSIPoints,
                       GTransformation *GT1=nullptr, GTransformation *GT2=nullptr)
 {
-  HMatrix *SCRMatrix;
+    std::unique_ptr<HMatrix> SCRMatrix;
 
   /*--------------------------------------------------------------*/
   /*--------------------------------------------------------------*/
@@ -273,7 +273,7 @@ HMatrix *GetSCRMatrix(const char *DSIMesh, double DSIRadius, int DSIPoints,
   if (DSIMesh)
    { 
      RWGSurface *BS=new RWGSurface(DSIMesh);
-     SCRMatrix = new HMatrix(BS->NumPanels, 7);
+     SCRMatrix = std::make_unique<HMatrix>(BS->NumPanels, 7);
      for(int np=0; np<BS->NumPanels; np++)
       { 
         double *X0   = BS->Panels[np]->Centroid;
@@ -304,7 +304,7 @@ HMatrix *GetSCRMatrix(const char *DSIMesh, double DSIRadius, int DSIPoints,
   else
    { double *LRule = GetLebedevRule(DSIPoints);
      if (LRule==nullptr) ErrExit("no Lebedev rule with %i points",DSIPoints);
-     SCRMatrix = new HMatrix(DSIPoints, 7);
+     SCRMatrix = std::make_unique<HMatrix>(DSIPoints, 7);
      double R=DSIRadius, R2=R*R;
      for(int np=0; np<DSIPoints; np++)
       { SCRMatrix->SetEntry(np,0, R*LRule[4*np + 0]);
@@ -469,7 +469,7 @@ void GetDSIPFT(RWGGeometry *G, cdouble Omega, double *kBloch,
   /***************************************************************/
   /* get cubature-rule matrix ************************************/
   /***************************************************************/
-  HMatrix *SCRMatrix = GetSCRMatrix(DSIMesh, DSIRadius, DSIPoints, GT1, GT2);
+  auto SCRMatrix = GetSCRMatrix(DSIMesh, DSIRadius, DSIPoints, GT1, GT2);
 
   /***************************************************************/
   /* we assume that all cubature points lie in the same region   */
@@ -491,12 +491,12 @@ void GetDSIPFT(RWGGeometry *G, cdouble Omega, double *kBloch,
   /***************************************************************/
   /* get the scattered and total fields at the cubature points   */
   /***************************************************************/
-  auto FMatrixScat = G->GetFields(nullptr, KN, Omega, kBloch, SCRMatrix);
+  auto FMatrixScat = G->GetFields(nullptr, KN, Omega, kBloch, SCRMatrix.get());
 
   HMatrix *FMatrix=FMatrixScat.get();
   std::unique_ptr<HMatrix> FMatrixTot;
   if (IF)
-   { FMatrixTot = G->GetFields(IF, nullptr, Omega, kBloch, SCRMatrix);
+   { FMatrixTot = G->GetFields(IF, nullptr, Omega, kBloch, SCRMatrix.get());
      FMatrix   = FMatrixTot.get();
      FMatrixTot->AddBlock(FMatrixScat.get(), 0, 0);
    };
@@ -561,7 +561,6 @@ void GetDSIPFT(RWGGeometry *G, cdouble Omega, double *kBloch,
       };
    };
 
-  delete SCRMatrix;
 
   /***************************************************************/
   /***************************************************************/
@@ -613,8 +612,8 @@ void GetDSIPFTTrace(RWGGeometry *G, cdouble Omega, HMatrix *DRMatrix,
   /*--------------------------------------------------------------*/
   /*--------------------------------------------------------------*/
   /*--------------------------------------------------------------*/
-  HMatrix *SCRMatrix = GetSCRMatrix(DSIMesh, DSIRadius, DSIPoints, GT1, GT2);
-  auto SRMatrix  = GetSRFluxTrace(G, SCRMatrix, Omega, DRMatrix,
+  auto SCRMatrix = GetSCRMatrix(DSIMesh, DSIRadius, DSIPoints, GT1, GT2);
+  auto SRMatrix  = GetSRFluxTrace(G, SCRMatrix.get(), Omega, DRMatrix,
                                   RFMatrix, RFMatrixDirty);
 
   /*--------------------------------------------------------------*/
@@ -730,7 +729,6 @@ void GetDSIPFTTrace(RWGGeometry *G, cdouble Omega, HMatrix *DRMatrix,
 
    }; // if (DSIMesh && PlotFileName)
 
-  delete SCRMatrix;
 
 }
 

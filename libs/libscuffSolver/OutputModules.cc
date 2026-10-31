@@ -351,14 +351,14 @@ const char *PPOptions=
  "View.Light   = 0;\n"
  "View.Visible = 0;\n";
 
-HMatrix *scuffSolver::ProcessFVMesh(char *FVMesh, char *TransFile, char *OutFileBase)
+std::unique_ptr<HMatrix> scuffSolver::ProcessFVMesh(char *FVMesh, char *TransFile, char *OutFileBase)
 {
   char FileBaseBuffer[100];
   if (!OutFileBase) 
    { OutFileBase = FileBaseBuffer;
      snprintf(OutFileBase,100,"%s.%s",SolverName,GetFileBase(FVMesh));
     }
-  HMatrix *Integrals = MakeMeshPlot(RFFieldsMDF, (void *)this, FVMesh, TransFile, OutFileBase, PPOptions);
+  auto Integrals = MakeMeshPlot(RFFieldsMDF, reinterpret_cast<void *>(this), FVMesh, TransFile, OutFileBase, PPOptions);
 
 /*!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!*/
 #if 0
@@ -380,12 +380,12 @@ HMatrix *scuffSolver::ProcessFVMesh(char *FVMesh, char *TransFile, char *OutFile
   return Integrals;
 }
 
-HVector *scuffSolver::PlotRFFields(dVec X0, dVec L1, dVec L2, iVec NVec, char *OutFileBase)
+std::unique_ptr<HVector> scuffSolver::PlotRFFields(dVec X0, dVec L1, dVec L2, iVec NVec, char *OutFileBase)
 { return MakeMeshPlot(RFFieldsMDF, (void *)this, X0, L1, L2, NVec, OutFileBase, PPOptions); }
 
-HMatrix *scuffSolver::PlotRFFields()
-{ 
-  HMatrix *Integrals=nullptr;
+std::unique_ptr<HMatrix> scuffSolver::PlotRFFields()
+{
+  std::unique_ptr<HMatrix> Integrals;
   for(int ns=0; ns<G->NumSurfaces; ns++)
    Integrals=ProcessFVMesh(G->Surfaces[ns]->MeshFileName,nullptr,G->Surfaces[ns]->Label);
   return Integrals;

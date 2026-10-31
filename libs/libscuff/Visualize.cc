@@ -921,7 +921,7 @@ void RWGGeometry::PlotSurfaceCurrents(HVector *KN, cdouble Omega,
 /* the remaining vertices.                                     */
 /***************************************************************/
 #define ABSURD 1.0e100
-HVector *RWGSurface::MakeMeshPlot(MeshDataFunc MDFunc, void *UserData,
+std::unique_ptr<HVector> RWGSurface::MakeMeshPlot(MeshDataFunc MDFunc, void *UserData,
                                   const char *OutFileBase, const char *PPOptions,
                                   bool UseCentroids)
 {
@@ -958,7 +958,7 @@ HVector *RWGSurface::MakeMeshPlot(MeshDataFunc MDFunc, void *UserData,
    }
   int NumData = DataMatrix->NC;
   bool RealData = (DataMatrix->RealComplex==LHM_REAL);
-  HVector *Integrals = new HVector(NumData, LHM_REAL);
+  auto Integrals = std::make_unique<HVector>(NumData, LHM_REAL);
 
   /***************************************************************/
   /* By default we assume all data quantities are real-valued    */
@@ -1019,7 +1019,7 @@ HVector *RWGSurface::MakeMeshPlot(MeshDataFunc MDFunc, void *UserData,
 /***************************************************************/
 /***************************************************************/
 /***************************************************************/
-HVector *MakeMeshPlot(MeshDataFunc MDFunc, void *UserData,
+std::unique_ptr<HVector> MakeMeshPlot(MeshDataFunc MDFunc, void *UserData,
                       dVec X0, dVec L1, dVec L2, iVec NVec,
                       const char *FileBase, const char *PPOptions, bool UseCentroids)
 {
@@ -1034,7 +1034,7 @@ HVector *MakeMeshPlot(MeshDataFunc MDFunc, void *UserData,
 /* (nd,nt) entry of returned matrix                            */
 /*  = integral of quantity #nd for transform #nt               */
 /***************************************************************/
-HMatrix *MakeMeshPlot(MeshDataFunc MDFunc, void *UserData,
+std::unique_ptr<HMatrix> MakeMeshPlot(MeshDataFunc MDFunc, void *UserData,
                       const char *MeshFile, const char *TransFile,
                       const char *CallerFileBase, const char *PPOptions, bool UseCentroids)
 {
@@ -1057,19 +1057,18 @@ HMatrix *MakeMeshPlot(MeshDataFunc MDFunc, void *UserData,
      
   GTCList GTCs = ReadTransFile(TransFile);
   int NT = GTCs.size();
-  HMatrix *Integrals=0;
+  std::unique_ptr<HMatrix> Integrals;
   for(int nt=0; nt<NT; nt++)
    { if ( GTCs[nt]->GTs.size() > 0 )
       S->Transform(GTCs[nt]->GTs[0].get());
      if (TransFile)
       snprintf(FullFileBase,100,"%s.%s",PPFileBase,GTCs[nt]->Tag);
-     HVector *I=S->MakeMeshPlot(MDFunc, UserData, FullFileBase, PPOptions, UseCentroids);
+     auto I=S->MakeMeshPlot(MDFunc, UserData, FullFileBase, PPOptions, UseCentroids);
      int NumData=I->N;
      if (!Integrals)
-      Integrals = new HMatrix(NumData, NT, LHM_REAL);
+      Integrals = std::make_unique<HMatrix>(NumData, NT, LHM_REAL);
      for(int nd=0; nd<NumData; nd++)
       Integrals->SetEntry(nd,nt,I->GetEntry(nd));
-     delete I;
      S->UnTransform();
    }
   delete S;

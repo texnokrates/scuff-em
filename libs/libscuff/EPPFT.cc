@@ -158,7 +158,7 @@ void GetEPFT(RWGGeometry *G, int DestSurface, cdouble Omega,
   /* XCCMatrix[8    ] = Sigma_M (magnetic surface charge)        */
   /* XCCMatrix[9..11] = Nx, Ny, Nz (electric surface current)    */
   /***************************************************************/
-  HMatrix *XCCMatrix=new HMatrix(NP*NCP, 12);
+  auto XCCMatrix=std::make_unique<HMatrix>(NP*NCP, 12);
   for(int np=0; np<NP; np++)
    { 
      RWGPanel *P = S->Panels[np];
@@ -198,7 +198,7 @@ void GetEPFT(RWGGeometry *G, int DestSurface, cdouble Omega,
   /***************************************************************/
   /***************************************************************/
   /***************************************************************/
-  auto FMatrix=G->GetFields(IF, KNVector, Omega, XCCMatrix);
+  auto FMatrix=G->GetFields(IF, KNVector, Omega, XCCMatrix.get());
 
   /***************************************************************/
   /*- initialize edge-by-edge contributions to zero -------------*/
@@ -292,7 +292,6 @@ void GetEPFT(RWGGeometry *G, int DestSurface, cdouble Omega,
   /***************************************************************/
   /***************************************************************/
   /***************************************************************/
-  delete XCCMatrix;
 
 }
 
