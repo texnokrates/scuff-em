@@ -127,7 +127,7 @@ void ProcessEPFile(RWGGeometry *G, HVector *KN, cdouble Omega,
   /***************************************************************/
   /* read in the list of evaluation points  **********************/
   /***************************************************************/
-  HMatrix *XMatrix=new HMatrix(EPFile,LHM_TEXT,"--ncol 3");
+  auto XMatrix=std::make_unique<HMatrix>(EPFile,LHM_TEXT,"--ncol 3");
   if (XMatrix->ErrMsg)
    ErrExit("%s: %s",EPFile,XMatrix->ErrMsg);
 
@@ -142,7 +142,7 @@ void ProcessEPFile(RWGGeometry *G, HVector *KN, cdouble Omega,
   /* call the usual scuff-EM routine to get the contribution of  */
   /* the main structure to the fields                            */
   /***************************************************************/
-  auto FMatrix=G->GetFields(nullptr,KN,Omega,XMatrix);
+  auto FMatrix=G->GetFields(nullptr,KN,Omega,XMatrix.get());
 
   /***************************************************************/
   /* now go through the list of evaluation points and add the    */

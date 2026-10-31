@@ -214,12 +214,12 @@ int main(int argc, char *argv[])
   int nf;
   if (!PCFile.empty())
    {
-     PCList.reset(new HMatrix(PCFile.c_str(),LHM_TEXT));
+     PCList    = std::make_unique<HMatrix>(PCFile.c_str(),LHM_TEXT);
      if (PCList->ErrMsg)
       ErrExit("%s: %s",PCFile.c_str(),PCList->ErrMsg);
      if (PCList->NC != 2*NumPorts+1)
       ErrExit("%s: expected %i columns (2*%i ports + 1)\n",PCFile.c_str(),2*NumPorts+1,NumPorts);
-     FreqList.reset(new HVector(PCList->NR));
+     FreqList  = std::make_unique<HVector>(PCList->NR);
      for(nf=0; nf<FreqList->N; nf++)
       FreqList->SetEntry(nf,PCList->GetEntryD(nf,0));
    };
@@ -232,12 +232,12 @@ int main(int argc, char *argv[])
   bool NumFreqsSpecified= App.get_option("--numfreqs")->count() > 0;
   std::unique_ptr<HVector> FV1, FV2, FV3;
   if (!FreqFile.empty())
-   { FV1.reset(new HVector(FreqFile.c_str()));
+   { FV1      = std::make_unique<HVector>(FreqFile.c_str());
      if (FV1->ErrMsg)
       ErrExit("%s",FV1->ErrMsg);
    };
   if (FrequencyValues.size()>0)
-   { FV2.reset(new HVector((int)FrequencyValues.size()));
+   { FV2      = std::make_unique<HVector>(static_cast<int>(FrequencyValues.size()));
      memcpy(FV2->DV, FrequencyValues.data(), FrequencyValues.size()*sizeof(double));
    };
   if (MinFreqSpecified || MaxFreqSpecified || NumFreqsSpecified)
@@ -299,7 +299,7 @@ int main(int argc, char *argv[])
                    NumPorts+1,NumPorts+1);
       };
 
-     ZMatrix.reset(new HMatrix(NumPorts, NumPorts, LHM_COMPLEX));
+     ZMatrix  = std::make_unique<HMatrix>(NumPorts, NumPorts, LHM_COMPLEX);
    };
 
   FILE *SParFile=nullptr;
@@ -326,9 +326,9 @@ int main(int argc, char *argv[])
                    NumPorts+1,NumPorts+1);
       };
 
-     SMatrix.reset(new HMatrix(NumPorts, NumPorts, LHM_COMPLEX));
+     SMatrix  = std::make_unique<HMatrix>(NumPorts, NumPorts, LHM_COMPLEX);
      if (ZMatrix==nullptr) //ZMatrix is needed if s-parameters are computed
-      ZMatrix.reset(new HMatrix(NumPorts, NumPorts, LHM_COMPLEX)); 
+      ZMatrix  = std::make_unique<HMatrix>(NumPorts, NumPorts, LHM_COMPLEX); 
    };
 
   /*******************************************************************/
@@ -337,9 +337,9 @@ int main(int argc, char *argv[])
   FILE *MomentFile=nullptr;
   std::unique_ptr<HMatrix> PM, PSD;
   if (Moments)
-   { PM.reset(new HMatrix(G->NumSurfaces, 6, LHM_COMPLEX));
+   { PM      = std::make_unique<HMatrix>(G->NumSurfaces, 6, LHM_COMPLEX);
      MomentFile=vfopen("%s.moments","w",GetFileBase(G->GeoFileName));
-     PSD.reset(new HMatrix(G->TotalPanels, 13, LHM_COMPLEX));
+     PSD      = std::make_unique<HMatrix>(G->TotalPanels, 13, LHM_COMPLEX);
    }
 
   /*******************************************************************/

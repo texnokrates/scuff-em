@@ -42,8 +42,8 @@ using namespace scuff;
 /***************************************************************/
 void ZToS(HMatrix *ZMatrix, HMatrix *SMatrix, double ZCharacteristic)
 {
-  HMatrix *ZpZC=new HMatrix(ZMatrix->NR, ZMatrix->NC, LHM_COMPLEX);  
-  HMatrix *ZmZC=new HMatrix(ZMatrix->NR, ZMatrix->NC, LHM_COMPLEX);  
+  auto ZpZC=std::make_unique<HMatrix>(ZMatrix->NR, ZMatrix->NC, LHM_COMPLEX);
+  auto ZmZC=std::make_unique<HMatrix>(ZMatrix->NR, ZMatrix->NC, LHM_COMPLEX);
 
   ZpZC->Copy(ZMatrix);
   ZmZC->Copy(ZMatrix);
@@ -54,10 +54,8 @@ void ZToS(HMatrix *ZMatrix, HMatrix *SMatrix, double ZCharacteristic)
    };
   ZpZC->LUFactorize();
   ZpZC->LUInvert();
-  ZmZC->Multiply(ZpZC, SMatrix);
+  ZmZC->Multiply(ZpZC.get(), SMatrix);
 
-  delete ZpZC;
-  delete ZmZC;
     
 }
 
@@ -76,8 +74,8 @@ void ZToS(HMatrix *ZMatrix, HMatrix *SMatrix)
 void SToZ(HMatrix *SMatrix, HMatrix *ZMatrix, double ZCharacteristic)
 {
   // 'OmS = 'one minus S'
-  HMatrix *OmS=new HMatrix(SMatrix->NR, SMatrix->NC, LHM_COMPLEX);  
-  HMatrix *OpS=new HMatrix(SMatrix->NR, SMatrix->NC, LHM_COMPLEX);  
+  auto OmS=std::make_unique<HMatrix>(SMatrix->NR, SMatrix->NC, LHM_COMPLEX);
+  auto OpS=std::make_unique<HMatrix>(SMatrix->NR, SMatrix->NC, LHM_COMPLEX);
 
   OpS->Copy(SMatrix);
   OmS->Copy(SMatrix);
@@ -90,12 +88,10 @@ void SToZ(HMatrix *SMatrix, HMatrix *ZMatrix, double ZCharacteristic)
    };
   OmS->LUFactorize();
   OmS->LUInvert();
-  OmS->Multiply(OpS, ZMatrix);
+  OmS->Multiply(OpS.get(), ZMatrix);
 
   ZMatrix->Scale(ZCharacteristic);
 
-  delete OpS;
-  delete OmS;
 
 }
 
