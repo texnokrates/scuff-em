@@ -482,7 +482,7 @@ class SMatrix
     // MX = S * X
     cdouble Apply(HVector *X, HVector *MX);
     double ApplyD(HVector *X, HVector *MX);
-    HVector *Apply(HVector *X); // return new MX
+    std::unique_ptr<HVector> Apply(HVector *X); // returns newly allocated MX
     void Apply(HMatrix *X, HMatrix *MX);
     std::unique_ptr<HMatrix> Apply(HMatrix *X);
 

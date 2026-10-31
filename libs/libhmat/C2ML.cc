@@ -157,7 +157,6 @@ void HMatrix::ExportToMATLAB(void *pCC, const char *format, ...)
   KillDP(MName);
 
   MATLABContext *CC=(MATLABContext *)pCC;
-  HMatrix *MCopy;
   int nr, nc;
   /* MName may use all of its 1000 bytes; "real_"/"imag_" add five. */
   char buffer[1100];
@@ -171,16 +170,15 @@ void HMatrix::ExportToMATLAB(void *pCC, const char *format, ...)
   // FIXME all the remaining 'else' cases could be done more efficiently
   else if (RealComplex==LHM_REAL && StorageType==LHM_SYMMETRIC)
    { 
-      MCopy=new HMatrix(NR, NR, LHM_REAL, LHM_NORMAL);
+      auto MCopy=std::make_unique<HMatrix>(NR, NR, LHM_REAL, LHM_NORMAL);
       MCopy->Copy(this);
       MCopy->ExportToHDF5(CC->pHC, MName);
       fprintf(CC->MFile,"%s=hdf5read('%s','%s');\n",
                           MName,CC->HDF5FileName,MName);
-      delete(MCopy);
    }
   else if (RealComplex==LHM_COMPLEX )
    {  
-      MCopy=new HMatrix(NR, NC, LHM_REAL, LHM_NORMAL);
+      auto MCopy=std::make_unique<HMatrix>(NR, NC, LHM_REAL, LHM_NORMAL);
 
       for(nr=0; nr<NR; nr++)
        for(nc=0; nc<NC; nc++)
@@ -201,8 +199,6 @@ void HMatrix::ExportToMATLAB(void *pCC, const char *format, ...)
 
       fprintf(CC->MFile,"%s=real_%s + sqrt(-1)*imag_%s;\n",MName,MName,MName);
       fprintf(CC->MFile,"clear real_%s; clear imag_%s;\n",MName,MName);
-
-      delete(MCopy);
 
    };
 

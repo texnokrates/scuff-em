@@ -344,13 +344,13 @@ cdouble SMatrix::Apply(HVector *X, HVector *MX)
 double SMatrix::ApplyD(HVector *X, HVector *MX)
  { return real(Apply(X,MX)); }
 
-HVector *SMatrix::Apply(HVector *X)
+std::unique_ptr<HVector> SMatrix::Apply(HVector *X)
 {
-  HVector *MX = new HVector(X->N,
+  auto MX = std::make_unique<HVector>(X->N,
 			    X->RealComplex == LHM_REAL
 			    && RealComplex == LHM_REAL ? LHM_REAL
 			    : LHM_COMPLEX);
-  Apply(X, MX);
+  Apply(X, MX.get());
   return MX;
 }
 
