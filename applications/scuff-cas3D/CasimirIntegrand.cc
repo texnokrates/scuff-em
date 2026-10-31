@@ -50,7 +50,7 @@ using namespace scuff;
 /***************************************************************/
 double GetLNDetMInvMInf(SC3Data *SC3D)
 { 
-  HMatrix *M              = SC3D->M;
+  HMatrix *M              = SC3D->M.get();
   int N                   = SC3D->N;
 
   double LNDet=0.0;
@@ -59,7 +59,7 @@ double GetLNDetMInvMInf(SC3Data *SC3D)
      /*--------------------------------------------------------------*/
      /*- calculation method 1  --------------------------------------*/
      /*--------------------------------------------------------------*/
-     HVector *MInfLUDiagonal = SC3D->MInfLUDiagonal;
+     HVector *MInfLUDiagonal = SC3D->MInfLUDiagonal.get();
 
      for(int n=0; n<N; n++)
       LNDet+=log( abs( MInfLUDiagonal->GetEntryD(n) / M->GetEntry(n,n) ) );
@@ -71,7 +71,7 @@ double GetLNDetMInvMInf(SC3Data *SC3D)
      /*--------------------------------------------------------------*/
      Log("Computing Casimir energy by new method...");
      RWGGeometry *G = SC3D->G;
-     HMatrix *MM1MInf = SC3D->MM1MInf;
+     HMatrix *MM1MInf = SC3D->MM1MInf.get();
      MM1MInf->Zero();
      for(int ns=0; ns<G->NumSurfaces; ns++)
       MM1MInf->InsertBlock(SC3D->TBlocks[ns], G->BFIndexOffset[ns], G->BFIndexOffset[ns]);
@@ -103,9 +103,8 @@ double GetTraceMInvdM(SC3Data *SC3D, char XYZT)
   /* unpack fields from workspace structure **********************/
   /***************************************************************/
   RWGGeometry *G     = SC3D->G;
-  HMatrix *M         = SC3D->M;
-  HMatrix *dM        = SC3D->dM;
-  HMatrix **dUBlocks = SC3D->dUBlocks;
+  HMatrix *M         = SC3D->M.get();
+  HMatrix *dM        = SC3D->dM.get();
 
   int Mu=0;
   switch(XYZT)
@@ -128,7 +127,7 @@ double GetTraceMInvdM(SC3Data *SC3D, char XYZT)
   /***************************************************************/
   dM->Zero();
   for(int ns=1; ns<G->NumSurfaces; ns++)
-   dM->InsertBlockAdjoint(dUBlocks[ 6*(ns-1) + Mu ], G->BFIndexOffset[ns], 0);
+   dM->InsertBlockAdjoint(SC3D->dUBlocks[ 6*(ns-1) + Mu ].get(), G->BFIndexOffset[ns], 0);
 
   M->LUSolve(dM);
 
@@ -152,7 +151,7 @@ double GetTraceMInvdM(SC3Data *SC3D, char XYZT)
 void Factorize(SC3Data *SC3D)
 { 
   RWGGeometry *G = SC3D->G;
-  HMatrix *M     = SC3D->M;
+  HMatrix *M     = SC3D->M.get();
 
   /***************************************************************/
   /* stamp blocks into M matrix                                  */
@@ -172,8 +171,8 @@ void Factorize(SC3Data *SC3D)
     { 
       RowOffset=G->BFIndexOffset[ns];
       ColOffset=G->BFIndexOffset[nsp];
-      M->InsertBlock(SC3D->UBlocks[nb], RowOffset, ColOffset);
-      M->InsertBlockAdjoint(SC3D->UBlocks[nb], ColOffset, RowOffset);
+      M->InsertBlock(SC3D->UBlocks[nb].get(), RowOffset, ColOffset);
+      M->InsertBlockAdjoint(SC3D->UBlocks[nb].get(), ColOffset, RowOffset);
     };
 
   /***************************************************************/
@@ -319,8 +318,8 @@ void GetCasimirIntegrand(void *pSC3D, cdouble Omega,
   /***************************************************************/
   if ( SC3D->WhichQuantities & QUANTITY_ENERGY )
    {
-     HMatrix *M=SC3D->M;
-     HVector *V=SC3D->MInfLUDiagonal;
+     HMatrix *M=SC3D->M.get();
+     HVector *V=SC3D->MInfLUDiagonal.get();
      for(int ns=0; ns<G->NumSurfaces; ns++)
       { 
         int Offset=G->BFIndexOffset[ns];
@@ -348,7 +347,7 @@ void GetCasimirIntegrand(void *pSC3D, cdouble Omega,
             { for(int nbf=0; nbf<NBF; nbf++)
                for(int nbfp=0; nbfp<NBF; nbfp++)
                 M->ZM[nbf + nbfp*NBF] = SC3D->TBlocks[ns]->GetEntry(nbf,nbfp);
-              zgetrf_(&NBF, &NBF, M->ZM, &NBF, SC3D->ipiv, &info);
+              zgetrf_(&NBF, &NBF, M->ZM, &NBF, SC3D->ipiv.data(), &info);
               for(int nbf=0; nbf<NBF; nbf++)
                V->SetEntry(Offset+nbf, abs(M->ZM[nbf+nbf*NBF]) );
             }
@@ -356,7 +355,7 @@ void GetCasimirIntegrand(void *pSC3D, cdouble Omega,
             { for(int nbf=0; nbf<NBF; nbf++)
                for(int nbfp=0; nbfp<NBF; nbfp++)
                 M->DM[nbf + nbfp*NBF] = SC3D->TBlocks[ns]->GetEntryD(nbf,nbfp);
-              dgetrf_(&NBF, &NBF, M->DM, &NBF, SC3D->ipiv, &info);
+              dgetrf_(&NBF, &NBF, M->DM, &NBF, SC3D->ipiv.data(), &info);
               for(int nbf=0; nbf<NBF; nbf++)
                V->SetEntry(Offset+nbf, M->DM[nbf+nbf*NBF]);
             };
@@ -439,13 +438,16 @@ void GetCasimirIntegrand(void *pSC3D, cdouble Omega,
 
          Log(" Assembling U(%i,%i)",ns,nsp);
          void *Accelerator = PBC ? SC3D->UAccelerators[nt][nb] : 0;
+         HMatrix *dUB[6], *dT[3];
+         for(int i=0; i<6; i++) dUB[i] = SC3D->dUBlocks[6*nb+i].get();
+         for(int i=0; i<3; i++) dT[i]  = dUB[3+i];
          if (ns==0)
           G->AssembleBEMMatrixBlock(ns, nsp, Omega, kBloch,
-                                    SC3D->UBlocks[nb], SC3D->dUBlocks + 6*nb,
-                                    0, 0, Accelerator, false, 
-                                    SC3D->NumTorqueAxes, SC3D->dUBlocks + 6*nb + 3, SC3D->GammaMatrix);
+                                    SC3D->UBlocks[nb].get(), dUB,
+                                    0, 0, Accelerator, false,
+                                    SC3D->NumTorqueAxes, dT, SC3D->GammaMatrix);
          else
-          G->AssembleBEMMatrixBlock(ns, nsp, Omega, kBloch, SC3D->UBlocks[nb], 0,
+          G->AssembleBEMMatrixBlock(ns, nsp, Omega, kBloch, SC3D->UBlocks[nb].get(), nullptr,
                                     0, 0, Accelerator, false);
        };
 

@@ -94,8 +94,9 @@ SC3Data *CreateSC3Data(RWGGeometry *G, const char *TransFile,
   /*-                           Mu=3,4,5, for axis 1,2,3 rotation */
   /*--------------------------------------------------------------*/
   int NS=G->NumSurfaces;
-  SC3D->TBlocks  = (HMatrix **)mallocEC(NS*sizeof(HMatrix *));
-  SC3D->TAccelerators = PBC ? (void **)mallocEC(NS*sizeof(void *)) : nullptr;
+  SC3D->TBlocks.resize(NS);
+  SC3D->TBlockStorage.clear();
+  if (PBC) SC3D->TAccelerators.assign(NS, nullptr);
   bool NeedDMDZ = (WhichQuantities & QUANTITY_ZFORCE);
   for(int ns=0; ns<G->NumSurfaces; ns++)
    { int nsp = G->Mate[ns];
@@ -104,11 +105,13 @@ SC3Data *CreateSC3Data(RWGGeometry *G, const char *TransFile,
      else
       { int NBF=G->Surfaces[ns]->NumBFs;
         if (PBC)
-         { SC3D->TBlocks[ns] = new HMatrix(NBF, NBF, LHM_COMPLEX);
+         { SC3D->TBlockStorage.push_back(std::make_unique<HMatrix>(NBF, NBF, LHM_COMPLEX));
+           SC3D->TBlocks[ns] = SC3D->TBlockStorage.back().get();
            SC3D->TAccelerators[ns] = G->CreateABMBAccelerator(ns, ns, true, NeedDMDZ);
          }
         else
-         SC3D->TBlocks[ns] = new HMatrix(NBF, NBF, LHM_REAL, LHM_SYMMETRIC);
+         { SC3D->TBlockStorage.push_back(std::make_unique<HMatrix>(NBF, NBF, LHM_REAL, LHM_SYMMETRIC));
+           SC3D->TBlocks[ns] = SC3D->TBlockStorage.back().get(); }
       };
    };
 
@@ -119,26 +122,26 @@ SC3Data *CreateSC3Data(RWGGeometry *G, const char *TransFile,
   // SC3D->UBlocks[NS]   = 1,2    block
   // etc.                                         
   int NumBlocks       = NS*(NS-1)/2; // number of above-diagonal blocks
-  SC3D->UBlocks       = (HMatrix **)mallocEC(   NumBlocks * sizeof(HMatrix *));
-  SC3D->dUBlocks      = (HMatrix **)mallocEC( 6*NumBlocks * sizeof(HMatrix *));
+  SC3D->UBlocks.resize(NumBlocks);
+  SC3D->dUBlocks.resize(static_cast<size_t>(6)*NumBlocks);
   int RealComplex     = PBC ? LHM_COMPLEX : LHM_REAL;
   for(int ns=0, nb=0; ns<NS; ns++)
    for(int nsp=ns+1; nsp<NS; nsp++, nb++)
     { int NBF=G->Surfaces[ns]->NumBFs;
       int NBFp=G->Surfaces[nsp]->NumBFs;
-      SC3D->UBlocks[nb] = new HMatrix(NBF, NBFp, RealComplex);
+      SC3D->UBlocks[nb] = std::make_unique<HMatrix>(NBF, NBFp, RealComplex);
       if (WhichQuantities & QUANTITY_XFORCE)
-       SC3D->dUBlocks[6*nb+0] = new HMatrix(NBF, NBFp, RealComplex);
+       SC3D->dUBlocks[6*nb+0] = std::make_unique<HMatrix>(NBF, NBFp, RealComplex);
       if (WhichQuantities & QUANTITY_YFORCE)
-       SC3D->dUBlocks[6*nb+1] = new HMatrix(NBF, NBFp, RealComplex);
+       SC3D->dUBlocks[6*nb+1] = std::make_unique<HMatrix>(NBF, NBFp, RealComplex);
       if (WhichQuantities & QUANTITY_ZFORCE)
-       SC3D->dUBlocks[6*nb+2] = new HMatrix(NBF, NBFp, RealComplex);
+       SC3D->dUBlocks[6*nb+2] = std::make_unique<HMatrix>(NBF, NBFp, RealComplex);
       if (WhichQuantities & QUANTITY_TORQUE1)
-       SC3D->dUBlocks[6*nb+3] = new HMatrix(NBF, NBFp, RealComplex);
+       SC3D->dUBlocks[6*nb+3] = std::make_unique<HMatrix>(NBF, NBFp, RealComplex);
       if (WhichQuantities & QUANTITY_TORQUE2)
-       SC3D->dUBlocks[6*nb+4] = new HMatrix(NBF, NBFp, RealComplex);
+       SC3D->dUBlocks[6*nb+4] = std::make_unique<HMatrix>(NBF, NBFp, RealComplex);
       if (WhichQuantities & QUANTITY_TORQUE3)
-       SC3D->dUBlocks[6*nb+5] = new HMatrix(NBF, NBFp, RealComplex);
+       SC3D->dUBlocks[6*nb+5] = std::make_unique<HMatrix>(NBF, NBFp, RealComplex);
     };
 
   /*--------------------------------------------------------------*/
@@ -146,21 +149,16 @@ SC3Data *CreateSC3Data(RWGGeometry *G, const char *TransFile,
   /*--------------------------------------------------------------*/
   int N  = SC3D->N  = SC3D->G->TotalBFs;
   int N1 = SC3D->N1 = SC3D->G->Surfaces[0]->NumBFs;
-  SC3D->M           = new HMatrix(N,  N,  RealComplex);
-  SC3D->dM          = new HMatrix(N,  N1, RealComplex);
+  SC3D->M           = std::make_unique<HMatrix>(N,  N,  RealComplex);
+  SC3D->dM          = std::make_unique<HMatrix>(N,  N1, RealComplex);
   SC3D->NewEnergyMethod  = NewEnergyMethod;
 
   if (WhichQuantities & QUANTITY_ENERGY)
-   { SC3D->MInfLUDiagonal = new HVector(G->TotalBFs);
-     SC3D->ipiv = (int *)mallocEC(N*sizeof(int));
+   { SC3D->MInfLUDiagonal = std::make_unique<HVector>(G->TotalBFs);
+     SC3D->ipiv.resize(N);
      if (NewEnergyMethod)
-      SC3D->MM1MInf = new HMatrix(N, N, RealComplex);
+      SC3D->MM1MInf = std::make_unique<HMatrix>(N, N, RealComplex);
    }
-  else
-   { SC3D->MInfLUDiagonal=nullptr;
-     SC3D->ipiv=nullptr;
-     SC3D->MM1MInf = nullptr;
-   };
 
   /*--------------------------------------------------------------*/
   /*--------------------------------------------------------------*/
@@ -183,15 +181,14 @@ SC3Data *CreateSC3Data(RWGGeometry *G, const char *TransFile,
   /*--------------------------------------------------------------*/
   /*--------------------------------------------------------------*/
   /*--------------------------------------------------------------*/
-  SC3D->UAccelerators = nullptr;
   if (PBC)
    { int NT = SC3D->NumTransformations;
-     SC3D->UAccelerators = (void ***)mallocEC(NT*sizeof(void *));
+     SC3D->UAccelerators.resize(NT);
      for(int nt=0; nt<NT; nt++)
-      { SC3D->UAccelerators[nt] = (void **)mallocEC(NumBlocks*sizeof(void *));
+      { SC3D->UAccelerators[nt].assign(NumBlocks, nullptr);
         for(int ns=0, nb=0; ns<NS; ns++)
          for(int nsp=ns+1; nsp<NS; nsp++, nb++)
-          SC3D->UAccelerators[nt][nb] 
+          SC3D->UAccelerators[nt][nb]
            = G->CreateABMBAccelerator(ns, nsp, true, NeedDMDZ && ns==0);
       };
    };

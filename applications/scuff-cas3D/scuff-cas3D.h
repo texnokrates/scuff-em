@@ -63,14 +63,22 @@ typedef struct SC3Data
    int NumQuantities;
    int NTNQ;
 
-   // storage for BEM matrix blocks
+   // storage for BEM matrix blocks.
+   // Mated surfaces share their diagonal blocks: only the
+   // G->Mate[ns]==-1 slots are owned (TBlockStorage); TBlocks
+   // holds views.  dUBlocks entries are present only for the
+   // quantities in WhichQuantities.
    int N, N1;
-   HMatrix **TBlocks, **UBlocks, **dUBlocks, *M, *dM;
-   int *ipiv;
-   HVector *MInfLUDiagonal;
+   std::vector<HMatrix *> TBlocks;
+   std::vector<std::unique_ptr<HMatrix>> TBlockStorage;
+   std::vector<std::unique_ptr<HMatrix>> UBlocks, dUBlocks;
+   std::unique_ptr<HMatrix> M, dM;
+   std::vector<int> ipiv;
+   std::unique_ptr<HVector> MInfLUDiagonal;
 
    // matrix-block-assembly accelerators for PBC geometries
-   void **TAccelerators, ***UAccelerators;
+   std::vector<void *> TAccelerators;
+   std::vector<std::vector<void *>> UAccelerators;
 
    // storage for 3x3 gamma matrices describing rotation
    // information for torque calculations
@@ -109,7 +117,7 @@ typedef struct SC3Data
 
    // 20130427 alternative energy calculation
    bool NewEnergyMethod;
-   HMatrix *MM1MInf;
+   std::unique_ptr<HMatrix> MM1MInf;
 
    // various other miscellaneous items
    bool UseExistingData;
