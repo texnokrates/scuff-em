@@ -66,7 +66,7 @@ void scuffSolver::PlotSurfaceCurrents(const char *FileBase)
 {
   if (!ReadyToPostprocess()) return;
   if (!FileBase) FileBase=SolverName;
-  G->PlotSurfaceCurrents(KN, OmegaSIE, FileBase);
+  G->PlotSurfaceCurrents(KN.get(), OmegaSIE, FileBase);
 }
 
 /***************************************************************/
@@ -94,7 +94,7 @@ zVec scuffSolver::GetFields(dVec X, const char *WhichFields)
    XMatrix.SetEntriesD(nx, ":", &(X[3*nx]));
 
   auto FMatrix=G->GetFields(RetainIncident  ? CachedIF : nullptr,
-                            RetainScattered ? KN : nullptr, OmegaSIE, &XMatrix);
+                            RetainScattered ? KN.get() : nullptr, OmegaSIE, &XMatrix);
 
   for(int nfc=0; nfc<6*NX; nfc++)
    Fields.push_back(FMatrix->ZM[nfc]);
@@ -143,7 +143,7 @@ dVec scuffSolver::GetPFT(char *SurfaceLabel, char *Method)
   else
    printf("DSI method (R=%e, NumPts=%i)\n",Options.DSIRadius,Options.DSIPoints);
 
-  G->GetPFT(ns, KN, OmegaSIE, &(PFT[0]), &Options);
+  G->GetPFT(ns, KN.get(), OmegaSIE, &(PFT[0]), &Options);
   return PFT;
 }
 
@@ -153,7 +153,7 @@ std::unique_ptr<HMatrix> scuffSolver::GetPFTMatrix(char *Method)
   PFTOptions Options;
   if (!ParsePFTString(&Options, Method)) return nullptr;
   Options.IF = CachedIF;
-  return G->GetPFTMatrix(KN, OmegaSIE, &Options);
+  return G->GetPFTMatrix(KN.get(), OmegaSIE, &Options);
 }
   
 /***************************************************************/
@@ -164,7 +164,7 @@ void scuffSolver::ProcessEPFile(char *EPFile, char *OutFileName)
   /***************************************************************/
   /* read in the list of evaluation points                       */
   /***************************************************************/
-  HMatrix *XMatrix=new HMatrix(EPFile);
+  auto XMatrix=std::make_unique<HMatrix>(EPFile);
   if (XMatrix->NC!=3)
    { Warn("ProcessEPFile: file %s should have exactly 3 coordinates per line (skipping)",EPFile);
      return;
@@ -174,7 +174,7 @@ void scuffSolver::ProcessEPFile(char *EPFile, char *OutFileName)
   /***************************************************************/
   /* Get matrix of field components at evaluation points         */
   /***************************************************************/
-  HMatrix *PFMatrix = GetRFFields(XMatrix);
+  auto PFMatrix = GetRFFields(XMatrix.get());
 
   /***************************************************************/
   /* write field components to output file ***********************/
@@ -226,8 +226,6 @@ void scuffSolver::ProcessEPFile(char *EPFile, char *OutFileName)
    }
   fclose(f);
 
-  delete PFMatrix;
-  delete XMatrix;
 }
 
 /***************************************************************/
@@ -245,7 +243,7 @@ static const char *DataNames[]=
 #define NUMDATA_WITHPSDS    (sizeof(DataNames)/sizeof(DataNames[0]))
 #define NUMDATA_WITHOUTPSDS 10
   
-HMatrix *RFFieldsMDF(void *UserData, HMatrix *XMatrix, const char ***pDataNames)
+std::unique_ptr<HMatrix> RFFieldsMDF(void *UserData, HMatrix *XMatrix, const char ***pDataNames)
 {
   scuffSolver *Solver      = (scuffSolver *)UserData;
 
@@ -269,14 +267,14 @@ HMatrix *RFFieldsMDF(void *UserData, HMatrix *XMatrix, const char ***pDataNames)
   *pDataNames = DataNames;
 
   Log("Computing FVMesh data: %i quantities at %i points",NumData,NX);
-  HMatrix *PFMatrix = Solver->GetRFFields(XMatrix);
+  auto PFMatrix = Solver->GetRFFields(XMatrix);
 
   /***************************************************************/
   /* Q[0,1,2][nd] = {total, BF contribution, Port contribution}  */
   /*                to data quantity #nd                         */
   /***************************************************************/
   cdouble iw=II*Omega;
-  HMatrix *DataMatrix=new HMatrix(NX, NumData, LHM_COMPLEX);
+  auto DataMatrix=std::make_unique<HMatrix>(NX, NumData, LHM_COMPLEX);
   for(int nx=0; nx<NX; nx++)
    { 
      cdouble iwA[3], Phi, mdPhi[3];
@@ -336,7 +334,6 @@ HMatrix *RFFieldsMDF(void *UserData, HMatrix *XMatrix, const char ***pDataNames)
       }
    }
 
-  delete PFMatrix;
   return DataMatrix;
 }
 
@@ -407,7 +404,7 @@ void scuffSolver::AddMinusIdVTermsToZMatrix(HMatrix *KMatrix, HMatrix *ZMatrix)
 {
   int NBF           = G->TotalBFs;
   int NumPortEdges  = PortList->PortEdges.size();
-  HMatrix *XMatrix  = new HMatrix(3, NumPortEdges, LHM_REAL);
+  auto XMatrix      = std::make_unique<HMatrix>(3, NumPortEdges, LHM_REAL);
   for(int npe=0; npe<NumPortEdges; npe++)
    {
      RWGPortEdge *PE = PortList->PortEdges[npe];
@@ -415,18 +412,18 @@ void scuffSolver::AddMinusIdVTermsToZMatrix(HMatrix *KMatrix, HMatrix *ZMatrix)
      RWGEdge *E      = S->GetEdgeByIndex(PE->ne);
      XMatrix->SetEntriesD(":",npe,E->Centroid);
    }
-  HMatrix *PFMatrix = new HMatrix(NPFC, NumPortEdges, LHM_COMPLEX);
+  auto PFMatrix     = std::make_unique<HMatrix>(NPFC, NumPortEdges, LHM_COMPLEX);
   
   for(int SourcePort=0; SourcePort<NumPorts; SourcePort++)
    { 
      // get fields at centroids of all port edges due to unit-strength current into SourcePort
      HVector KNSource(NBF, LHM_COMPLEX, KMatrix->GetColumnPointer(SourcePort));
-     if (!KN) KN=G->AllocateRHSVector().release();
+     if (!KN) KN=G->AllocateRHSVector();
      KN->Copy(&KNSource);
      if (CachedPortCurrents==nullptr) CachedPortCurrents=new cdouble[NumPorts];
      memset(CachedPortCurrents, 0, NumPorts*sizeof(cdouble));
      CachedPortCurrents[SourcePort]=1.0;
-     GetRFFields(XMatrix, PFMatrix);
+     GetRFFields(XMatrix.get(), PFMatrix.get());
      
      // sum contributions to mean voltage gaps across all destination ports
      for(int npe=0; npe<NumPortEdges; npe++)
@@ -440,8 +437,6 @@ void scuffSolver::AddMinusIdVTermsToZMatrix(HMatrix *KMatrix, HMatrix *ZMatrix)
       }
     }
 
-  delete XMatrix;
-  delete PFMatrix;
 }
 
 /***************************************************************/
@@ -450,27 +445,27 @@ void scuffSolver::AddMinusIdVTermsToZMatrix(HMatrix *KMatrix, HMatrix *ZMatrix)
 HMatrix *scuffSolver::GetZMatrix(HMatrix *ZMatrix, bool AllTerms)
 {
 #define NUMZTERMS 3
-  HMatrix *ZTerms[NUMZTERMS];
+  std::unique_ptr<HMatrix> ZTerms[NUMZTERMS];
   for(int nt=0; nt<NUMZTERMS; nt++)
-   ZTerms[nt] = new HMatrix(NumPorts, NumPorts, LHM_COMPLEX);
+   ZTerms[nt] = std::make_unique<HMatrix>(NumPorts, NumPorts, LHM_COMPLEX);
 
   AssemblePortBFInteractionMatrix(G->StoredOmega);
 
   // Term1 = -(R^T * W * R) where R = port/BF interaction matrix
-  HMatrix *RMatrix=PBFIMatrix, *WRMatrix = new HMatrix(*RMatrix);
-  M->LUSolve(WRMatrix);
-  RMatrix->Multiply(WRMatrix, ZTerms[0], "--transA T");
+  HMatrix *RMatrix=PBFIMatrix.get();
+  auto WRMatrix = std::make_unique<HMatrix>(*RMatrix);
+  M->LUSolve(WRMatrix.get());
+  RMatrix->Multiply(WRMatrix.get(), ZTerms[0].get(), "--transA T");
   ZTerms[0]->Scale(-1.0*ZVAC);
 
   // Term2 = port--port interaction matrix
-  ZTerms[1]->Copy(PPIMatrix);
+  ZTerms[1]->Copy(PPIMatrix.get());
   ZTerms[1]->Scale(1.0*ZVAC);
 
   // Term3 = matrix of port voltage gaps
   ZTerms[2]->Zero();
-  AddMinusIdVTermsToZMatrix(WRMatrix, ZTerms[2]);
+  AddMinusIdVTermsToZMatrix(WRMatrix.get(), ZTerms[2].get());
 
-  delete WRMatrix;
  
   int NRMult = (AllTerms ? 4 : 1);
   int NR = NRMult*NumPorts;
@@ -486,47 +481,8 @@ HMatrix *scuffSolver::GetZMatrix(HMatrix *ZMatrix, bool AllTerms)
        if (AllTerms)
         ZMatrix->SetEntry(NRMult*DestPort+1+nt, SourcePort, Term);
      }
-  for(int nt=0; nt<NUMZTERMS; nt++)
-   delete ZTerms[nt];
-
   return ZMatrix;
 
-#if 0
-  char *TermFile=0;
-  if (CheckEnv("SCUFF_ZMATRIX_TERMFILE",&TermFile))
-   { 
-     HMatrix *ZSTerms[8];
-     ZSTerms[0]=ZMatrix;
-     ZSTerms[1]=ZTerms[0];
-     ZSTerms[2]=ZTerms[1];
-     ZSTerms[3]=ZTerms[2];
-     ZSTerms[4]=Z2S(ZMatrix);
-     ZSTerms[5]=Z2S(ZTerms[0]);
-     ZSTerms[6]=Z2S(ZTerms[1]);
-     ZSTerms[7]=Z2S(ZTerms[1]);
-
-     static char Mode[2]="w";
-     FILE *f=vfopen(TermFile,Mode,FileBase);
-     Mode[0]='a';
-     fprintf(f,"%e ",real(G->StoredOmega*OMEGA2FREQ));
-     for(int nt=0; nt<8; nt++)
-      for(int npp=0; npp<NumPorts*NumPorts; npp++)
-       fprintf(f,"%e %e ",abs(ZSTerms[nt]->ZM[npp]), arg(ZSTerms[nt]->ZM[npp]));
-     fprintf(f,"\n");
-     fclose(f);
-     delete ZSTerms[4];
-     delete ZSTerms[5];
-     delete ZSTerms[6];
-     delete ZSTerms[7];
-   }
-
-  if (!pZTerms)
-   { delete ZTerms[0];
-     delete ZTerms[1];
-     delete ZTerms[2];
-   }
-  return ZMatrix;
-#endif
 }
 
 HMatrix *scuffSolver::GetFullZMatrix()
@@ -541,47 +497,5 @@ HMatrix *scuffSolver::GetFullZMatrix()
 /*                                                             */
 /* where z0 = characteristic impedance, I=identity matrix      */
 /*                                                             */
-/* If the second argument is NULL, a new matrix is allocated.  */
-/* If the second argument is equal to the first argument, the  */
-/* routines operate in-place.                                  */
-/***************************************************************/
-HMatrix *scuffSolver::Z2S(HMatrix *Z, HMatrix *S, double ZCharacteristic)
-{ 
-  HMatrix *ZpZC = new HMatrix(*Z);
-  if (S==nullptr) 
-   S = new HMatrix(*Z);
-  else if (S!=Z)
-   S->InsertBlock(Z,0,0);
-  for(int nr=0; nr<ZpZC->NR; nr++)
-   { ZpZC->AddEntry(nr, nr,  ZCharacteristic);
-        S->AddEntry(nr, nr, -ZCharacteristic);
-   }
-  ZpZC->LUFactorize();
-  ZpZC->LUSolve(S);
-  delete ZpZC;
-  return S;
-}
-
-HMatrix *scuffSolver::S2Z(HMatrix *S, HMatrix *Z, double ZCharacteristic)
-{
-  // 'OmS = 'one minus S'
-  HMatrix *OmS=new HMatrix(*S);
-  HMatrix *OpS=new HMatrix(*S);
-  OmS->Scale(-1.0);
-  for(int nr=0; nr<S->NR; nr++)
-   { 
-     OpS->AddEntry(nr, nr, 1.0);
-     OmS->AddEntry(nr, nr, 1.0);
-   }
-  OmS->LUFactorize();
-  OmS->LUInvert();
-  if (Z==nullptr) Z=new HMatrix(*S);
-  OmS->Multiply(OpS, Z);
-  Z->Scale(ZCharacteristic);
-
-  delete OpS;
-  delete OmS;
-  return Z;
-}
 
 } // namespace scuff

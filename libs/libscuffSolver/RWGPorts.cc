@@ -487,8 +487,8 @@ void scuffSolver::AssemblePortBFInteractionMatrix(cdouble Omega)
   Log("Computing port<-->BF interaction matrix");
 
   int NBF = G->TotalBFs;
-  if (PBFIMatrix==nullptr) PBFIMatrix = new HMatrix(NBF,      NumPorts, LHM_COMPLEX);
-  if (PPIMatrix==nullptr)  PPIMatrix  = new HMatrix(NumPorts, NumPorts, LHM_COMPLEX);
+  if (PBFIMatrix==nullptr) PBFIMatrix = std::make_unique<HMatrix>(NBF,      NumPorts, LHM_COMPLEX);
+  if (PPIMatrix==nullptr)  PPIMatrix  = std::make_unique<HMatrix>(NumPorts, NumPorts, LHM_COMPLEX);
 
   /***************************************************************/
   /***************************************************************/
@@ -515,11 +515,11 @@ void scuffSolver::AssemblePortBFInteractionMatrix(cdouble Omega)
   int NumThreads             = GetNumThreads();
   bool AllocateThreadBuffers = (NumThreads>1 && !CheckEnv("SCUFF_NO_THREAD_BUFFERS"));
 
-  HMatrix **PBFPIByThread = nullptr;
+  std::vector<std::unique_ptr<HMatrix>> PBFPIByThread;
   if (AllocateThreadBuffers)
-   { PBFPIByThread = new HMatrix *[NumThreads];
+   { PBFPIByThread.resize(NumThreads);
      for(int nt=0; nt<NumThreads; nt++)
-      PBFPIByThread[nt] = new HMatrix(NBFPE, NumPorts, LHM_COMPLEX);
+      PBFPIByThread[nt] = std::make_unique<HMatrix>(NBFPE, NumPorts, LHM_COMPLEX);
    }
 
   Log("  getting %i port-BF interactions (%i threads)",NumPairs, NumThreads);
@@ -588,9 +588,7 @@ void scuffSolver::AssemblePortBFInteractionMatrix(cdouble Omega)
                PPIMatrix->AddEntry(DestPort, SourcePort, PBFPIByThread[nt]->GetEntry(NBF+npe,SourcePort));
             }
          }
-        delete PBFPIByThread[nt];
       }
-     delete[] PBFPIByThread;
    }
   
 }
@@ -610,7 +608,7 @@ void scuffSolver::EvalSourceDistribution(const double X[3], cdouble iwSigmaK[4])
   // get BF contribution
   int ns, np;
   cdouble KNX[6], iwSigmaTauX[2];
-  G->EvalSourceDistribution(X, KN, KNX, iwSigmaTauX, &ns, &np);
+  G->EvalSourceDistribution(X, KN.get(), KNX, iwSigmaTauX, &ns, &np);
   if (ns==-1) return; // X does not lie on a meshed surface
 
   iwSigmaK[0] = iwSigmaTauX[0];
@@ -668,7 +666,7 @@ void scuffSolver::EvalSourceDistribution(const double X[3], cdouble iwSigmaK[4])
 std::unique_ptr<HMatrix> scuffSolver::GetPanelSourceDensities()
 {
   cdouble Omega = G->StoredOmega;
-  auto PSDMatrix=G->GetPanelSourceDensities(Omega, KN);
+  auto PSDMatrix=G->GetPanelSourceDensities(Omega, KN.get());
   AddPortContributionsToPSD(Omega, PSDMatrix.get());
   return PSDMatrix;
 }
@@ -676,7 +674,7 @@ std::unique_ptr<HMatrix> scuffSolver::GetPanelSourceDensities()
 void scuffSolver::GetPanelSourceDensities(HMatrix &PSDMatrix)
 {
   cdouble Omega = G->StoredOmega;
-  G->GetPanelSourceDensities(Omega, KN, PSDMatrix);
+  G->GetPanelSourceDensities(Omega, KN.get(), PSDMatrix);
   AddPortContributionsToPSD(Omega, &PSDMatrix);
 }
 

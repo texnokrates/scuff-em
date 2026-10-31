@@ -165,7 +165,7 @@ double kdtri_meanleaf(kdtri t);
 /* NX x 3 matrix XMatrix) and returns a new NX x ND HMatrix    */
 /* whose columns are the ND data quantities.                   */
 /***************************************************************/
-using MeshDataFunc = HMatrix *(*)(void *UserData, HMatrix *XMatrix, const char ***DataNames);
+using MeshDataFunc = std::unique_ptr<HMatrix> (*)(void *UserData, HMatrix *XMatrix, const char ***DataNames);
 
 /***************************************************************/
 /* RWGSurface is a class describing a single contiguous surface*/

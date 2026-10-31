@@ -70,17 +70,10 @@ void scuffSolver::InitSolver()
   PortList       = nullptr;
   NumPorts       = 0;
 
-  M              = nullptr;
-  PBFIMatrix     = nullptr; 
-  PPIMatrix      = nullptr;
-  KN             = nullptr;
   CachedPortCurrents   = nullptr;
   CachedIF             = nullptr;
   OmegaSIE       = CACHE_DIRTY;
   OmegaPBFI      = CACHE_DIRTY;
-
-  TBlocks        = nullptr;
-  UBlocks        = nullptr;
 
   Medium         = nullptr;
   SubstrateFile  = nullptr;
@@ -94,27 +87,13 @@ void scuffSolver::InitSolver()
 /***************************************************************/
 scuffSolver::~scuffSolver()
 {
-  /* mated surfaces share their block matrices, exactly as in the
-     geometry's FIBBI caches: only the Mate[ns]==-1 slots are owned */
-  if (TBlocks && G)
-   { for(int ns=0; ns<G->NumSurfaces; ns++)
-      if (G->Mate[ns]==-1)
-       delete TBlocks[ns];
-     delete TBlocks;
-   }
-  if (UBlocks && G)
-   { int NS = G->NumSurfaces, NU=(NS-1)*NS/2;
-     for(int nu=0; nu<NU; nu++)
-      delete UBlocks[nu];
-     delete UBlocks;
-   }
+  /* TBlockStorage / UBlocks / M / KN / PBFIMatrix / PPIMatrix free
+     automatically.  Mated surfaces share their block matrices, exactly
+     as in the geometry's FIBBI caches: only the Mate[ns]==-1 slots are
+     owned (TBlockStorage); TBlocks itself holds non-owning views.    */
 
   if (CachedPortCurrents) delete CachedPortCurrents;
   if (CachedIF)     delete CachedIF;
-  if (KN)           delete KN;
-  if (PBFIMatrix)   delete PBFIMatrix;
-  if (PPIMatrix)    delete PPIMatrix;
-  if (M)            delete M;
   if (PortList)     delete PortList;
   if (G)            delete G;
   if (SolverName)   free(SolverName);
@@ -547,7 +526,7 @@ void scuffSolver::EnableSystemBlockCache()
      return;
    }
 
-  if (TBlocks!=nullptr) return; // already enabled
+  if (!TBlocks.empty()) return; // already enabled
 
   int NS = G->NumSurfaces, NU=(NS-1)*NS/2;
   if (NS==1)
@@ -557,14 +536,18 @@ void scuffSolver::EnableSystemBlockCache()
   else 
    Log("Initializing system block cache (%i/%i diagonal/off-diagonal blocks)",NS,NU);
 
-  TBlocks = new HMatrix *[NS];
+  TBlocks.resize(NS);
+  TBlockStorage.clear();
   for(int ns=0; ns<NS; ns++)
    { int NBF = G->Surfaces[ns]->NumBFs, Mate=G->Mate[ns];
-     TBlocks[ns] = (Mate!=-1) ? TBlocks[Mate] : new HMatrix(NBF, NBF, LHM_COMPLEX);
+     if (Mate!=-1)
+      TBlocks[ns] = TBlocks[Mate];
+     else
+      { TBlockStorage.push_back(std::make_unique<HMatrix>(NBF, NBF, LHM_COMPLEX));
+        TBlocks[ns] = TBlockStorage.back().get(); }
    }
 
-  UBlocks = new HMatrix *[NU];
-  memset(UBlocks, 0, NU*sizeof(HMatrix *)); // allocated lazily
+  UBlocks.resize(NU); // allocated lazily
 
   OmegaSIE = CACHE_DIRTY;
 }
@@ -574,7 +557,7 @@ void scuffSolver::EnableSystemBlockCache()
 /***************************************************************/
 void scuffSolver::UpdateSystemMatrix(cdouble Omega)
 { 
-  if (TBlocks==nullptr)
+  if (TBlocks.empty())
    { Warn("EnableSystemBlockCache() must be called before UpdateSystemMatrix (skipping)");
      return;
    }
@@ -595,12 +578,12 @@ void scuffSolver::UpdateSystemMatrix(cdouble Omega)
     { if (FindEquivalentSurfacePair(G, nsa, nsb)!=-1)
        continue;
       if (Omega!=OmegaSIE || G->SurfaceMoved[nsa] || G->SurfaceMoved[nsb])
-       { if (UBlocks[nu]==nullptr) 
-          UBlocks[nu]=new HMatrix(G->Surfaces[nsa]->NumBFs, G->Surfaces[nsb]->NumBFs, LHM_COMPLEX);
+       { if (!UBlocks[nu])
+          UBlocks[nu]=std::make_unique<HMatrix>(G->Surfaces[nsa]->NumBFs, G->Surfaces[nsb]->NumBFs, LHM_COMPLEX);
          if(NumPorts==0)
-          G->AssembleBEMMatrixBlock(nsa, nsb, Omega, nullptr, UBlocks[nu]);
+          G->AssembleBEMMatrixBlock(nsa, nsb, Omega, nullptr, UBlocks[nu].get());
          else
-          AssembleMOIMatrixBlock(G, nsa, nsb, Omega, UBlocks[nu]);
+          AssembleMOIMatrixBlock(G, nsa, nsb, Omega, UBlocks[nu].get());
        }
     }
 
@@ -613,7 +596,7 @@ void scuffSolver::UpdateSystemMatrix(cdouble Omega)
         int OffsetB = G->BFIndexOffset[nsb];
         bool Flipped=false;
         int nuEquivalent=FindEquivalentSurfacePair(G, nsa, nsb, &Flipped);
-        HMatrix *UBlock = UBlocks[(nuEquivalent==-1 ? nu : nuEquivalent)];
+        HMatrix *UBlock = UBlocks[(nuEquivalent==-1 ? nu : nuEquivalent)].get();
         int RowOffset = Flipped ? OffsetB : OffsetA;
         int ColOffset = Flipped ? OffsetA : OffsetB;
         M->InsertBlock(UBlock,RowOffset,ColOffset);
@@ -630,7 +613,7 @@ void scuffSolver::AssembleSystemMatrix(double Omega)
 { 
   if (!G) InitGeometry();
   if (!SubstrateInitialized) InitSubstrate();
-  if (M==nullptr) M=G->AllocateBEMMatrix().release();
+  if (M==nullptr) M=G->AllocateBEMMatrix();
   G->UpdateCachedEpsMuValues(Omega);
 
   Log("Assembling BEM matrix at Omega=%g (f=%g GHz)...",Omega,Omega/FREQ2OMEGA);
@@ -647,10 +630,10 @@ void scuffSolver::AssembleSystemMatrix(double Omega)
                                             PPIsOnly, Subtract, RetainSingularTerms, Verbose);
    }
 
-  if (TBlocks!=nullptr)
+  if (!TBlocks.empty())
    UpdateSystemMatrix(Omega);
   else if (NumPorts!=0)
-   AssembleMOIMatrix(G, Omega, M);
+   AssembleMOIMatrix(G, Omega, M.get());
   else 
    G->AssembleBEMMatrix(Omega, *M);
 
@@ -672,12 +655,12 @@ void scuffSolver::DoSolve(IncField *IF, cdouble *PortCurrents)
   /*- lazy allocation of internal variables ----------------------*/
   /*--------------------------------------------------------------*/
   int NBF = G->TotalBFs;
-  if (KN==nullptr) KN = new HVector(NBF,                LHM_COMPLEX);
+  if (KN==nullptr) KN = std::make_unique<HVector>(NBF, LHM_COMPLEX);
 
   // stuff needed for RF calculations
   if (PortCurrents)
-   { if (PBFIMatrix==nullptr)   PBFIMatrix   = new HMatrix(NBF,      NumPorts, LHM_COMPLEX);
-     if (PPIMatrix==nullptr)    PPIMatrix    = new HMatrix(NumPorts, NumPorts, LHM_COMPLEX);
+   { if (PBFIMatrix==nullptr)   PBFIMatrix   = std::make_unique<HMatrix>(NBF,      NumPorts, LHM_COMPLEX);
+     if (PPIMatrix==nullptr)    PPIMatrix    = std::make_unique<HMatrix>(NumPorts, NumPorts, LHM_COMPLEX);
      AssemblePortBFInteractionMatrix(Omega);
     // form RHS vector as weighted linear combination of contributions from each port
      KN->Zero();
@@ -707,7 +690,7 @@ void scuffSolver::DoSolve(IncField *IF, cdouble *PortCurrents)
 
   // solve the system
   Log("LU-solving...");
-  M->LUSolve(KN);
+  M->LUSolve(KN.get());
 }
 
 void scuffSolver::Solve(IncField *IF)

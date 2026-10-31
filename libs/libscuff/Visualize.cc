@@ -949,10 +949,9 @@ std::unique_ptr<HVector> RWGSurface::MakeMeshPlot(MeshDataFunc MDFunc, void *Use
   /* call user's function to populate data matrix ****************/
   /***************************************************************/
   const char **DataNames=0;
-  HMatrix *DataMatrix=MDFunc(UserData, &XMatrix, &DataNames);
+  auto DataMatrix=MDFunc(UserData, &XMatrix, &DataNames);
   if ( DataMatrix==0 || DataMatrix->NR!=NX )
    { Warn("Mesh data function returned wrong-size DataMatrix");
-     delete DataMatrix;
      return 0;
    }
   int NumData = DataMatrix->NC;
@@ -1001,17 +1000,16 @@ std::unique_ptr<HVector> RWGSurface::MakeMeshPlot(MeshDataFunc MDFunc, void *Use
       }
 
      if (VectorPlot)
-      { double I = PlotVectorDensity(PlotType, DataMatrix, nd, PPFileName, DataName);
+      { double I = PlotVectorDensity(PlotType, DataMatrix.get(), nd, PPFileName, DataName);
         Integrals->SetEntry(nd,I);
         nd+=2;
       }
      else
       { int AveragingMethod = (UseCentroids ? 1 : 2);
-        double I = PlotScalarDensity(PlotType, DataMatrix, nd, AveragingMethod, PPFileName, DataName);
+        double I = PlotScalarDensity(PlotType, DataMatrix.get(), nd, AveragingMethod, PPFileName, DataName);
         Integrals->SetEntry(nd, I);
       }
    }
-  delete DataMatrix;
   return Integrals;
 }
 

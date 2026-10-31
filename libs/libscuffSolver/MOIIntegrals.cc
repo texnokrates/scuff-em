@@ -758,176 +758,6 @@ void AssembleMOIMatrix(RWGGeometry *G, cdouble Omega, HMatrix *M)
     M->SetEntry(nr, nc, M->GetEntry(nc, nr) );
 }
 
-/***************************************************************/
-/* Get 'Reduced Potential/Field' (RPF) matrices tabulating the */
-/* contributions of individual basis functions to potentials   */
-/* and fields at individual points.                            */
-/*                                                             */
-/* XMatrix = 3xNX matrix of evaluation point coordinates       */
-/*                                                             */
-/* RPFMatrix[0][7*nx + npfc, nbfp]                             */
-/*  = contribution of basis function #nbfp, weighted with unit */
-/*    strength, to potential/field component #npfc @ point #nx */
-/*                                                             */
-/* RPFMatrix[1][7*nx + npfc, np]                               */
-/*  = contribution of port #np, driven with unit input current,*/
-/*    to potential/field component #npfc @ point #nx           */
-/*                                                             */
-/* Thus, if KN is a vector of length NBF storing the           */
-/* surface-current coefficients of the basis functions,        */
-/* then RPFMatrix[0] * KN is the payload of a 7xNX matrix      */
-/* whose (npfc,nx) entry is the potential/field component npfc */
-/* at point #nx due to RWG functions weighted by KN.           */
-/*                                                             */
-/* Similarly, if PC is a vector of length NPorts storing       */
-/* port currents, then RPFMatrix[1] * KN is the payload of a   */
-/* 7xNX matrix giving the contributions of driven ports.       */
-/***************************************************************/
-void GetMOIRPFMatrices(RWGGeometry *G, RWGPortList *PortList,
-                       cdouble Omega, HMatrix *XMatrix,
-                       HMatrix **pBFRPFMatrix, HMatrix **pPortRPFMatrix)
-{
-  int NX               = XMatrix->NC;
-  int NPFCX            = NPFC*NX; // total number of potential/field components at all points
-
-  int NBFEdges         = 0;
-  HMatrix *BFRPFMatrix = nullptr;
-  bool NeedBFRPFMatrix = (pBFRPFMatrix!=nullptr); 
-  if (NeedBFRPFMatrix)
-   { NBFEdges = G->TotalBFs;
-     BFRPFMatrix = *pBFRPFMatrix = CheckHMatrix(*pBFRPFMatrix, NPFCX, NBFEdges, LHM_COMPLEX);
-   }
-
-  // PERPFMatrix ("PortEdgeRPFMatrix") is a port-edge-resolved version of PortRPFMatrix
-  // that is reduced after the loop to obtain PortRPFMatrix[1].
-  int NPortEdges         = 0;
-  HMatrix *PERPFMatrix   = nullptr;
-  bool NeedPortRPFMatrix = (pPortRPFMatrix!=nullptr);
-  if (NeedPortRPFMatrix)
-   { NPortEdges   = PortList->PortEdges.size();
-     PERPFMatrix  = new HMatrix(NPFCX, NPortEdges, LHM_COMPLEX);
-   }
-
-  /***************************************************************/
-  /* pre-allocate interpolator for subtrate green's functions    */
-  /***************************************************************/
-  bool Subtract = (XMatrix->GetEntryD(2,0) >= 0.0);
-  if (G->Substrate)
-   { 
-     double RhoMinMax[2], zMinMax[2];
-     GetRzMinMax(G, XMatrix, RhoMinMax, zMinMax);
-     bool PPIsOnly = false;
-     bool RetainSingularTerms = false;
-     bool Verbose = (G->LogLevel==SCUFF_VERBOSE2);
-     G->Substrate->InitScalarGFInterpolator(Omega, RhoMinMax[0], RhoMinMax[1], zMinMax[0], zMinMax[1],
-                                            PPIsOnly, Subtract, RetainSingularTerms, Verbose);
-   }
-
-  /***************************************************************/
-  /* loop over all (edge, eval point) pairs to get contributions */
-  /* of individual basis functions (and optionally individual    */
-  /* port edges) to potentials and fields at eval points         */
-  /***************************************************************/
-  int NEdges = NBFEdges + NPortEdges;
-  int NXNE   = NX*NEdges;
-  int NumThreads=GetNumThreads();
-  Log("Computing (%i,%i) MOIRPF matrix (%i threads)",BFRPFMatrix->NR,BFRPFMatrix->NC,NumThreads);
-#ifdef USE_OPENMP
-#pragma omp parallel for schedule(dynamic,1), num_threads(NumThreads)
-#endif
-  for(int nxne=0; nxne<NXNE; nxne++)
-   {
-     int nx    = nxne / NEdges;
-     int nEdge = nxne % NEdges;
-
-     if (G->LogLevel>=SCUFF_VERBOSE2) LogPercent(nxne, NXNE);
-
-     int ns, ne;
-     cdouble *RPFVector;
-     if (nEdge < NBFEdges)
-      { G->ResolveEdge(nEdge, &ns, &ne);
-        RPFVector = (cdouble *)BFRPFMatrix->GetColumnPointer(nEdge);
-      }
-     else
-      { int nPE = nEdge - NBFEdges;
-        ns = PortList->PortEdges[nPE]->ns;
-        ne = PortList->PortEdges[nPE]->ne;
-        RPFVector = (cdouble *)PERPFMatrix->GetColumnPointer(nPE);
-      }
-    
-     double *XDest = (double *)XMatrix->GetColumnPointer(nx);
-     int Order=-1;
-     Get1BFMOIFields(G, ns, ne, Omega, XDest, RPFVector + NPFC*nx, Order, Subtract);
-   }
-  
-  /***************************************************************/
-  /* collapse the port-edge resolved RPF matrix, which gives the */
-  /* potentials and fields due to individual port edges, into the*/
-  /* port RPF matrix (NumPorts columns), which gives the full PFs*/
-  /* due to the port.                                            */
-  /***************************************************************/
-  if (NeedPortRPFMatrix)
-   { int NPorts = PortList->Ports.size();
-     HMatrix *PortRPFMatrix = *pPortRPFMatrix = CheckHMatrix(*pPortRPFMatrix, NPFCX, NPorts, LHM_COMPLEX);
-     PortRPFMatrix->Zero();
-     for(int nPE=0; nPE<NPortEdges; nPE++)
-      { RWGPortEdge *PE        = PortList->PortEdges[nPE];
-        int nPort              = PE->nPort;
-        int Pol                = PE->Pol;
-        double PolSign         = (Pol ==_PLUS ? +1.0 : -1.0);
-        double Perimeter       = PortList->Ports[nPort]->Perimeter[Pol];
-        double Weight          = PE->Sign*PolSign / Perimeter;
-        cdouble *PortRPFVector = (cdouble *)PortRPFMatrix->GetColumnPointer(nPort);
-        cdouble *PERPFVector   = (cdouble *)PERPFMatrix->GetColumnPointer(nPE);
-        VecPlusEquals(PortRPFVector, Weight, PERPFVector, NPFCX);
-      }
-     delete PERPFMatrix;
-   }
-}
-
-/***************************************************************/
-/***************************************************************/
-/***************************************************************/
-HMatrix *scuffSolver::GetRFFieldsViaRPFMatrices(HMatrix *XMatrix)
-{
-  if (XMatrix->NR!=3)
-   ErrExit("wrong-size (%ix%i) XMatrix in GetMOIFields",XMatrix->NR,XMatrix->NC);
-  int NX = XMatrix->NC;
-
-  cdouble Omega = G->StoredOmega;
-
-  bool OmitBFTerms   = CheckEnv("SCUFF_RFFIELDS_PORTONLY");
-  bool OmitPortTerms = CheckEnv("SCUFF_RFFIELDS_BFONLY");
-
-  // compute reduced potential-field matrices
-  Log("Getting RPF matrices for %i points...",NX);
-  HMatrix *BFRPFMatrix = nullptr, *PortRPFMatrix = nullptr;
-  GetMOIRPFMatrices( G, PortList, Omega, XMatrix,
-                     OmitBFTerms ? nullptr : &BFRPFMatrix, OmitPortTerms ? nullptr : &PortRPFMatrix
-                   );
-                    
-  // create output matrix
-  HMatrix *PFMatrix = new HMatrix(NPFC, NX, LHM_COMPLEX);
-
-  if (BFRPFMatrix)
-   { HVector Payload(NPFC*NX, PFMatrix->ZM);
-     BFRPFMatrix->Apply(KN, &Payload);
-     delete BFRPFMatrix;
-   }
-
-  // add port contribution
-  if (PortRPFMatrix)
-   { HVector Payload(NPFC*NX, LHM_COMPLEX);
-     HVector PCVector(NumPorts, CachedPortCurrents);
-     PortRPFMatrix->Apply(&PCVector, &Payload);
-     HMatrix PortPFContribution(NPFC, NX, Payload.ZV);
-     PFMatrix->Add(&PortPFContribution);
-     delete PortRPFMatrix;
-   }
-  
-  Log("...done with MOI fields via RPF  matrices");
-  return PFMatrix;
-}
 
 /***************************************************************/
 /***************************************************************/
@@ -970,17 +800,19 @@ HMatrix *scuffSolver::GetRFFields(HMatrix *XMatrix, HMatrix *PFMatrix)
   int NXNE = NX*NEdges;
   int NumThreads=GetNumThreads();
   bool AllocateThreadBuffers=false, NonCritical=false;
-  HMatrix **PFByThread=nullptr;
+  std::vector<HMatrix *> PFByThread;
+  std::vector<std::unique_ptr<HMatrix>> PFOwned;
   Log("Computing MOI fields at %ix%i = %i edge-point pairs (%i threads)",NEdges,NX,NXNE,NumThreads);
 #ifdef USE_OPENMP
   NonCritical = CheckEnv("SCUFF_NONCRITICAL");
   AllocateThreadBuffers = !CheckEnv("SCUFF_NO_THREAD_BUFFERS");
   Log("%s thread buffers",AllocateThreadBuffers ? "Allocating" : "Not allocating");
   if (AllocateThreadBuffers)
-   { PFByThread = new HMatrix *[NumThreads];
+   { PFByThread.resize(NumThreads);
      PFByThread[0] = PFMatrix;
      for(int nt=1; nt<NumThreads; nt++)
-      PFByThread[nt] = new HMatrix(NPFC, NX, LHM_COMPLEX);
+      { PFOwned.push_back(std::make_unique<HMatrix>(NPFC, NX, LHM_COMPLEX));
+        PFByThread[nt] = PFOwned.back().get(); }
    }
 #pragma omp parallel for schedule(dynamic,1), num_threads(NumThreads)
 #endif
@@ -1034,12 +866,8 @@ HMatrix *scuffSolver::GetRFFields(HMatrix *XMatrix, HMatrix *PFMatrix)
   /* accumulate per-thread contributions                         */
   /***************************************************************/
   if (AllocateThreadBuffers)
-   { for(int nt=1; nt<NumThreads; nt++)
-      { PFMatrix->Add(PFByThread[nt]);
-        delete PFByThread[nt];
-      }
-     delete[] PFByThread;
-   }
+   for(int nt=1; nt<NumThreads; nt++)
+    PFMatrix->Add(PFByThread[nt]);
   return PFMatrix;
 }
 

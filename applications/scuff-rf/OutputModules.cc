@@ -187,8 +187,8 @@ using RFMeshData = struct RFMeshData
    cdouble *PortCurrents;
  };
 
-HMatrix *RFFluxMDF(void *UserData, HMatrix *XMatrix, 
-                   const char ***pDataNames)
+std::unique_ptr<HMatrix> RFFluxMDF(void *UserData, HMatrix *XMatrix,
+                                   const char ***pDataNames)
 {
   static const char *DataNames[]=
    { "Ex", "Ey", "Ez", "|E|", "|H|", "Radial Poynting flux" };
@@ -219,7 +219,7 @@ HMatrix *RFFluxMDF(void *UserData, HMatrix *XMatrix,
   /* contributions of driven ports to the fields at each point,  */
   /* then fill in the appropriate colums of the DataMatrix.      */
   /***************************************************************/
-  HMatrix *DataMatrix=new HMatrix(NX, NumData, LHM_REAL);
+  auto DataMatrix=std::make_unique<HMatrix>(NX, NumData, LHM_REAL);
   DataMatrix->Zero();
   for(int nx=0; nx<NX; nx++)
    { 

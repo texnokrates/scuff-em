@@ -88,8 +88,8 @@ int main(int argc, char *argv[])
   G->Substrate = CreateLayeredSubstrate(SubstrateDefinition);
 
   int NEA = G->Surfaces[nsa]->NumEdges, NEB=G->Surfaces[nsb]->NumEdges;
-  HMatrix *MSlow = new HMatrix(NEA, NEB, LHM_COMPLEX);
-  HMatrix *MFast = new HMatrix(NEA, NEB, LHM_COMPLEX);
+  auto MSlow = std::make_unique<HMatrix>(NEA, NEB, LHM_COMPLEX);
+  auto MFast = std::make_unique<HMatrix>(NEA, NEB, LHM_COMPLEX);
 
   Tic();
   setenv("SCUFF_IGNORE_EEPS","1",1);

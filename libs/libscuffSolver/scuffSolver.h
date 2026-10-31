@@ -173,8 +173,7 @@ public:
     HMatrix *GetFullZMatrix();
 
     // utility routines for converting Z <--> S parameters
-    HMatrix *Z2S(HMatrix *Z, HMatrix *S=nullptr, double ZCharacteristic=50.0);
-    HMatrix *S2Z(HMatrix *S, HMatrix *Z=nullptr, double ZCharacteristic=50.0);
+
 
     // low-level post-processing
     HMatrix *GetRFFields(HMatrix *XMatrix, HMatrix *PFMatrix=nullptr);
@@ -183,7 +182,6 @@ public:
     zVec GetFields(dVec X, const char *WhichFields=nullptr);
 
     // alternative implementation of GetFields that uses RPF ("reduced potential/field") matrices
-    HMatrix *GetRFFieldsViaRPFMatrices(HMatrix *XMatrix);
     /* GetPanelSourceDensities comes in two forms: allocating and
        filling (PSDMatrix must be TotalPanels x 13).               */
     std::unique_ptr<HMatrix> GetPanelSourceDensities();
@@ -218,18 +216,23 @@ public:
     int NumPorts;
 
     // internally stored variables
-    HMatrix *M;             // LU-factorized SIE matrix, set by AssembleSystemMatrix
-    HMatrix *PBFIMatrix;    // port <--> basis-function interaction matrix
-    HMatrix *PPIMatrix;     // port <--> port interaction matrix
-    HVector *KN;            // set by most recent call to SolveSystem()
+    std::unique_ptr<HMatrix> M;          // LU-factorized SIE matrix, set by AssembleSystemMatrix
+    std::unique_ptr<HMatrix> PBFIMatrix; // port <--> basis-function interaction matrix
+    std::unique_ptr<HMatrix> PPIMatrix;  // port <--> port interaction matrix
+    std::unique_ptr<HVector> KN;         // set by most recent call to SolveSystem()
     cdouble *CachedPortCurrents;  // set by most recent call to SolveSystem()
     IncField *CachedIF;     // set by most recent call to SolveSystem()
     cdouble OmegaSIE;       // frequencies at which M, PBFI/PP were last computed
     cdouble OmegaPBFI;
 
     // optional caching of system matrix blocks (useful with geometrical transformations)
-    HMatrix **TBlocks; 
-    HMatrix **UBlocks;
+    /* system block cache.  Mated surfaces share their diagonal
+       blocks exactly as in the geometry's FIBBI caches: only the
+       Mate[ns]==-1 slots are owned (TBlockStorage); TBlocks holds
+       views.                                                       */
+    std::vector<HMatrix *> TBlocks;
+    std::vector<std::unique_ptr<HMatrix>> TBlockStorage;
+    std::vector<std::unique_ptr<HMatrix>> UBlocks;
 
     ////////////////////////////////////////////////////
     // stuff to facilitate python-driven sessions by storing user-specified
