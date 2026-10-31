@@ -54,11 +54,11 @@ typedef struct BeynSolver
    int M;   // dimension of matrices
    int L;   // number of columns of VHat matrix
 
-   HVector *Eigenvalues, *EVErrors, *Residuals;
-   HMatrix *Eigenvectors;
-   HMatrix *A0, *A1, *A0Coarse, *A1Coarse, *MInvVHat;
-   HMatrix *VHat;
-   HVector *Sigma;
+   std::unique_ptr<HVector> Eigenvalues, EVErrors, Residuals;
+   std::unique_ptr<HMatrix> Eigenvectors;
+   std::unique_ptr<HMatrix> A0, A1, A0Coarse, A1Coarse, MInvVHat;
+   std::unique_ptr<HMatrix> VHat;
+   std::unique_ptr<HVector> Sigma;
    cdouble *Workspace;
 
  } BeynSolver;

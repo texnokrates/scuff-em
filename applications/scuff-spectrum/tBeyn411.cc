@@ -49,14 +49,14 @@
 /***************************************************************/
 typedef struct BFData
  { 
-   HMatrix *M;
+   std::unique_ptr<HMatrix> M;
  } BFData;
 
 void BeynFunc(cdouble z, void *UserData, HMatrix *VHat, HMatrix *MVHat)
 {
   // unpack fields from data structure
   BFData *Data   = (BFData *)UserData;
-  HMatrix *M     = Data->M;
+  HMatrix *M     = Data->M.get();
 
   // assemble M matrix as described in Beyn section 4.11
   int NR = M->NR;
@@ -160,7 +160,7 @@ CLI::App App{"compute spectrum via Beyn method"};
   /* initialize data structure needed for our BeynFunction  ******/
   /***************************************************************/
   struct BFData MyBFData, *BFD=&MyBFData;
-  BFD->M = new HMatrix(Dim, Dim, LHM_COMPLEX);
+  BFD->M = std::make_unique<HMatrix>(Dim, Dim, LHM_COMPLEX);
 
   /***************************************************************/
   /* compute eigenvalues by Beyn method                          */

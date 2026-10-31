@@ -187,9 +187,9 @@ int main(int argc, char *argv[])
   /***************************************************************/
   std::unique_ptr<HMatrix> ContourMatrix;
   if (!ContourFile.empty())
-   ContourMatrix.reset(new HMatrix(ContourFile.c_str()));
+   ContourMatrix        = std::make_unique<HMatrix>(ContourFile.c_str());
   else
-   { ContourMatrix.reset(new HMatrix(1, 5 + G->LDim, LHM_COMPLEX));
+   { ContourMatrix      = std::make_unique<HMatrix>(1, 5 + G->LDim, LHM_COMPLEX);
      int nc=0;
      if (G->LDim>=1) ContourMatrix->SetEntry(0,nc++,kx);
      if (G->LDim==2) ContourMatrix->SetEntry(0,nc++,ky);
@@ -248,10 +248,10 @@ int main(int argc, char *argv[])
      /***************************************************************/
      std::unique_ptr<BeynSolver, void (*)(BeynSolver *)> Solver(CreateBeynSolver(D, L),
                                                                 DestroyBeynSolver);
-     HVector *Eigenvalues  = Solver->Eigenvalues;
-     HVector *EVErrors     = Solver->EVErrors;
-     HMatrix *Eigenvectors = Solver->Eigenvectors;
-     HVector *Residuals    = Solver->Residuals;
+     HVector *Eigenvalues  = Solver->Eigenvalues.get();
+     HVector *EVErrors     = Solver->EVErrors.get();
+     HMatrix *Eigenvectors = Solver->Eigenvectors.get();
+     HVector *Residuals    = Solver->Residuals.get();
      int NumModes=BeynSolve(Solver.get(), BeynFunc, (void *)&MyBFData, Omega0, Rx, Ry, N);
 
      if (PlotContours)

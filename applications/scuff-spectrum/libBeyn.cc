@@ -51,19 +51,19 @@ BeynSolver *CreateBeynSolver(int M, int L)
   int MLMin = (M<L) ? M : L;
 
   // storage for eigenvalues and eigenvectors
-  Solver->Eigenvalues  = new HVector(L, LHM_COMPLEX);
-  Solver->EVErrors     = new HVector(L, LHM_COMPLEX);
-  Solver->Residuals    = new HVector(L, LHM_COMPLEX);
-  Solver->Eigenvectors = new HMatrix(M, L, LHM_COMPLEX);
+  Solver->Eigenvalues  = std::make_unique<HVector>(L, LHM_COMPLEX);
+  Solver->EVErrors     = std::make_unique<HVector>(L, LHM_COMPLEX);
+  Solver->Residuals    = std::make_unique<HVector>(L, LHM_COMPLEX);
+  Solver->Eigenvectors = std::make_unique<HMatrix>(M, L, LHM_COMPLEX);
 
   // storage for singular values, random VHat matrix, etc. used in algorithm
-  Solver->A0           = new HMatrix(M,L,LHM_COMPLEX);
-  Solver->A1           = new HMatrix(M,L,LHM_COMPLEX);
-  Solver->A0Coarse     = new HMatrix(M,L,LHM_COMPLEX);
-  Solver->A1Coarse     = new HMatrix(M,L,LHM_COMPLEX);
-  Solver->MInvVHat     = new HMatrix(M,L,LHM_COMPLEX);
-  Solver->VHat         = new HMatrix(M,L,LHM_COMPLEX);
-  Solver->Sigma        = new HVector(MLMin);
+  Solver->A0           = std::make_unique<HMatrix>(M,L,LHM_COMPLEX);
+  Solver->A1           = std::make_unique<HMatrix>(M,L,LHM_COMPLEX);
+  Solver->A0Coarse     = std::make_unique<HMatrix>(M,L,LHM_COMPLEX);
+  Solver->A1Coarse     = std::make_unique<HMatrix>(M,L,LHM_COMPLEX);
+  Solver->MInvVHat     = std::make_unique<HMatrix>(M,L,LHM_COMPLEX);
+  Solver->VHat         = std::make_unique<HMatrix>(M,L,LHM_COMPLEX);
+  Solver->Sigma        = std::make_unique<HVector>(MLMin);
   ReRandomize(Solver);
 
   // internal workspace: need storage for 2 MxL matrices
@@ -84,17 +84,8 @@ BeynSolver *CreateBeynSolver(int M, int L)
 /***************************************************************/
 void DestroyBeynSolver(BeynSolver *Solver)
 {
-  delete  Solver->Eigenvalues;
-  delete  Solver->EVErrors;  
-  delete  Solver->Eigenvectors;
-
-  delete  Solver->A0;
-  delete  Solver->A1;
-  delete  Solver->A0Coarse;
-  delete  Solver->A1Coarse;
-  delete  Solver->MInvVHat;
-  delete  Solver->Sigma;
-  delete  Solver->VHat;
+  /* member matrices/vectors free through their unique_ptrs; note the
+     previous hand-written version leaked Solver->Residuals          */
 
   free(Solver->Workspace);
 
@@ -109,7 +100,7 @@ void ReRandomize(BeynSolver *Solver, unsigned int RandSeed)
   if (RandSeed==0) 
    RandSeed=time(0);
   srandom(RandSeed);
-  HMatrix *VHat=Solver->VHat;
+  HMatrix *VHat=Solver->VHat.get();
   for(int nr=0; nr<VHat->NR; nr++)
    for(int nc=0; nc<VHat->NC; nc++)
     VHat->SetEntry(nr,nc,zrandN());
@@ -127,7 +118,7 @@ int ProcessAMatrices(BeynSolver *Solver, BeynFunction UserFunc, void *UserData,
 {
   int M          = Solver->M;
   int L          = Solver->L;
-  HVector *Sigma = Solver->Sigma;
+  HVector *Sigma = Solver->Sigma.get();
 
   cdouble *MLBuffers[2], *LLBuffers[3];
   int ML = M*L, LL=L*L;
@@ -238,12 +229,12 @@ int BeynSolve(BeynSolver *Solver,
 
   int M                 = Solver->M;
   int L                 = Solver->L;
-  HMatrix *A0           = Solver->A0;
-  HMatrix *A1           = Solver->A1;
-  HMatrix *A0Coarse     = Solver->A0Coarse;
-  HMatrix *A1Coarse     = Solver->A1Coarse;
-  HMatrix *MInvVHat     = Solver->MInvVHat;
-  HMatrix *VHat         = Solver->VHat;
+  HMatrix *A0           = Solver->A0.get();
+  HMatrix *A1           = Solver->A1.get();
+  HMatrix *A0Coarse     = Solver->A0Coarse.get();
+  HMatrix *A1Coarse     = Solver->A1Coarse.get();
+  HMatrix *MInvVHat     = Solver->MInvVHat.get();
+  HMatrix *VHat         = Solver->VHat.get();
 
   /***************************************************************/
   /* evaluate contour integrals by numerical quadrature to get   */
@@ -277,9 +268,9 @@ int BeynSolve(BeynSolver *Solver,
   /***************************************************************/
   /***************************************************************/
   /***************************************************************/
-  HVector *Eigenvalues  = Solver->Eigenvalues;
-  HVector *EVErrors     = Solver->EVErrors;
-  HMatrix *Eigenvectors = Solver->Eigenvectors;
+  HVector *Eigenvalues  = Solver->Eigenvalues.get();
+  HVector *EVErrors     = Solver->EVErrors.get();
+  HMatrix *Eigenvectors = Solver->Eigenvectors.get();
   
   int K       = ProcessAMatrices(Solver, UserFunc, UserData, A0,       A1,       z0, Eigenvalues, Eigenvectors);
   int KCoarse = ProcessAMatrices(Solver, UserFunc, UserData, A0Coarse, A1Coarse, z0, EVErrors);

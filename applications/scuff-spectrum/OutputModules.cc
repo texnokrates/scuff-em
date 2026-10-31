@@ -54,14 +54,13 @@ void ProcessEPFile(RWGGeometry *G, HVector *KN, cdouble Omega, double *kBloch,
   /*--------------------------------------------------------------*/
   /*- try to read eval points from file --------------------------*/
   /*--------------------------------------------------------------*/
-  HMatrix *XMatrix=new HMatrix(EPFileName,LHM_TEXT,"-ncol 3");
+  auto XMatrix=std::make_unique<HMatrix>(EPFileName,LHM_TEXT,"-ncol 3");
   if (XMatrix->ErrMsg)
    { fprintf(stderr,"Error processing EP file: %s\n",XMatrix->ErrMsg);
-     delete XMatrix;
-     return;
+        return;
    };
   Log("Evaluating fields at points in file %s...",EPFileName);
-  auto FMatrix = G->GetFields( nullptr, KN, Omega, kBloch, XMatrix);
+  auto FMatrix = G->GetFields( nullptr, KN, Omega, kBloch, XMatrix.get());
 
   /*--------------------------------------------------------------*/
   /*- get components of fields radiated by eigenmode currents    -*/
@@ -94,7 +93,6 @@ void ProcessEPFile(RWGGeometry *G, HVector *KN, cdouble Omega, double *kBloch,
    };
   fclose(f);
 
-  delete XMatrix;
 
 }
 
@@ -149,7 +147,7 @@ void WriteFVMesh(RWGGeometry *G, HVector *KN, cdouble Omega, double *kBloch,
   /*- create an Nx3 HMatrix whose columns are the coordinates of  */
   /*- the flux mesh panel vertices                                */
   /*--------------------------------------------------------------*/
-  HMatrix *XMatrix=new HMatrix(NumVertices, 3);
+  auto XMatrix=std::make_unique<HMatrix>(NumVertices, 3);
   for(int nv=0; nv<NumVertices; nv++)
    XMatrix->SetEntriesD(nv, ":", Vertices + 3*nv);
 
@@ -177,7 +175,7 @@ void WriteFVMesh(RWGGeometry *G, HVector *KN, cdouble Omega, double *kBloch,
   /*--------------------------------------------------------------*/
   /*- get the total fields at the panel vertices                 -*/
   /*--------------------------------------------------------------*/
-  auto FMatrix=G->GetFields(nullptr, KN, Omega, kBloch, XMatrix);
+  auto FMatrix=G->GetFields(nullptr, KN, Omega, kBloch, XMatrix.get());
   for(int nff=0; nff<NUMFIELDFUNCS; nff++)
    { 
      fprintf(f,"View \"%s (Omega%s)",FieldFunctionNames[nff],z2s(Omega));
@@ -210,7 +208,6 @@ void WriteFVMesh(RWGGeometry *G, HVector *KN, cdouble Omega, double *kBloch,
   /*--------------------------------------------------------------*/
   /*--------------------------------------------------------------*/
   /*--------------------------------------------------------------*/
-  delete XMatrix;
 }
 
 /***************************************************************/
@@ -299,11 +296,11 @@ void VisualizeSurfaceFields(RWGGeometry *G, HVector *KN, cdouble Omega, double *
   /*- create an Nx3 HMatrix whose columns are the coordinates of  */
   /*- the flux mesh panel vertices                                */
   /*--------------------------------------------------------------*/
-  HMatrix *XMatrix=new HMatrix(G->TotalPanels, 3);
+  auto XMatrix=std::make_unique<HMatrix>(G->TotalPanels, 3);
   for(int ns=0, ntp=0; ns<G->NumSurfaces; ns++)
    for(int np=0; np<G->Surfaces[ns]->NumPanels; np++, ntp++)
     XMatrix->SetEntriesD(ntp,":",G->Surfaces[ns]->Panels[np]->Centroid);
-  auto FMatrix=G->GetFields(nullptr, KN, Omega, kBloch, XMatrix);
+  auto FMatrix=G->GetFields(nullptr, KN, Omega, kBloch, XMatrix.get());
 
   int PlotType=0, AveragingMethod=1;
   CheckEnv("SCUFF_AVERAGING_METHOD", &AveragingMethod);
@@ -323,7 +320,6 @@ void VisualizeSurfaceFields(RWGGeometry *G, HVector *KN, cdouble Omega, double *
       }
      delete[] Values;
    }
-  delete XMatrix;
 }
 
 /***************************************************************/
