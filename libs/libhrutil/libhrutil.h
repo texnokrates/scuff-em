@@ -33,7 +33,6 @@
 #include <complex>
 #include <cmath>
 #include <vector>
-using namespace std;
 
 #include <Owner.h>
 
@@ -69,25 +68,25 @@ using namespace std;
 /***************************************************************/
 //typedef _Complex double cdouble;
 #ifndef cdouble
-  using cdouble = complex<double>;
+  using cdouble = std::complex<double>;
 #endif
 #ifndef iVec
-  using iVec = vector<int>;
+  using iVec = std::vector<int>;
 #endif
 #ifndef dVec
-  using dVec = vector<double>;
+  using dVec = std::vector<double>;
 #endif
 #ifndef zVec
-  using zVec = vector<cdouble>;
+  using zVec = std::vector<cdouble>;
 #endif
 #ifndef sVec
-  using sVec = vector<char *>;
+  using sVec = std::vector<char *>;
 #endif
 #ifndef strVec
-  using strVec = vector<string>;
+  using strVec = std::vector<std::string>;
 #endif
 #ifndef bVec
-  using bVec = vector<bool>;
+  using bVec = std::vector<bool>;
 #endif
 
 /***************************************************************/

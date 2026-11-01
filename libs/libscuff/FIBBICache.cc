@@ -106,17 +106,10 @@ using FIBBIKeyCmp = struct
 
  };
 
-#ifdef HAVE_CXX11
 using KDMap = std::unordered_map< KeyStruct,
-                            DataStruct,
-                            FIBBIKeyHash,
-                            FIBBIKeyCmp>;
-#elif defined(HAVE_TR1)
-typedef std::tr1::unordered_map< KeyStruct,
-                                 DataStruct,
-                                 FIBBIKeyHash,
-                                 FIBBIKeyCmp> KDMap;
-#endif
+                                  DataStruct,
+                                  FIBBIKeyHash,
+                                  FIBBIKeyCmp>;
 
 /*--------------------------------------------------------------*/
 /*--------------------------------------------------------------*/

@@ -572,7 +572,7 @@ class InterpND
     /*- user-supplied function, user-supplied grids in each dimension*/
     /*--------------------------------------------------------------*/
     InterpND(PhiVDFunc UserFunc, void *UserData, int NF, 
-             vector<dVec> &X0Grids, bool Verbose=false);
+             std::vector<dVec> &X0Grids, bool Verbose=false);
 
     /*--------------------------------------------------------------*/
     /*- user-supplied function with requested error tolerance       */
@@ -660,7 +660,7 @@ class InterpND
     iVec NPoints;            // # grid points in each dimension
     int NF;                  // number of functions
     dVec XMin, DX;           // grid points (uniform spacing)
-    vector<dVec> XGrids;     // grid points (non-uniform spacing)
+    std::vector<dVec> XGrids;     // grid points (non-uniform spacing)
 
     iVec CellStride;         // strides for computing grid-cell index
     iVec PointStride;        // strides for computing grid-point index

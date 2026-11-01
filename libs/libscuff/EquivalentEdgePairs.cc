@@ -40,11 +40,7 @@
 #include "EquivalentEdgePairs.h"
 #include "PanelCubature.h"
 
-#if defined(HAVE_TR1)
-  #include <tr1/unordered_map>
-#elif defined(HAVE_CXX11)
-  #include <unordered_map>
-#endif
+#include <unordered_map>
 
 namespace scuff {
 
@@ -300,8 +296,8 @@ char *EdgePairSignatureStr(RWGSurface *Sa, int nea, RWGSurface *Sb, int neb, cha
 /* An EdgePair is a pair of edge indices.                                        */
 /* An EdgePairSet is a set of EdgePairs, all equivalent to each other.           */
 /*********************************************************************************/
-using EdgePairSet = set<EdgePair, EdgePairCmp>;
-using ChildPairMap = map<EdgePair, EdgePairSet, EdgePairCmp>;
+using EdgePairSet = std::set<EdgePair, EdgePairCmp>;
+using ChildPairMap = std::map<EdgePair, EdgePairSet, EdgePairCmp>;
 
 struct EPSigHash
   { long operator() (const EdgePairSignature &EPSig) const
@@ -333,16 +329,8 @@ struct EPSigCmp
    }
 };
 
-#if defined(HAVE_TR1)
-  typedef tr1::unordered_map <EdgePair, EdgePair, EdgePairHash, EdgePairEq > ParentPairMap;
-  typedef tr1::unordered_map <EdgePairSignature, EdgePair, EPSigHash, EPSigEqual> EPSigMap;
-#elif defined(HAVE_CXX11)
-  using ParentPairMap = unordered_map <EdgePair, EdgePair, EdgePairHash, EdgePairEq>;
-  using EPSigMap = unordered_map <EdgePairSignature, EdgePair, EPSigHash, EPSigEqual>;
-#else
-  typedef map<EdgePair, EdgePair, EdgePairCmp> ParentPairMap;
-  typedef map<EdgePairSignature, EdgePair , EPSigCmp> EPSigMap;
-#endif
+using ParentPairMap = std::unordered_map <EdgePair, EdgePair, EdgePairHash, EdgePairEq>;
+using EPSigMap = std::unordered_map <EdgePairSignature, EdgePair, EPSigHash, EPSigEqual>;
 
 using EquivalentEdgePairSubTable = struct EquivalentEdgePairSubTable
  { RWGSurface *Sa, *Sb;
@@ -541,7 +529,7 @@ EquivalentEdgePairTable::EquivalentEdgePairTable(RWGGeometry *_G, int _nsa, int 
 #endif
 
   int NumThreads = GetNumThreads();
-  vector<EquivalentEdgePairSubTable *> BranchTables(NumThreads);
+  std::vector<EquivalentEdgePairSubTable *> BranchTables(NumThreads);
   for(int nt=0; nt<NumThreads; nt++)
    { BranchTables[nt] = new EquivalentEdgePairSubTable;
      BranchTables[nt]->Sa = G->Surfaces[nsa];
@@ -675,7 +663,7 @@ void EquivalentEdgePairTable::Export(const char *FileName)
 /***************************************************************/
 /***************************************************************/
 /***************************************************************/
-// read a string of the form {n1,n2} or %c%c{n1,n2} from f.
+// read a std::string of the form {n1,n2} or %c%c{n1,n2} from f.
 // return codes:
 // 0: fail because end of file
 // 1: fail for other reason

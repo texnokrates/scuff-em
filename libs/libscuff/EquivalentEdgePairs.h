@@ -38,7 +38,7 @@ using ParentPairData = struct ParentPairData
    ParentPairData(int _nea, int _neb): nea(_nea), neb(_neb) {}
  };
 
-using ParentPairList = vector<ParentPairData>;
+using ParentPairList = std::vector<ParentPairData>;
 
 #define GKERNEL 0
 #define IKCKERNEL 1
@@ -53,7 +53,7 @@ struct ChildPairData
     { GCSign[0] = Signs.Flipped[0] ? -1.0 : 1.0, GCSign[1] = Signs.Flipped[1] ? -1.0 : 1.0; }
    ChildPairData(int _nea, int _neb): nea(_nea), neb(_neb) { GCSign[0]=GCSign[1]=1.0; }
  };
-using ChildPairList = vector<ChildPairData>;
+using ChildPairList = std::vector<ChildPairData>;
 
 class EquivalentEdgePairTable
  {

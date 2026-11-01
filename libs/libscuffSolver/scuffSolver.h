@@ -79,7 +79,7 @@ using RWGPortEdge = struct RWGPortEdge
 
  };
 
-using RWGPortEdgeList = vector<RWGPortEdge *>;
+using RWGPortEdgeList = std::vector<RWGPortEdge *>;
 
 using RWGPort = struct RWGPort
  { RWGPortEdgeList PortEdges[NUMPOLARITIES];
@@ -87,7 +87,7 @@ using RWGPort = struct RWGPort
  };
 
 using RWGPortList = struct RWGPortList
- { vector<RWGPort *> Ports;
+ { std::vector<RWGPort *> Ports;
    RWGPortEdgeList   PortEdges;
    double            RMinMax[6]; // bounding box
 
@@ -242,7 +242,7 @@ public:
     char *SubstrateFile;
     bool SubstrateInitialized;
 
-    vector<dVec> LatticeVectors;
+    std::vector<dVec> LatticeVectors;
     char *Medium;
     sVec MeshFiles, MeshLabels, MeshTransforms, Materials;
     char *scuffgeoFile;

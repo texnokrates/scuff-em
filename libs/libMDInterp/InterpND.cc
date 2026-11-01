@@ -191,7 +191,7 @@ InterpND::InterpND(PhiVDFunc UserFunc, void *UserData, int _NF,
 /* function and user-supplied grids for each variable           */
 /****************************************************************/
 InterpND::InterpND(PhiVDFunc UserFunc, void *UserData, int _NF,
-                   vector<dVec> &X0Grids, bool Verbose)
+                   std::vector<dVec> &X0Grids, bool Verbose)
   : NF(_NF)
  
 { 
