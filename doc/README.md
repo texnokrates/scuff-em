@@ -103,3 +103,33 @@ is the root directory of the documentation tree, and
 "gh-pages." I don't want items (a) or (b) to be true 
 for the main scuff-em repository, so it's easier to
 have a separate repository for documentation alone.
+
+## Building the documentation with CMake (2026-11)
+
+The documentation is now built by the CMake build system (see
+`cmake/ScuffDocs.cmake` and the Doxygen page
+`Building the documentation` in the generated HTML output):
+
+```
+% cmake -B build && cmake --build build --target docs
+```
+
+produces the full HTML documentation -- the API reference extracted
+from the library headers together with the markdown pages in
+`doc/docs` -- in `build/doc/html/index.html`, with the technical-memo
+PDFs copied alongside under `build/doc/html/tex/`. The
+
+```
+% cmake --build build --target memos
+```
+
+target rebuilds the LaTeX memos in `doc/docs/tex` in place via
+latexmk. Both targets are enabled automatically when Doxygen and
+latexmk are found; the `SCUFF_BUILD_DOCS` and `SCUFF_BUILD_MEMOS`
+CMake options control them explicitly.
+
+The markdown sources in `doc/docs` are shared between this Doxygen
+build and the historical mkdocs-based web documentation: the small
+input filter `doc/doxygen/md-filter.py` translates the few
+mkdocs-specific constructs (wikilinks, `{!...!}` include directives)
+when Doxygen processes the files.

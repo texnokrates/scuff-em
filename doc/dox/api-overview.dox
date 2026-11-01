@@ -1,0 +1,85 @@
+/**
+\page api_overview C++ API overview
+
+The computational engine underlying the <span class=SC>scuff-em</span>
+command-line applications is a set of C++ libraries.  If the standalone
+programs are not flexible enough for your needs, you can write your own
+C++ (or python) codes that link against these libraries directly; the
+[core-library reference](@ref md_doc_2docs_2_a_p_i_2libscuff) walks
+through this process with fully worked examples.
+
+\section api_libraries Libraries
+
+<table>
+<tr><th>Library<th>Header<th>Description
+<tr><td>\b libscuff
+    <td>\c libscuff.h
+    <td>The core library.  The central class is
+        \ref scuff::RWGGeometry "RWGGeometry," which stores all
+        necessary data on a scattering geometry described by a
+        <tt>.scuffgeo</tt> file and provides methods for assembling and
+        solving BEM systems and post-processing the solutions.
+        Surfaces are described by \ref scuff::RWGSurface "RWGSurface."
+<tr><td>\b libscuffSolver
+    <td>\c libscuffSolver.h
+    <td>A higher-level convenience layer, \ref scuff::scuffSolver
+        "scuffSolver," that caches the assembled BEM matrix to accelerate
+        computations at multiple frequencies, incident fields, and
+        post-processing evaluations on one and the same geometry.
+<tr><td>\b libStaticSolver
+    <td>\c libStaticSolver.h
+    <td>\ref scuff::StaticSolver "StaticSolver," the quasistatic
+        (pure-electrostatics) counterpart of RWGGeometry.
+<tr><td>\b libIncField
+    <td>\c libIncField.h
+    <td>The \ref IncField "IncField" class hierarchy describes incident
+        fields: plane waves, point sources, gaussian beams, and
+        user-specified field profiles.
+<tr><td>\b libhmat
+    <td>\c libhmat.h
+    <td>Simple row-major dense matrix/vector classes (\ref HMatrix,
+        \ref HVector) used throughout <span class=SC>scuff-em</span>,
+        with helpers for linear algebra (wrappers around LAPACK for
+        \ref Eig "eigendecomposition," SVD, QR, ...).
+<tr><td>\b libhrutil
+    <td>\c libhrutil.h
+    <td>Miscellaneous utility routines: geometry helpers, cache
+        management, timing, logging, command-line conveniences
+        (\c GetCommandLineOptions), file I/O helpers.
+<tr><td>\b libMatProp
+    <td>\c libMatProp.h
+    <td>The \ref MatProp "MatProp" class describes frequency-dependent
+        material permittivities/permeabilities, including tabulated
+        materials, Drude/Lorentz models, and interpolated material
+        files.
+<tr><td>\b libSubstrate
+    <td>\c libSubstrate.h
+    <td>\ref Substrate "Substrate" describes layered dielectric
+        substrates and computes their Green's functions.
+<tr><td>\b libSpherical
+    <td>\c libSpherical.h
+    <td>Vector spherical waves and spherical-basis helpers.
+</table>
+
+\section api_conventions Conventions
+
+- All library entities live in the \c scuff namespace; source files
+  typically \c \#include \c <libscuff.h> and issue
+  <tt>using namespace scuff;</tt>.
+- Matrix and vector objects are \ref HMatrix "HMatrix" /
+  \ref HVector "HVector" instances.  Modern <span class=SC>scuff-em</span>
+  API methods follow a factory/fill convention: an allocating overload
+  returns a \c std::unique_ptr to a freshly allocated object, while a
+  filling overload stores into a caller-owned object of exactly the
+  right dimensions (wrong dimensions are a fatal error).
+- Geometries are created with \c new and managed by pointer; copying
+  is neither used nor safe.
+
+\section api_examples Example programs
+
+The \c examples directory of the source distribution contains
+fully worked example programs that access the core library directly;
+see \ref md_doc_2docs_2examples_2examples "the examples overview" and
+the individual tutorial pages linked from the documentation home page.
+
+*/

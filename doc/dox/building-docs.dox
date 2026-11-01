@@ -1,0 +1,49 @@
+/**
+\page building_the_documentation Building the documentation
+
+The documentation is built as part of the CMake build system.
+
+\section doc_targets Targets
+
+- \c docs -- runs Doxygen and produces the full HTML documentation in
+  \c <buildDir>/doc/html.  Open \c doc/html/index.html in a browser.
+  The rendered technical memos (\c PDF) are copied into the output
+  tree under \c doc/html/tex and are reachable from the documentation
+  home page and the \ref technical_memos "memo list."
+- \c memos -- (re)builds the LaTeX technical memos in
+  \c doc/docs/tex via \c latexmk.  Built automatically as a
+  prerequisite of \c docs when \c latexmk is available.
+
+\section doc_config Configuration options
+
+| CMake option          | Default | Meaning                                        |
+|-----------------------|---------|------------------------------------------------|
+| SCUFF_BUILD_DOCS      | ON if Doxygen found | Enable the documentation targets   |
+| SCUFF_BUILD_MEMOS     | ON if latexmk found | Rebuild the LaTeX memos from source|
+
+\section doc_requirements Requirements
+
+- Doxygen (1.9 or newer recommended) for the HTML documentation.
+- \c pdflatex and \c latexmk with the standard TeX Live package set
+  for rebuilding the memos from source.  Without them the committed
+  PDFs are simply copied into the HTML output.
+- The formulas on the documentation pages are rendered client-side by
+  MathJax loaded from a public CDN, so the HTML documentation requires
+  network access for formula display.
+
+\section doc_source_source Documentation sources
+
+- \c doc/docs -- the markdown documentation tree (tutorials, reference
+  pages, application manuals).  The files were originally written for
+  the mkdocs-based documentation site; a small input filter
+  (\c doc/doxygen/md-filter.py) translates the few mkdocs-specific
+  constructs (wikilinks, include directives) when Doxygen processes
+  them.
+- \c doc/docs/tex -- LaTeX sources of the technical memos.
+- \c doc/dox -- the Doxygen-specific glue pages (this page, the API
+  overview, the memo list).
+- Library headers -- the API reference is extracted directly from the
+  source code.
+
+*/
+

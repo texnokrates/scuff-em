@@ -154,16 +154,15 @@ template<typename T> inline Vec<T> const GetOrthogonalNormVec(Vec<T> const& vin)
   return vout;
 }
 
-/* this calculates the local cylindrical coordinates r and z of a point. input:
-   Xrel: cartesian vector of the point relative to the origin of the system
-   nHat: unit vector along the z-axis of the coordinate system
-
-   we use the formulas from 
-   http://mathworld.wolfram.com/Point-LineDistance3-Dimensional.html, 
-   where x1 = (0,0,0) and x2 = nHat (|nHat|==1!), and
-   formula (13) from http://mathworld.wolfram.com/Point-PlaneDistance.html,
-   where Xi = (0,0,0) (any point on the plane) and n = nHat
-*/
+/** this calculates the local cylindrical coordinates r and z of a point. input:
+    Xrel: cartesian vector of the point relative to the origin of the system
+    nHat: unit vector along the z-axis of the coordinate system
+    we use the formulas from
+    http://mathworld.wolfram.com/Point-LineDistance3-Dimensional.html,
+    where x1 = (0,0,0) and x2 = nHat (|nHat|==1!), and
+    formula (13) from http://mathworld.wolfram.com/Point-PlaneDistance.html,
+    where Xi = (0,0,0) (any point on the plane) and n = nHat
+ */
 template<typename T> inline void GetLocalCylinderCoordinates(Vec<T> const& Xrel, Vec<T> const& nHat, T& r, T& z) {
   r = norm(cross(nHat, Xrel));
   z = dot(nHat, Xrel);

@@ -127,9 +127,10 @@ using PFTOptions = struct PFTOptions
  };
 
 /***************************************************************/
-/* routine for initializing a PFTOptions structure to default  */
-/* values; creates and returns a new default structure if      */
-/* called with Options=NULL or with no argument                */
+/** routine for initializing a PFTOptions structure to default
+    values; creates and returns a new default structure if
+    called with Options=NULL or with no argument
+ */
 /***************************************************************/
 PFTOptions *InitPFTOptions(PFTOptions *Options=nullptr);
 
@@ -137,12 +138,13 @@ PFTOptions *InitPFTOptions(PFTOptions *Options=nullptr);
 /***************************************************************/
 /***************************************************************/
 class RWGGeometry;
-/* GetSRFluxTrace comes in two forms: the allocating form returns a
-   newly allocated NXxNUMSRFLUX matrix of spatially-resolved fluxes at
-   the NX evaluation points; the filling form stores into a
-   caller-owned FMatrix, which must have exactly NX rows and NUMSRFLUX
-   columns.  RFMatrix, if non-null, must be a correctly sized
-   precomputed reduced-field matrix (RFMatrixDirty=false to reuse).  */
+/** GetSRFluxTrace comes in two forms: the allocating form returns a
+    newly allocated NXxNUMSRFLUX matrix of spatially-resolved fluxes at
+    the NX evaluation points; the filling form stores into a
+    caller-owned FMatrix, which must have exactly NX rows and NUMSRFLUX
+    columns.  RFMatrix, if non-null, must be a correctly sized
+    precomputed reduced-field matrix (RFMatrixDirty=false to reuse).
+ */
 std::unique_ptr<HMatrix> GetSRFluxTrace(RWGGeometry *G, HMatrix *XMatrix,
                    cdouble Omega, HMatrix *DRMatrix,
                    HMatrix *RFMatrix=nullptr, bool RFMatrixDirty=true);

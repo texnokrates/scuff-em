@@ -44,7 +44,12 @@
 #define MP_OTHER    5  // everything else 
 
 /***************************************************************/
-/* MatProp class definition ************************************/
+/** Describes the frequency-dependent material properties
+    (relative permittivity and permeability) of a material.
+    Materials may be specified by name (a library of built-in
+    materials is included), by Drude--Lorentz model parameters,
+    by tabulated data files, or by closed-form expressions.
+ */
 /***************************************************************/
 class MatProp
  { 
@@ -54,70 +59,83 @@ class MatProp
    /* public class methods ****************************************/
    /***************************************************************/
 
-   /* constructor entry points */
+   /** constructor entry points
+    */
    MatProp();
    MatProp(int Type);
    MatProp(const char *MaterialName);
    MatProp(const char *MaterialName, const char *MatPropFileName);
 
-   /* deep copy: interpolators and cmatheval expressions are cloned, so
-      the copy owns its state and the source is unaffected.  Copy
-      assignment is deleted -- MatProp objects are always handled
-      through pointers in this library (C.21/C.84). */
+   /** deep copy: interpolators and cmatheval expressions are cloned, so
+       the copy owns its state and the source is unaffected.  Copy
+       assignment is deleted -- MatProp objects are always handled
+       through pointers in this library (C.21/C.84).
+    */
    MatProp(const MatProp &MP);
    MatProp &operator=(const MatProp &) = delete;
 
   /* destructor */
    ~MatProp();
 
-   /* set the angular frequency unit; the Omega parameter     */
-   /* to each of the following routines will be multiplied by */
-   /* parameter.                                              */
-   /* SetLengthUnit(L) is equivalent to SetFreqUnit(L/c).     */
+   /** set the angular frequency unit; the Omega parameter
+       to each of the following routines will be multiplied by
+       parameter.
+       SetLengthUnit(L) is equivalent to SetFreqUnit(L/c).
+    */
    static void SetFreqUnit(double NewFreqUnit);
    static void SetLengthUnit(double NewLengthUnit);
 
-   /* get epsilon and mu at a given frequency */
+   /** get epsilon and mu at a given frequency
+    */
    void GetEpsMu(cdouble Omega, cdouble *Eps, cdouble *Mu);
    cdouble GetEps(cdouble Omega);
    cdouble GetMu(cdouble Omega);
 
-   /* get index of refraction and relative wave impedance at given freq*/
+   /** get index of refraction and relative wave impedance at given freq
+    */
    cdouble GetRefractiveIndex(cdouble Omega, cdouble *ZRel=nullptr);
 
-   /* set constant eps/mu */
+   /** set constant eps/mu
+    */
    void SetEpsMu(cdouble pEps, cdouble pMu);
    void SetEps(cdouble pEps) { SetEpsMu(pEps, 1.0); }
 
-   /* return 1 if the material is a perfect electrical conductor, 0 othrws */
+   /** return 1 if the material is a perfect electrical conductor, 0 othrws
+    */
    int IsPEC();
 
-   /* the following two functions implement a simple mechanism for */
-   /* temporarily zeroing out a MatProp so that calls to GetEpsMu()*/
-   /* return Eps=Mu=0.0 at all frequencies                         */
+   /** the following two functions implement a simple mechanism for
+       temporarily zeroing out a MatProp so that calls to GetEpsMu()
+       return Eps=Mu=0.0 at all frequencies
+    */
    void Zero() { Zeroed=1; }
    void UnZero() { Zeroed=0; }
 
-   /* if ErrMsg is not NULL after the class constructor is invoked, there  */
-   /* was an error.                                                        */
+   /** if ErrMsg is not NULL after the class constructor is invoked, there
+       was an error.
+    */
    char *ErrMsg;
 
  // private:
 
-   /* the actual body of the class constructor */
+   /** the actual body of the class constructor
+    */
    void InitMatProp(const char *MaterialName, const char *MatPropFileName);
 
-   /* constructor helper function for tabulated-data materials */
+   /** constructor helper function for tabulated-data materials
+    */
    void ReadInterpolationTable(const char *FileName);
 
-   /* constructor helper functions for user-defined materials */
+   /** constructor helper functions for user-defined materials
+    */
    void CreateUserDefinedMaterial(const char *MatPropFileName, const char *MaterialName);
    int ReadMaterialFromFile(const char *FileName, const char *MaterialName);
    int ParseMaterialSectionInFile(FILE *f, const char *FileName, int *LineNum);
    void GetEpsMu_Parsed(cdouble Omega, cdouble *pEps, cdouble *pMu);
 
    /***************************************************************/
-   /* class data **************************************************/
+   /** class data
+    */
    /***************************************************************/
    int Type;
    int Zeroed;
@@ -141,9 +159,10 @@ class MatProp
  };
 
 /***************************************************************/
-/* this routine allows user-defined materials to be defined    */
-/* on-the-fly without needed to be found in a MatProp database */
-/* file..                                                      */
+/** this routine allows user-defined materials to be defined
+    on-the-fly without needed to be found in a MatProp database
+    file..
+ */
 /***************************************************************/
 char *AddMaterialToMatPropDataBase(FILE *f, char *FileName,
                                    char *MaterialName, int *LineNum);

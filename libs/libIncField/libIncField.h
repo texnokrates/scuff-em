@@ -39,8 +39,9 @@
 #endif
 
 /**********************************************************************/
-/* IncField is a general base class from which specific classes       */
-/* for various types of field are derived.                            */
+/** IncField is a general base class from which specific classes
+    for various types of field are derived.
+ */
 /**********************************************************************/
 class IncField
  { 
@@ -91,7 +92,8 @@ class IncField
  };
 
 /**********************************************************************/
-/* non-class-method function to delete an entire linked chain of IncFields */
+/** non-class-method function to delete an entire linked chain of IncFields
+ */
 /**********************************************************************/
 void DeleteIncFieldChain(IncField *IF);
 
@@ -101,7 +103,8 @@ void DeleteIncFieldChain(IncField *IF);
 /**********************************************************************/
 
 /**********************************************************************/
-/* plane wave *********************************************************/
+/** plane wave
+ */
 /**********************************************************************/
 class PlaneWave : public IncField
  { 
@@ -156,7 +159,8 @@ class PointSource: public IncField
  };
 
 /**********************************************************************/
-/* focused gaussian beam  **********8**********************************/
+/** focused gaussian beam  **********8
+ */
 /**********************************************************************/
 class GaussianBeam: public IncField
  { 
@@ -220,7 +224,8 @@ class MagneticFrill: public IncField
  } MagneticFrill;
 
 /**********************************************************************/
-/* magnetic solenoid                            ***********************/
+/** magnetic solenoid
+ */
 /**********************************************************************/
 class MagneticSolenoid: public IncField
  { 
@@ -232,9 +237,10 @@ class MagneticSolenoid: public IncField
 #endif
 
 /**********************************************************************/
-/* 20160522 new functionality for parsing an input text file to yield */
-/* a list of incident fields; used to implement "advanced mode" in    */
-/* scuff-scatter and buff-scatter                                     */
+/** 20160522 new functionality for parsing an input text file to yield
+    a list of incident fields; used to implement "advanced mode" in
+    scuff-scatter and buff-scatter
+ */
 /**********************************************************************/
 using IncFieldList = struct IncFieldList
  { IncField **IFs;

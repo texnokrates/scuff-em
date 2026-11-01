@@ -64,7 +64,8 @@ namespace scuff {
 #define NPFC      7
 
 /***************************************************************/
-/* Data structures used to describe ports on RF devices        */
+/** Data structures used to describe ports on RF devices
+ */
 /***************************************************************/
 using RWGPortEdge = struct RWGPortEdge
  { 
@@ -103,8 +104,12 @@ using RWGPortList = struct RWGPortList
  };
 
 /***************************************************************/
-/* a "scuffSolver" is a SCUFF-EM geometry, plus a list of ports, */
-/* plus various internally-cached data (operating frequency,   */
+/** A "scuffSolver" is a SCUFF-EM geometry, plus a list of ports,
+    plus various internally-cached data (operating frequency, BEM
+    matrix, LU factorizations) used to accelerate repeated
+    computations on the same geometry; it is most commonly used
+    through the python wrapper.
+ */
 /***************************************************************/
 class scuffSolver
  {
@@ -119,9 +124,8 @@ public:
     //scuffSolver(const char *GDSIIFileName);
     ~scuffSolver();
 
-    /*--------------------------------------------------------------*/
-    /* functions for defining geometries line-by-line from python   */
-    /*--------------------------------------------------------------*/
+    /** functions for defining geometries line-by-line from python
+     */
     void SetGeometryFile(const char *scuffgeoFileName);
     void AddLatticeVector(dVec L);
     void SetMediumMaterial(char *MediumMaterial);
@@ -154,9 +158,8 @@ public:
     void Transform(const char *SurfaceLabel, const char *Transformation);
     void UnTransform();
 
-    /*---------------------------------------------------------------*/
-    /* post-processing routines for producing various types of output*/
-    /*---------------------------------------------------------------*/
+    /** post-processing routines for producing various types of output
+     */
     void PlotGeometry(const char *PPFormat, ...);
     void PlotGeometry();
 
@@ -182,8 +185,9 @@ public:
     zVec GetFields(dVec X, const char *WhichFields=nullptr);
 
     // alternative implementation of GetFields that uses RPF ("reduced potential/field") matrices
-    /* GetPanelSourceDensities comes in two forms: allocating and
-       filling (PSDMatrix must be TotalPanels x 13).               */
+    /** GetPanelSourceDensities comes in two forms: allocating and
+        filling (PSDMatrix must be TotalPanels x 13).
+     */
     std::unique_ptr<HMatrix> GetPanelSourceDensities();
     void GetPanelSourceDensities(HMatrix &PSDMatrix);
     void AddPortContributionsToPSD(cdouble Omega, HMatrix *PSDMatrix);
@@ -226,10 +230,11 @@ public:
     cdouble OmegaPBFI;
 
     // optional caching of system matrix blocks (useful with geometrical transformations)
-    /* system block cache.  Mated surfaces share their diagonal
-       blocks exactly as in the geometry's FIBBI caches: only the
-       Mate[ns]==-1 slots are owned (TBlockStorage); TBlocks holds
-       views.                                                       */
+    /** system block cache.  Mated surfaces share their diagonal
+        blocks exactly as in the geometry's FIBBI caches: only the
+        Mate[ns]==-1 slots are owned (TBlockStorage); TBlocks holds
+        views.
+     */
     std::vector<HMatrix *> TBlocks;
     std::vector<std::unique_ptr<HMatrix>> TBlockStorage;
     std::vector<std::unique_ptr<HMatrix>> UBlocks;
@@ -263,9 +268,10 @@ RWGPortList *ParsePortFile(RWGGeometry *G, const char *PortFileName);
 RWGPortList *ReadGDSIIPorts(RWGGeometry *G, const char *GDSIIFileName, iVec Layers);
 
 /***************************************************************/
-/* Routines for handling MOI (metal on insulator, i.e. thin    */
-/* metal traces on the surface of a dielectric substrate,      */
-/* possibly with ground plane)                                 */
+/** Routines for handling MOI (metal on insulator, i.e. thin
+    metal traces on the surface of a dielectric substrate,
+    possibly with ground plane)
+ */
 /***************************************************************/
 int Get1BFMOIFields(RWGGeometry *G, int ns, int ne,
                     cdouble Omega, double *XDest, cdouble *PFVector,

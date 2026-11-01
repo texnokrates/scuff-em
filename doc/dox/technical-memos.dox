@@ -1,0 +1,70 @@
+/**
+\page technical_memos Technical memos
+
+The deeper algorithmic details of <span class=SC>scuff-em</span> are
+documented in a series of technical memos written in LaTeX.  The
+sources live in the \c doc/docs/tex directory of the source tree (they
+are the same files as the \c tex convenience symlink at the top level)
+and may be rebuilt with the <tt>memos</tt> build target; the rendered
+PDF files linked below are also committed to the repository.
+
+General memos:
+
+- [<b>libscuff Implementation and Technical Details</b>](tex/lsInnards.pdf) --
+  implementation notes for the core library: geometry handling, basis
+  functions, singularity treatment, cubatures, and more.
+- [<b>Formulations</b>](tex/Formulations.pdf) --
+  surface-integral-equation formulations used by
+  <span class=SC>scuff-em</span>.
+
+Application-specific memos:
+
+- [<b>Computation of power, force, and torque</b>](tex/PFT.pdf) --
+  methods for computing power, force, and torque in classical
+  scattering and in fluctuational electrodynamics.
+- [<b>Fields near RWG panels</b>](tex/NearFields.pdf) --
+  evaluation of electromagnetic fields in the immediate vicinity of
+  discretized surface currents, where the integrands are nearly
+  singular.
+- [<b>Green's functions and LDOS computations</b>](tex/scuff-ldos.pdf) --
+  implementation of the scuff-ldos code.
+- [<b>Plane-wave reflection and transmission coefficients</b>](tex/scuff-transmission.pdf) --
+  implementation of the scuff-transmission code.
+- [<b>Pure electrostatics (scuff-static)</b>](tex/scuff-static.pdf) --
+  implementation of the electrostatics code.
+- [<b>RF device modeling</b>](tex/scuff-rf.pdf) --
+  ports, network parameters, and radiated fields in the
+  surface-integral-equation framework.
+- [<b>Electromagnetism in the vector-spherical-wave basis</b>](tex/scuffSpherical.pdf) --
+  a collection of classical results in the vector-spherical-wave basis
+  used by scuff-tmatrix and the spherical-basis code.
+- [<b>Implicit multilayered substrates (full wave)</b>](tex/FullWaveSubstrate.pdf) --
+  implementation of implicit support for layered dielectric substrates
+  and ground planes in full-wave calculations.
+- [<b>Static dielectric substrates</b>](tex/StaticDielectricSubstrate.pdf) --
+  quasi-static Green's functions for layered substrates.
+- [<b>Surface impedance boundary conditions</b>](tex/SurfaceImpedance.pdf) --
+  IPEC bodies and conductive-dielectric interfaces.
+- [<b>Ewald summation for periodic Green's functions</b>](tex/Ewald.pdf) --
+  the Ewald-split representation of the 1D/2D periodic lattice sums.
+- [<b>Junctions between surfaces</b>](tex/Junction.pdf) --
+  handling of multiple surfaces meeting along common edges.
+
+Scattering-theory background memos:
+
+- [<b>Scattering amplitudes from surface currents</b>](tex/ScatteringAmplitudes.pdf) --
+  how scuff-em computes S-, T-, and scattering matrices.
+- [<b>Fresnel scattering</b>](tex/Fresnel.pdf) --
+  closed-form Fresnel reflection/transmission used for verification.
+- [<b>Non-equilibrium formalism</b>](tex/scuff-neq.pdf) --
+  fluctuational-electrodynamics formalism behind scuff-neq
+  (volume I) and its [technical reference](tex/scuff-neq2.pdf)
+  (volume II).
+- [<b>Power/force/torque formula summary</b>](tex/PFTandNEQFormulas.pdf) --
+  quick reference of PFT formulas.
+- [<b>Generalized propagation factors</b>](tex/scuff-scatter.pdf) --
+  scattering via generalized propagation factors; see also the
+  [periodic variant](tex/scuff-scatter-periodic.pdf).
+
+*/
+

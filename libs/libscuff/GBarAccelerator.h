@@ -32,15 +32,17 @@
 namespace scuff {
 
 /***************************************************************/
-/* routine for computing the periodic green's function via     */
-/* ewald summation                                             */
+/** routine for computing the periodic green's function via
+    ewald summation
+ */
 /***************************************************************/
 void GBarVDEwald(double *R, cdouble k, double *kBloch,
                  double (*LBV)[3], int LDim,
                  double E, bool ExcludeInnerCells, cdouble *GBarVD);
 
 /***************************************************************/
-/* interpolation-based acceleration of periodic GF evaluation  */
+/** interpolation-based acceleration of periodic GF evaluation
+ */
 /***************************************************************/
 using GBarAccelerator = struct GBarAccelerator
  {

@@ -67,61 +67,75 @@ int LHM_AUTO_FileType(const char *FileName);
 #define LHM_VERTICAL 1
 
 /***************************************************************/
-/* HVector class definition ************************************/
+/** A dense vector of real or complex entries, which may be
+    created with specified dimensions, initialized from file, or
+    exported to and imported from ASCII, HDF5, and MATLAB files.
+ */
 /***************************************************************/
 class HVector
  { 
   public:  
 
-   /* constructor entry points to create vectors of known length */
-   /* and data type (optionally with user-specified payload)     */
+   /** constructor entry points to create vectors of known length
+       and data type (optionally with user-specified payload)
+    */
    HVector(int N, int RealComplex = LHM_REAL, void *data = nullptr);
    HVector(int N, double *data);
    HVector(int N, cdouble *data);
    void InitHVector(int N, int RealComplex = LHM_REAL, void *data = nullptr);
 
-   /* constructors that attempt to read vector in from a data file */
+   /** constructors that attempt to read vector in from a data file
+    */
    HVector(const char *FileName, int FileType = LHM_AUTO, const char *Options = "");
    void ReadFromFile(const char *FileName, int FileType = LHM_AUTO, const char *Options = "");
 
-   /* HDF5 file IO */
+   /** HDF5 file IO
+    */
    void ImportFromHDF5(const char *FileName, const char *Name);
    void ExportToHDF5(const char *FileName, const char *format, ...);
    void ExportToHDF5(void *pHC, const char *format, ...);
 
-   /* MATLAB file IO */
+   /** MATLAB file IO
+    */
    void ExportToMATLAB(void *pCC, const char *format, ... );
 
-   /* ASCII text file IO */
+   /** ASCII text file IO
+    */
    void ImportFromText(const char *FileName, const char *Options = "");
 
    void ExportToText(const char *FileName, const char *Options = "");
 
-   /* copy constructor */
-   /* deep copy; copy assignment deleted (C.21) */
+   /** copy constructor
+       deep copy; copy assignment deleted (C.21)
+    */
    HVector(const HVector &V);
    HVector &operator=(const HVector &) = delete;
 
    /* destructor */
    ~HVector();
 
-   /* get the value of an entry */
+   /** get the value of an entry
+    */
    cdouble GetEntry(int n);
    double GetEntryD(int n);
 
-   /* copying another HVector of the same size */
+   /** copying another HVector of the same size
+    */
    void Copy(HVector *V);
    std::unique_ptr<HVector> Copy() { return std::make_unique<HVector>(*this); }
 
-   /* set the value of an entry */
+   /** set the value of an entry
+    */
    void SetEntry(int n, double Entry);
    void SetEntry(int n, cdouble Entry);
 
-   /* augment the value of an entry */
+   /** augment the value of an entry
+    */
    void AddEntry(int n, double Entry);
    void AddEntry(int n, cdouble Entry);
 
-   /* scale the entire vector by a scalar multiple */
+   /** scale the entire vector by a scalar multiple
+    */
    void Scale(double Alpha);
    void Scale(cdouble Alpha);
 
@@ -151,8 +165,9 @@ class HVector
  };
 
 /***************************************************************/
-/* a couple of non-class methods that return newly allocated   */
-/* HVectors                                                    */
+/** a couple of non-class methods that return newly allocated
+    HVectors
+ */
 /***************************************************************/
 std::unique_ptr<HVector> LinSpace(double Min, double Max, int Num);
 std::unique_ptr<HVector> LogSpace(double Min, double Max, int Num);
@@ -163,56 +178,73 @@ std::unique_ptr<HVector> GetOmegaList(const char *OmegaFile,
                       cdouble *LambdaVals, int nLambdaVals);
 
 /***************************************************************/
-/* HMatrix class definition ************************************/
-/***************************************************************/
 class SMatrix; // forward declaration used by a couple of HMatrix routines
+
+/***************************************************************/
+/** A dense matrix of real or complex entries, stored in
+    row-major or column-major order.  HMatrix objects are the
+    currency of data exchange between the <span class=SC>scuff-em</span>
+    libraries; they may be created with specified dimensions,
+    initialized from file, or exported to and imported from ASCII,
+    HDF5, and MATLAB files.
+ */
+/***************************************************************/
 class HMatrix
  { 
   public:  
 
-   /* constructors that initialize the matrix with known sizes and */
-   /* storage parameters                                           */
+   /** constructors that initialize the matrix with known sizes and
+       storage parameters
+    */
    HMatrix(int NRows, int NCols, int RealComplex = LHM_REAL,
 	   int StorageType = LHM_NORMAL, void *data = nullptr);
    HMatrix(int NRows, int NCols, int pRealComplex, void *data);
    HMatrix(int NRows, int NCols, cdouble *data);
    HMatrix(int NRows, int NCols, double *data);
-   /* deep copy; the new matrix owns freshly allocated storage.
-      (The former HMatrix(HMatrix *, bool takedatandownership) steal
-      path was removed in 2026-10-27 -- it had no in-tree users; a
-      non-owning wrapper around an existing buffer is available via
-      the void *data constructor entry points above.) */
+   /** deep copy; the new matrix owns freshly allocated storage.
+       (The former HMatrix(HMatrix *, bool takedatandownership) steal
+       path was removed in 2026-10-27 -- it had no in-tree users; a
+       non-owning wrapper around an existing buffer is available via
+       the void *data constructor entry points above.)
+    */
    HMatrix(const HMatrix &M);
    HMatrix &operator=(const HMatrix &) = delete;
    void InitHMatrix(int NRows, int NCols, int RealComplex = LHM_REAL,
 		    int StorageType = LHM_NORMAL, void *data = nullptr);
 
-   /* constructors that attempt to read matrix in from a data file */
+   /** constructors that attempt to read matrix in from a data file
+    */
    HMatrix(const char *FileName, int FileType = LHM_AUTO, const char *Options = "");
    void ReadFromFile(const char *FileName, int FileType = LHM_AUTO, const char *Options = "");
 
-   /* constructor that converts an SMatrix to an HMatrix */
+   /** constructor that converts an SMatrix to an HMatrix
+    */
    HMatrix(SMatrix *S);
 
-   /* HDF5 file IO */
+   /** HDF5 file IO
+    */
    void ImportFromHDF5(const char *FileName, const char *MatrixName, bool Init=true);
    void ExportToHDF5(const char *FileName, const char *format, ...);
    void ExportToHDF5(void *pHC, const char *format, ...);
 
-   /* MATLAB file IO */
+   /** MATLAB file IO
+    */
    void ExportToMATLAB(void *pCC, const char *format, ...);
 
-   /* ASCII text file IO */
+   /** ASCII text file IO
+    */
    void ImportFromText(const char *FileName, const char *Options = "");
    void ExportToText(const char *FileName, const char *Options = "");
 
    /* destructor */
    ~HMatrix(); 
-   /* get the value of an entry */
+   /** get the value of an entry
+    */
    cdouble GetEntry(size_t nr, size_t nc) const;
    double GetEntryD(size_t nr, size_t nc);
 
-   /* routines for setting, augmenting, scaling matrix entries */
+   /** routines for setting, augmenting, scaling matrix entries
+    */
    void SetEntry(size_t nr, size_t nc, double Entry);
    void SetEntry(size_t nr, size_t nc, cdouble Entry);
 
@@ -223,15 +255,17 @@ class HMatrix
 
    void *GetColumnPointer(size_t nc);
 
-   /* matlab-style fetching or setting of swaths of a matrix */
+   /** matlab-style fetching or setting of swaths of a matrix
+    */
    double *GetEntriesD(const char *RowString, int Col, double *Entries=nullptr);
    cdouble *GetEntries(const char *RowString, int Col, cdouble *Entries=nullptr);
    double *GetEntriesD(int Row, const char *ColString, double *Entries=nullptr);
    cdouble *GetEntries(int Row, const char *ColString, cdouble *Entries=nullptr);
    std::unique_ptr<HMatrix> ExtractEntries(const char *RowColString);
-   /* placement worker for the GetEntries family: fills the caller's B
-      (allocating it only when B==nullptr on entry, in which case the
-      caller owns the returned pointer).  Prefer ExtractEntries(). */
+   /** placement worker for the GetEntries family: fills the caller's B
+       (allocating it only when B==nullptr on entry, in which case the
+       caller owns the returned pointer).  Prefer ExtractEntries().
+    */
    HMatrix *DoGetEntries(int RowStart, int RowStop, int RowInc, int RowLen,
                          int ColStart, int ColStop, int ColInc, int ColLen,
                          HMatrix *B, int RowOffset, int ColOffset);
@@ -256,15 +290,18 @@ class HMatrix
                      int ColStart, int ColStop, int ColInc, int ColLen,
                      HMatrix *B, cdouble Entry=0.0);
 
-   /* routine for copying another HMatrix of the same size*/
+   /** routine for copying another HMatrix of the same size
+    */
    void Copy(const HMatrix *M);
    std::unique_ptr<HMatrix> Copy() { return std::make_unique<HMatrix>(*this); }
 
-   /* get the trace */
+   /** get the trace
+    */
    cdouble GetTrace();
    double GetTraceD();
 
-   /* scale the entire matrix by a scalar multiple */
+   /** scale the entire matrix by a scalar multiple
+    */
    void Scale(double Alpha);
    void Scale(cdouble Alpha);
 
@@ -291,7 +328,8 @@ class HMatrix
    // sort of the inverse of InsertBlock
    void ExtractBlock(int RowOffset, int ColOffset, HMatrix *B);
 
-   /* sort the rows by the values of one or more columns */
+   /** sort the rows by the values of one or more columns
+    */
    void Sort(std::vector<int> SortColumns,
              std::vector<char> SortType);
    void Sort(std::vector<int> SortColumns);
@@ -310,16 +348,19 @@ class HMatrix
    //  (to use non-hermitian transpose of A and hermitian adjoint of B)
    void Multiply(HMatrix *B, HMatrix *C, const char *Options=nullptr); 
 
-   /* matrix-matrix multiply with only the diagonal elements */
-   /* of the product matrix computed (using ddot or zdotu)   */
+   /** matrix-matrix multiply with only the diagonal elements
+       of the product matrix computed (using ddot or zdotu)
+    */
    void GetMatrixProductDiagonal(HMatrix *B, HVector *DAB);
 
-   /* matrix-vector multiplication, this*X = Y (xgemv))      */
-   /* Trans='C' or 'T' for hermitian / non-hermitian adjoint */
+   /** matrix-vector multiplication, this*X = Y (xgemv))
+       Trans='C' or 'T' for hermitian / non-hermitian adjoint
+    */
    void Apply(HVector *X, HVector *Y, char Trans=0);
    
-   /* routines for LU-factorizing, solving, inverting */
-   /* (xgetrf, xgetrs, xgetri) */
+   /** routines for LU-factorizing, solving, inverting
+       (xgetrf, xgetrs, xgetri)
+    */
    int LUFactorize();
    int LUSolve(HVector *X);
    int LUSolve(HMatrix *X);
@@ -328,47 +369,54 @@ class HMatrix
    int LUSolve(HMatrix *X, char Trans, int nrhs);
    int LUInvert();
 
-   /* routines for cholesky-factorizing, solving, inverting */
-   /* (xpotrf, xpotrs, xpotri) */
+   /** routines for cholesky-factorizing, solving, inverting
+       (xpotrf, xpotrs, xpotri)
+    */
    int CholFactorize();
    int CholSolve(HVector *X);
    int CholSolve(HMatrix *X);
    int CholSolve(HMatrix *X, int nrhs);
 
-   /* routine for qr-factorizing (xgeqrf); Q and R are caller-owned
-      buffers of the right sizes (Q is NRxNR, R is NRxNC)           */
+   /** routine for qr-factorizing (xgeqrf); Q and R are caller-owned
+       buffers of the right sizes (Q is NRxNR, R is NRxNC)
+    */
    int QR(HMatrix &Q, HMatrix &R);
 
-   /* eigenvalues (and optionally eigenvectors) of symmetric/
-      hermitian matrices (dsyevr / zheevr).  The allocating forms
-      return a newly allocated vector of eigenvalues; the U buffer,
-      if supplied, must have the matrix's dimensions and receives
-      the eigenvectors.  The filling forms store into caller-owned
-      buffers of the right sizes.                                   */
+   /** eigenvalues (and optionally eigenvectors) of symmetric/
+       hermitian matrices (dsyevr / zheevr).  The allocating forms
+       return a newly allocated vector of eigenvalues; the U buffer,
+       if supplied, must have the matrix's dimensions and receives
+       the eigenvectors.  The filling forms store into caller-owned
+       buffers of the right sizes.
+    */
    std::unique_ptr<HVector> Eig();
    std::unique_ptr<HVector> Eig(HMatrix &U);
    void Eig(HVector &Lambda);
    void Eig(HVector &Lambda, HMatrix &U);
 
-   /* same, for non-symmetric matrices (dgeevx / zgeevx) */
+   /** same, for non-symmetric matrices (dgeevx / zgeevx)
+    */
    std::unique_ptr<HVector> NSEig();
    std::unique_ptr<HVector> NSEig(HMatrix &U);
    void NSEig(HVector &Lambda);
    void NSEig(HVector &Lambda, HMatrix &U);
 
-   /* singular-value decomposition (xgesvd); the U/VT buffers, if
-      supplied, may be either full-size (NRxNR / NCxNC) or compact
-      (NRxNRCMin / NRCMinxNC)                                       */
+   /** singular-value decomposition (xgesvd); the U/VT buffers, if
+       supplied, may be either full-size (NRxNR / NCxNC) or compact
+       (NRxNRCMin / NRCMinxNC)
+    */
    std::unique_ptr<HVector> SVD();
    std::unique_ptr<HVector> SVD(HMatrix &U, HMatrix &VT);
    void SVD(HVector &Sigma);
    void SVD(HVector &Sigma, HMatrix &U, HMatrix &VT);
 
-   /* matrix norm*/
+   /** matrix norm
+    */
    double GetNorm(bool UseInfinityNorm=false);
 
-   /* routine for estimating reciprocal of condition    */
-   /* number (assumes LUFactorize() has been called)    */
+   /** routine for estimating reciprocal of condition
+       number (assumes LUFactorize() has been called)
+    */
    double GetRCond(double ANorm, bool UseInfinityNorm=false);
 
    size_t inline NumEntries() 
@@ -425,9 +473,10 @@ class HMatrix
    static bool AbortOnIOError;
 
  private:
-   /* workers for the Eig/NSEig/SVD entry points; the buffers they
-      fill must have exactly the right dimensions (enforced by the
-      public overloads, which ErrExit on mismatches)                */
+   /** workers for the Eig/NSEig/SVD entry points; the buffers they
+       fill must have exactly the right dimensions (enforced by the
+       public overloads, which ErrExit on mismatches)
+    */
    void EigCore(HVector *Lambda, HMatrix *U);
    void NSEigCore(HVector *Lambda, HMatrix *U);
    void SVDCore(HVector *Sigma, HMatrix *U, HMatrix *VT);
@@ -451,7 +500,8 @@ HMatrix *CheckHMatrix(HMatrix *M, int NR, int NC, int RealComplex, const char *C
 HMatrix *CheckHMatrix(HMatrix *M, HMatrix *M0, const char *Context=nullptr);
 
 /***************************************************************/
-/* SMatrix class definition ************************************/
+/** SMatrix class definition
+ */
 /***************************************************************/
 class SMatrix
  { 

@@ -61,8 +61,9 @@ public:
     EquivalentEdgePairTable(RWGGeometry *G, int nsa, int nsb, char *EEPTFile=nullptr);
     ~EquivalentEdgePairTable();
 
-    /* tables are owned by RWGGeometry::EEPTables; copying is neither
-       used nor safe (C.21) */
+    /** tables are owned by RWGGeometry::EEPTables; copying is neither
+        used nor safe (C.21)
+     */
     EquivalentEdgePairTable(const EquivalentEdgePairTable &) = delete;
     EquivalentEdgePairTable &operator=(const EquivalentEdgePairTable &) = delete;
 

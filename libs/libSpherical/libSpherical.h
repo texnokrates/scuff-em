@@ -64,7 +64,8 @@
 #define LM2ALPHA(l,m) ( (l)*(l+1) + (m) )
 
 /***************************************************************/
-/* conversion routines                                         */
+/** conversion routines
+ */
 /***************************************************************/
 void CoordinateC2S(double X, double Y, double Z, double *r, double *Theta, double *Phi);
 void CoordinateC2S(const double X[3], double *r, double *Theta, double *Phi);
@@ -84,7 +85,8 @@ void VectorS2C(double Theta, double Phi, double V[3]);
 void VectorS2C(double Theta, double Phi, cdouble V[3]);
 
 /***************************************************************/
-/* finite-difference vector-calculus operators                 */
+/** finite-difference vector-calculus operators
+ */
 /***************************************************************/
 void GetDiv(double r, double Theta, double Phi,
             void (*F)(double r, double Theta, double Phi, cdouble *V),
@@ -98,7 +100,8 @@ void GetCurl(double r, double Theta, double Phi,
              cdouble *CurlF, cdouble *CurlF2);
 
 /***************************************************************/
-/* spherical harmonics                                         */
+/** spherical harmonics
+ */
 /***************************************************************/
 void GetYlmArray(int lMax, double Theta, double Phi, cdouble *Ylm);
 cdouble GetYlm(int l, int m, double Theta, double Phi);
@@ -108,16 +111,15 @@ void GetYlmDerivArray(int lMax, double Theta, double Phi,
                       cdouble *Ylm, cdouble *dYlmdTheta);
 
 /***************************************************************/ 
-/* spherical bessel functions needed for scalar and vector     */
-/* helmholtz solutions                                         */
-/*                                                             */
-/* note: R and dRdr must have space for (lMax+2) cdoubles even */
-/* though only (lMax+1) functions are calculated.              */
-/*                                                             */
-/* note: there is no typo here! R and dRdr must have space for */
-/* lMax+2 slots, not lMax+1 slots, even though the user is only*/
-/* asking for lMax+1 return quantities, because we need one    */
-/* extra slot to compute derivatives via recurrence relations. */
+/** spherical bessel functions needed for scalar and vector
+    helmholtz solutions
+    note: R and dRdr must have space for (lMax+2) cdoubles even
+    though only (lMax+1) functions are calculated.
+    note: there is no typo here! R and dRdr must have space for
+    lMax+2 slots, not lMax+1 slots, even though the user is only
+    asking for lMax+1 return quantities, because we need one
+    extra slot to compute derivatives via recurrence relations.
+ */
 /***************************************************************/
 void GetRadialFunctions(int lMax, cdouble k, double r, int WaveType,
                         cdouble *R, cdouble *dRdr, double *Workspace=nullptr);
@@ -126,14 +128,16 @@ void GetRadialFunction(int l, cdouble k, double r, int WaveType,
                        cdouble *R, cdouble *dRdr=nullptr, cdouble *RlSlash=nullptr);
 
 /***************************************************************/
-/* scalar helmholtz solutions **********************************/
+/** scalar helmholtz solutions
+ */
 /***************************************************************/
 void GetScalarHelmholtzSolutions(int lMax, cdouble k,
                                  double r, double Theta, double Phi,
                                  int WaveType, cdouble *Psi);
 
 /***************************************************************/
-/* vector helmholtz solutions: spherical waves / Maxwell waves */
+/** vector helmholtz solutions: spherical waves / Maxwell waves
+ */
 /***************************************************************/
 int GetMWIndex(int L, int M, int T); // maxwell-wave index
 int GetSWIndex(int L, int M, int P); // spherical-wave index
@@ -151,9 +155,10 @@ void GetVSWRadialFunctions(int LMax, cdouble k, double r,
                            bool TimesrFactor=false,
                            bool Conjugate=false);
 
-/* filling forms: WaveMatrix must have exactly 3 x NW dimensions,
-   where NW = 2*((LMax+1)^2-1) for Maxwell waves or 3*((LMax+1)^2-1)
-   for scalar waves.                                                 */
+/** filling forms: WaveMatrix must have exactly 3 x NW dimensions,
+    where NW = 2*((LMax+1)^2-1) for Maxwell waves or 3*((LMax+1)^2-1)
+    for scalar waves.
+ */
 void GetWaveMatrix(double r, double Theta, double Phi,
                    cdouble k, int LMax, int WaveType,
                    HMatrix &WaveMatrix, bool MaxwellWaves=true,
@@ -177,13 +182,15 @@ void GetTranslationMatrices(double Xij[3], cdouble k, int lMax,
 /***************************************************************/
 
 /***************************************************************/
-/* vector spherical harmonics                                  */
+/** vector spherical harmonics
+ */
 /***************************************************************/
 void GetXlm(int l, int m, double Theta, double Phi, cdouble X[3]);
 void GetXlmArray(int lMax, double Theta, double Phi, cdouble *X);
 
 /***************************************************************/
-/* vector helmholtz solutions                                  */
+/** vector helmholtz solutions
+ */
 /***************************************************************/
 void GetMNlm(int l, int m, cdouble k, double r, double Theta, double Phi, 
              int WaveType, cdouble M[3], cdouble N[3]);
@@ -200,7 +207,8 @@ void GetMNlmArray(int lMax, cdouble k,
 /***************************************************************/
 
 /***************************************************************/
-/* bessel and airy functions in AmosBessel.cc                  */
+/** bessel and airy functions in AmosBessel.cc
+ */
 /***************************************************************/
 int AmosBessel(char WhichFunction, cdouble z,
                double MinOrder, int NumOrders,

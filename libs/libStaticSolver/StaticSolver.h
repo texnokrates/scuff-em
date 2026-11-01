@@ -56,12 +56,13 @@ enum SurfType     { PEC = 0, DIELECTRIC=1, LAMBDASURFACE=2 };
 enum IntegralType { PHIINTEGRAL = 0, ENORMALINTEGRAL=1 };
 
 /****************************************************************/
-/* A 'StaticExcitation' is the externally-defined stimulus for  */
-/* the electrostatics problem (analogous to the incident field  */
-/* in a full-wave scattering problem). An excitation is defined */
-/* by a set of potential values (one for each conductor in the  */
-/* geometry) plus an optional externally-sourced electrostatic  */
-/* field.                                                       */
+/** A 'StaticExcitation' is the externally-defined stimulus for
+    the electrostatics problem (analogous to the incident field
+    in a full-wave scattering problem). An excitation is defined
+    by a set of potential values (one for each conductor in the
+    geometry) plus an optional externally-sourced electrostatic
+    field.
+ */
 /****************************************************************/
 using StaticField = void (*)(double *x, void *UserData, double PhiE[4]);
 
@@ -73,10 +74,16 @@ using StaticExcitation = struct StaticExcitation
    int NumSFs;
  };
 
-/****************************************************************/
-/****************************************************************/
-/***************************************************************/
 #define MAXSTR 1000
+
+/****************************************************************/
+/** The quasistatic (pure-electrostatics) counterpart of
+    RWGGeometry: assembles and solves the electrostatic BEM system
+    for a geometry, and post-processes the solution to compute
+    capacitance matrices, polarizabilities, and electrostatic
+    potentials and fields.
+ */
+/****************************************************************/
 class StaticSolver   
  { 
    /*--------------------------------------------------------------*/ 
@@ -84,54 +91,63 @@ class StaticSolver
    /*--------------------------------------------------------------*/ 
   public:  
 
-   /* constructor / destructor */
+   /** constructor / destructor
+    */
    StaticSolver(const char *GeoFileName,
                 const char *SubstrateFile=nullptr,
                 int pLogLevel = SCUFF_NOLOGGING);
    ~StaticSolver();
 
-   /* routines for allocating, and then filling in, the electrostatic
-      BEM matrix.  The filling form of AssembleBEMMatrix stores into a
-      caller-owned M, which must have the right (TotalPanels x
-      TotalPanels) dimensions.                                       */
+   /** routines for allocating, and then filling in, the electrostatic
+       BEM matrix.  The filling form of AssembleBEMMatrix stores into a
+       caller-owned M, which must have the right (TotalPanels x
+       TotalPanels) dimensions.
+    */
    std::unique_ptr<HMatrix> AllocateBEMMatrix();
    std::unique_ptr<HMatrix> AssembleBEMMatrix();
    void AssembleBEMMatrix(HMatrix &M);
 
-   /* lower-level routine for assembling individual BEM matrix blocks */
+   /** lower-level routine for assembling individual BEM matrix blocks
+    */
    void AssembleBEMMatrixBlock(int nsa, int nsb,
                                HMatrix *M, int RowOffset=0, int ColOffset=0);
 
-   /* routines for allocating, and then filling in, the RHS vector */
+   /** routines for allocating, and then filling in, the RHS vector
+    */
    std::unique_ptr<HVector> AllocateRHSVector();
    void AssembleRHSVector(StaticExcitation *SE, HVector &RHS);
    void AssembleRHSVector(double *Potentials, HVector &RHS);
 
-   /* routine for calculating electric dipole moment */
-   /* filling form: Moments must have NS rows and >= 4 columns */
+   /** routine for calculating electric dipole moment
+       filling form: Moments must have NS rows and >= 4 columns
+    */
    void GetCartesianMoments(HVector *Sigma, HMatrix &Moments);
-   /* filling forms: Moments must have exactly (lMax+1)^2 entries */
+   /** filling forms: Moments must have exactly (lMax+1)^2 entries
+    */
    void GetSphericalMoments(HVector *Sigma, int lMax, HVector &Moments);
    void GetSphericalMoments(HVector *Sigma, int WhichSurface,
                             int lMax, HVector &Moments);
 
-   /* compute fields; the allocating form returns a newly allocated
-      NXx4 matrix, the filling form stores into a caller-owned PhiE
-      which must have exactly NX rows and 4 columns                  */
+   /** compute fields; the allocating form returns a newly allocated
+       NXx4 matrix, the filling form stores into a caller-owned PhiE
+       which must have exactly NX rows and 4 columns
+    */
    std::unique_ptr<HMatrix> GetFields(StaticExcitation *SE, HVector *Sigma, HMatrix *X);
    void GetFields(StaticExcitation *SE, HVector *Sigma, HMatrix *X, HMatrix &PhiE);
    std::unique_ptr<HMatrix> GetFields(HVector *Sigma, HMatrix *X);
    void GetFields(HVector *Sigma, HMatrix *X, HMatrix &PhiE);
 
-   /* compute capacitance matrix; returns a newly allocated
-      NCSxNCS matrix (NCS = number of conducting surfaces).
-      M and Sigma, if non-null, are borrowed and must be the
-      factorized BEM matrix and RHS vector; if null they are
-      assembled internally.                                          */
+   /** compute capacitance matrix; returns a newly allocated
+       NCSxNCS matrix (NCS = number of conducting surfaces).
+       M and Sigma, if non-null, are borrowed and must be the
+       factorized BEM matrix and RHS vector; if null they are
+       assembled internally.
+    */
    std::unique_ptr<HMatrix> GetCapacitanceMatrix(HMatrix *M=nullptr,
                                                  HVector *Sigma=nullptr);
 
-   /* visualization */
+   /** visualization
+    */
    void PlotChargeDensity(HVector *Sigma, const char *FileName);
    void VisualizeFields(HVector *Sigma,  const char *FVMeshFile,
                         const char *OutFileBase=nullptr, StaticExcitation *SE=nullptr,
@@ -169,8 +185,9 @@ class StaticSolver
  };
 
 /***************************************************************/
-/* a few types of built-in implementations of the StaticField  */
-/* function to be passed to AssembleRHSVector()                */
+/** a few types of built-in implementations of the StaticField
+    function to be passed to AssembleRHSVector()
+ */
 /***************************************************************/
 using UserSFData = struct UserSFData
  { void *PhiEvaluator;

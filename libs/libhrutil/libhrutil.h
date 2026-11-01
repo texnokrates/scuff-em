@@ -112,14 +112,16 @@
   }; 
 
 /***************************************************************/
-/* timing functions  *******************************************/
+/** timing functions
+ */
 /***************************************************************/
 double Secs();
 void Tic(bool MeasureBytesAllocated=false);
 double Toc(unsigned long *BytesAllocated=nullptr);
 
 /***************************************************************/
-/* string functions  *******************************************/
+/** string functions
+ */
 /***************************************************************/
 char *RemoveDirectories(const char *s);
 char *RemoveExtension(const char *s);
@@ -133,7 +135,8 @@ int StrCaseCmp(const char *s1, const char *s2);
 FILE *fopenPath(const char *Path, const char *FileName, const char *Mode, char **WhichDir=nullptr);
 
 /***************************************************************/
-/* Vararg versions of common functions *************************/
+/** Vararg versions of common functions
+ */
 /***************************************************************/
 int vsnprintfEC(char *str, size_t size, const char *format, va_list ap)
   SCUFF_PRINTF_FORMAT(3,0);
@@ -157,7 +160,8 @@ void Warn(const char *format, ...)
   SCUFF_PRINTF_FORMAT(1,2);
 
 /***************************************************************/
-/* General-purpose status logging ******************************/
+/** General-purpose status logging
+ */
 /***************************************************************/
 char *GetHostName(); 
 char *GetTimeString(char *s=nullptr);
@@ -176,7 +180,8 @@ void MutexLog(const char *format, ...)
 void LogPercent(int n, int N, int Gradations=10);
 
 /***************************************************************/
-/* POSIX-specific nonportable system information functions *****/
+/** POSIX-specific nonportable system information functions
+ */
 /***************************************************************/
 int GetNumProcs();
 void SetNumThreads(int pNumThreads);
@@ -186,7 +191,8 @@ unsigned long GetMemoryUsage(unsigned long *MemoryUsage=nullptr);
 void SetCPUAffinity(int WhichProcessor);
 
 /***************************************************************/
-/* complex arithmetic ******************************************/
+/** complex arithmetic
+ */
 /***************************************************************/
 cdouble expi(double x);
 cdouble csqrt2(cdouble z);
@@ -199,7 +205,8 @@ void z2s(cdouble z, char *zStr, size_t Size);
 char *z2s(cdouble z);
 
 /***************************************************************/
-/* real-valued vector arithmetic                               */
+/** real-valued vector arithmetic
+ */
 /***************************************************************/
 void VecZero(double *v, int N=3);
 double *VecCopy(const double *v1, double *v2, int N=3);
@@ -221,7 +228,8 @@ double VecDistance2(const double *v1, const double *v2, int N=3);
 double *VecCross(const double *v1, const double *v2, double *v3);
 
 /***************************************************************/
-/* complex-valued vector arithmetic                            */
+/** complex-valued vector arithmetic
+ */
 /***************************************************************/
 cdouble *VecLinComb(cdouble Alpha, const cdouble *v1, cdouble Beta, const cdouble *v2, cdouble *v3, int N=3);
 cdouble *VecScale(const cdouble *v1, cdouble Alpha, cdouble *v2, int N=3);
@@ -240,21 +248,24 @@ double VecDistance2(const cdouble *v1, const cdouble *v2, int N);
 double VecDistance(const cdouble *v1, const cdouble *v2, int N);
 
 /***************************************************************/
-/* random numbers                                              */
+/** random numbers
+ */
 /***************************************************************/
 int irand(int A, int B);                       // uniform integer-value 
 double randU(double A=0.0, double B=1.0);      // uniform real-valued
 double randN(double Sigma=1.0, double Mu=0.0); // normal real-valued
 
 /***************************************************************/
-/* finite-difference derivatives *******************************/
+/** finite-difference derivatives
+ */
 /***************************************************************/
 using VVFunction = void (*) (void *UserData, double X[3], cdouble V[3]);
 cdouble GetDivCurl(VVFunction VVFun, void *UserData, int Order,
                    double X[3], double Delta, cdouble CurlF[3]);
 
 /***************************************************************/
-/* single-precision comparisons of double-precision numbers    */
+/** single-precision comparisons of double-precision numbers
+ */
 /***************************************************************/
 bool EqualFloat(const double a, const double b);
 bool EqualFloat(const cdouble a, const cdouble b);
@@ -270,12 +281,14 @@ bool IsFinite(double d);
 bool IsFinite(cdouble z);
 
 /***************************************************************/
-/* matrix arithmetic *******************************************/
+/** matrix arithmetic
+ */
 /***************************************************************/
 bool Matrix2x2_Inverse(double *a[2],double ainv[2][2]);
 
 /***************************************************************/
-/* pretty-printing of vectors and comparisons ******************/
+/** pretty-printing of vectors and comparisons
+ */
 /***************************************************************/
 void Compare(double *V1, double *V2, int N, const char *str1, const char *str2);
 void Compare(cdouble *V1, cdouble *V2, int N, const char *str1, const char *str2);
@@ -288,7 +301,8 @@ void fprintVec(FILE *f, cdouble *v, int Length=3, const char *format="%+.8e %+.8
 void fprintVecCR(FILE *f, cdouble *v, int Length=3, const char *format="%+.8e %+.8e"); 
 
 /***************************************************************/
-/* Other functions  ********************************************/
+/** Other functions
+ */
 /***************************************************************/
 void *mallocEC(size_t size);
 void *reallocEC(void *v, size_t size);
@@ -299,9 +313,10 @@ void KeyPause();
 bool CheckEnv(const char *Name, const char *fmt, void *Destination, bool LogSuccess=true);
 bool CheckEnv(const char *Name, double *Destination, bool LogSuccess=true);
 bool CheckEnv(const char *Name, int *Destination, bool LogSuccess=true);
-/* The char** overload stores a malloc'd copy of the variable's value
-   into *Destination (which must be free()d by the caller); it leaves
-   *Destination untouched when the variable is unset. */
+/** The char** overload stores a malloc'd copy of the variable's value
+    into *Destination (which must be free()d by the caller); it leaves
+    *Destination untouched when the variable is unset.
+ */
 bool CheckEnv(const char *Name, char **Destination, bool LogSuccess=true);
 bool CheckEnv(const char *Name, bool LogSuccess=true);
 void AppendEnv(const char *Name, const char *Separator, const char *format, ...)

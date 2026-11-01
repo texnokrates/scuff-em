@@ -31,6 +31,7 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin")
 include(ScuffVersion)
 include(ScuffDependencies)
 include(ScuffCLI11)
+include(ScuffDocs)
 
 # All internal library directories are on the include path, mirroring the
 # historical AM_CPPFLAGS.  The generated include directory comes first so that
@@ -75,6 +76,8 @@ message(STATUS "  DCUTRI:            ${HAVE_DCUTRI}")
 message(STATUS "  libGDSII:          ${HAVE_LIBGDSII}")
 message(STATUS "  Install examples:  ${SCUFF_INSTALL_EXAMPLES}")
 message(STATUS "  Install tests:     ${SCUFF_INSTALL_TESTS}")
+message(STATUS "  Doxygen docs:      ${SCUFF_BUILD_DOCS}")
+message(STATUS "  LaTeX memos:       ${SCUFF_BUILD_MEMOS}")
 message(STATUS "")
 
 # ---------------------------------------------------------------------------

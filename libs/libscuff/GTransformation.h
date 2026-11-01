@@ -35,9 +35,10 @@
 namespace scuff {
 
 /*****************************************************************/
-/* a GTransformation consists of a 3x3 matrix M and a 3-vector   */
-/* DX; it maps a point with cartesian coordinates X[0..2] into   */
-/* a new point with coordinates XP[0..2] such that XP = M*X + DX */
+/** a GTransformation consists of a 3x3 matrix M and a 3-vector
+    DX; it maps a point with cartesian coordinates X[0..2] into
+    a new point with coordinates XP[0..2] such that XP = M*X + DX
+ */
 /*****************************************************************/
 class GTransformation {
 public:
@@ -110,8 +111,9 @@ public:
 using GTList = std::vector<std::unique_ptr<GTransformation>>;
 
 /***************************************************************/
-/* a GTComplex is collection of GTransformations, each of      */
-/* which is carried out on a specific surface in a geometry.   */
+/** a GTComplex is collection of GTransformations, each of
+    which is carried out on a specific surface in a geometry.
+ */
 /***************************************************************/
 struct GTComplex
  {

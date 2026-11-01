@@ -89,14 +89,13 @@ namespace scuff {
 /*--------------------------------------------------------------*/ 
 
 /***************************************************************/
-/* RWGPanel is a structure containing data on a single         */
-/* triangular panel in the meshed geometry.                    */
-/*                                                             */
-/* note: after the following code snippet                      */
-/*  double *R= O->Vertices + 3*O->Panels[np]->VI[i]            */
-/* we have that R[0..2] are the cartesian coordinates of the   */
-/* ith vertex (i=0,1,2) of the npth panel in surface O.        */
-/*                                                             */
+/** RWGPanel is a structure containing data on a single
+    triangular panel in the meshed geometry.
+    note: after the following code snippet
+    double *R= O->Vertices + 3*O->Panels[np]->VI[i]
+    we have that R[0..2] are the cartesian coordinates of the
+    ith vertex (i=0,1,2) of the npth panel in surface O.
+ */
 /***************************************************************/
 using RWGPanel = struct RWGPanel
  { 
@@ -112,22 +111,21 @@ using RWGPanel = struct RWGPanel
 };
 
 /***************************************************************/
-/* RWGEdge is a structure containing data on a single edge     */
-/* in a meshed surfaces, corresponding to a single RWG basis   */
-/* function.                                                   */
-/*                                                             */
-/* This may be a *full* RWG function, supported on two panels  */
-/* (corresponding to an *interior* edge in the discretization),*/
-/* or it may be a *half* RWG (HRWG) function, supported on     */
-/* only one panel. HRWG functions are created for all exterior */
-/* edges, and in some cases may be created for interior edges  */
-/* well (to define point-like RWGPorts in RF devices.)         */
-/* RWGEdges for HRWG functions have iQM=iMPanel=MIndex=-1.     */
-/*                                                             */
-/* note: after the following code snippet                      */
-/*  double *QP = S->Vertices + 3*E->IQP                        */
-/* we have that QP[0..2] are the cartesian coordinates of the  */
-/* QP vertex in the basis function corresponding to edge E.    */
+/** RWGEdge is a structure containing data on a single edge
+    in a meshed surfaces, corresponding to a single RWG basis
+    function.
+    This may be a *full* RWG function, supported on two panels
+    (corresponding to an *interior* edge in the discretization),
+    or it may be a *half* RWG (HRWG) function, supported on
+    only one panel. HRWG functions are created for all exterior
+    edges, and in some cases may be created for interior edges
+    well (to define point-like RWGPorts in RF devices.)
+    RWGEdges for HRWG functions have iQM=iMPanel=MIndex=-1.
+    note: after the following code snippet
+    double *QP = S->Vertices + 3*E->IQP
+    we have that QP[0..2] are the cartesian coordinates of the
+    QP vertex in the basis function corresponding to edge E.
+ */
 /***************************************************************/
 using RWGEdge = struct RWGEdge 
  { 
@@ -147,7 +145,8 @@ using RWGEdge = struct RWGEdge
 };
 
 /***************************************************************/
-/* fast kd-tree based point-in-object calculations             */
+/** fast kd-tree based point-in-object calculations
+ */
 /***************************************************************/
 using kdtri = struct kdtri_s *;
 void kdtri_destroy(kdtri t); // destructor
@@ -159,18 +158,20 @@ double kdtri_meandepth(kdtri t);
 double kdtri_meanleaf(kdtri t);
 
 /***************************************************************/
-/* prototype for caller-supplied routine used to generate      */
-/* visualization plots of surface quantities.                  */
-/* MDFunc inputs a list of NX coordinates (in the form of the  */
-/* NX x 3 matrix XMatrix) and returns a new NX x ND HMatrix    */
-/* whose columns are the ND data quantities.                   */
+/** prototype for caller-supplied routine used to generate
+    visualization plots of surface quantities.
+    MDFunc inputs a list of NX coordinates (in the form of the
+    NX x 3 matrix XMatrix) and returns a new NX x ND HMatrix
+    whose columns are the ND data quantities.
+ */
 /***************************************************************/
 using MeshDataFunc = std::unique_ptr<HMatrix> (*)(void *UserData, HMatrix *XMatrix, const char ***DataNames);
 
 /***************************************************************/
-/* RWGSurface is a class describing a single contiguous surface*/
-/* lying at the interface between two regions. The surface may */
-/* be closed or open.                                          */
+/** RWGSurface is a class describing a single contiguous surface
+    lying at the interface between two regions. The surface may
+    be closed or open.
+ */
 /***************************************************************/
 class RWGSurface
  { 
@@ -179,19 +180,17 @@ class RWGSurface
    /*--------------------------------------------------------------*/ 
   public:  
 
-   /*-------------------------------------------------------------------*/
-   /* main constructor entry point: construct from 'OBJECT...ENDOBJECT' */
-   /* or SURFACE...ENDSURFACE section in a .scuffgeo file               */
-   /*-------------------------------------------------------------------*/
+   /** main constructor entry point: construct from 'OBJECT...ENDOBJECT'
+       or SURFACE...ENDSURFACE section in a .scuffgeo file
+    */
    RWGSurface(FILE *f, const char *Label, int *LineNum, char *Keyword);
 
-   /*-----------------------------------------------------------------*/
-   /* alternative constructor entry points that define an RWGSurface  */
-   /* which exists independently of any RWGGeometry structure. This   */
-   /* means the surface doesn't know what regions it bounds or what   */
-   /* materials are on its two sides, but can still be used for       */
-   /* low-level computations at the level of individual panels/edges. */
-   /*-----------------------------------------------------------------*/
+   /** alternative constructor entry points that define an RWGSurface
+       which exists independently of any RWGGeometry structure. This
+       means the surface doesn't know what regions it bounds or what
+       materials are on its two sides, but can still be used for
+       low-level computations at the level of individual panels/edges.
+    */
    RWGSurface(const char *MeshFile, int MeshTag=-1);
    RWGSurface(dVec VertexCoordinates, iVec PanelVertexIndices, char *pLabel=nullptr);
    RWGSurface(dVec X0, dVec L1, dVec L2, int N1, int N2=0, char *pLabel=nullptr);
@@ -199,21 +198,25 @@ class RWGSurface
    /* destructor */
    ~RWGSurface();
 
-   /* surfaces are created with new and handled by pointer; copying is
-      neither used nor safe (owning raw members, C.21) */
+   /** surfaces are created with new and handled by pointer; copying is
+       neither used nor safe (owning raw members, C.21)
+    */
    RWGSurface(const RWGSurface &) = delete;
    RWGSurface &operator=(const RWGSurface &) = delete;
 
-   /* get overlap integrals between two basis functions */
+   /** get overlap integrals between two basis functions
+    */
    double GetOverlap(int neAlpha, int neBeta, double *pOTimes = nullptr);
    void GetOverlaps(int neAlpha, int neBeta, double *Overlaps);
 
-   /* apply a general transformation (rotation+displacement) to the surface */
+   /** apply a general transformation (rotation+displacement) to the surface
+    */
    void Transform(const GTransformation *GT);
    void Transform(const char *format, ...);
    void UnTransform();
 
-   /* fast inclusion tests */
+   /** fast inclusion tests
+    */
    bool Contains(const double X[3]);
    bool Contains(const RWGSurface *S);
 
@@ -250,7 +253,8 @@ class RWGSurface
    int RegionIndices[2];           /* indices of the two regions within the RWGGeometry list of Regions */
    bool IsPEC;                     /* =1 if this is a simple PEC object */
    bool IsObject;                  /* =1 if we came from an OBJECT...ENDOBJECT section */
-                                   /* =0 if we came from a SURFACE...ENDSURFACE section */
+                                   /** =0 if we came from a SURFACE...ENDSURFACE section
+                                    */
 
    double *Vertices;               /* Vertices[3*n,3*n+1,3*n+2]=nth vertex coords */
    RWGPanel **Panels;              /* array of pointers to panels         */
@@ -277,12 +281,15 @@ class RWGSurface
    int Index;                      /* index of this surface in geometry  */
 
    int *WhichBC;                   /* WhichBC[nv] = index of boundary contour */
-                                   /* on which vertex #nv lies (=0 if vertex  */
-                                   /* #nv is an internal vertex)              */
+                                   /** on which vertex #nv lies (=0 if vertex
+                                       #nv is an internal vertex)
+                                    */
    int *NumBCEdges;                /* NumBCEdges[2] is the number of edges in */
-                                   /* boundary contour #2                     */
+                                   /** boundary contour #2
+                                    */
    RWGEdge ***BCEdges;             /* BCEdges[2][3] is a pointer to the 3rd   */
-                                   /* edge in boundary contour #2             */
+                                   /** edge in boundary contour #2
+                                    */
 
    int NumRedundantVertices;
 
@@ -294,20 +301,22 @@ class RWGSurface
    kdtri kdPanels; /* kd-tree of panels */
    void InitkdPanels(bool reinit = false, int LogLevel = SCUFF_NOLOGGING);
 
-   /* OTGT is a 'one-time geometry transformation' that is applied  */
-   /* once to the mesh upon the initial read in from the mesh file  */
-   /* and is not subsequently undone.                               */
-   /* GT encodes a subsequent transformation that may be applied    */
-   /* to the surface temporarily with the intention of eventually   */
-   /* undoing it.                                                   */
-   /* Origin is the point (0,0,0) in the original mesh file,        */
-   /* transformed by OTGT and or any subsequent transformations.    */
+   /** OTGT is a 'one-time geometry transformation' that is applied
+       once to the mesh upon the initial read in from the mesh file
+       and is not subsequently undone.
+       GT encodes a subsequent transformation that may be applied
+       to the surface temporarily with the intention of eventually
+       undoing it.
+       Origin is the point (0,0,0) in the original mesh file,
+       transformed by OTGT and or any subsequent transformations.
+    */
    std::unique_ptr<GTransformation> OTGT, GT;
    double Origin[3];
 
-   /* SurfaceZeta, if non-NULL, points to a cevaluator for a      */
-   /* user-specified function of frequency and position (w,x,y,z) */
-   /* describing surface impedance in units of ZVAC               */
+   /** SurfaceZeta, if non-NULL, points to a cevaluator for a
+       user-specified function of frequency and position (w,x,y,z)
+       describing surface impedance in units of ZVAC
+    */
    void *SurfaceZeta;
 
    // the following fields are used to pass some data items up to the 
@@ -325,7 +334,8 @@ class RWGSurface
    /*--------------------------------------------------------------*/ 
    RWGEdge *GetEdgeByIndex(int ne);
 
-   /* constructor helper subroutines */
+   /** constructor helper subroutines
+    */
    char *InitRWGSurface(dVec VertexCoordinates, iVec PanelVertexIndices);
    char *ParseOBJECTSURFACESection(FILE *f, int *LineNum);
    char *InitEdgeList();
@@ -348,8 +358,9 @@ using MMJData = struct MMJData
 class EquivalentEdgePairTable; // forward declaration
 
 /*************************** ***********************************/
-/* an RWGGeometry is a collection of regions with interfaces   */
-/* described by RWGSurfaces.                                   */
+/** an RWGGeometry is a collection of regions with interfaces
+    described by RWGSurfaces.
+ */
 /***************************************************************/
 class RWGGeometry 
  { 
@@ -358,12 +369,14 @@ class RWGGeometry
    /*--------------------------------------------------------------*/ 
   public:  
 
-   /* constructor / destructor */
+   /** constructor / destructor
+    */
    RWGGeometry(const char *GeoFileName, int pLogLevel = SCUFF_NOLOGGING);
    ~RWGGeometry();
 
-   /* geometries are created with new and handled by pointer; copying is
-      neither used nor safe (owning raw members, C.21) */
+   /** geometries are created with new and handled by pointer; copying is
+       neither used nor safe (owning raw members, C.21)
+    */
    RWGGeometry(const RWGGeometry &) = delete;
    RWGGeometry &operator=(const RWGGeometry &) = delete;
 
@@ -372,16 +385,18 @@ class RWGGeometry
    /*- assembling the BEM matrix and RHS vector                    */
    /*--------------------------------------------------------------*/
    std::unique_ptr<HMatrix> AllocateBEMMatrix(bool PureImagFreq = false, bool Packed = false);
-   /* filling forms: M must have exactly TotalBFs x TotalBFs
-      dimensions (use AllocateBEMMatrix() to create it)             */
+   /** filling forms: M must have exactly TotalBFs x TotalBFs
+       dimensions (use AllocateBEMMatrix() to create it)
+    */
    void AssembleBEMMatrix(cdouble Omega, double *kBloch, HMatrix &M);
    void AssembleBEMMatrix(cdouble Omega, HMatrix &M);
 
    std::unique_ptr<HVector> AllocateRHSVector(bool PureImagFreq = false );
-   /* AssembleRHSVector comes in two forms: the allocating form
-      returns a newly allocated vector of length TotalBFs; the
-      filling form stores into a caller-owned RHS, which must have
-      exactly TotalBFs entries.                                     */
+   /** AssembleRHSVector comes in two forms: the allocating form
+       returns a newly allocated vector of length TotalBFs; the
+       filling form stores into a caller-owned RHS, which must have
+       exactly TotalBFs entries.
+    */
    std::unique_ptr<HVector> AssembleRHSVector(cdouble Omega, double *kBloch,
                                               IncField *IF);
    std::unique_ptr<HVector> AssembleRHSVector(cdouble Omega, IncField *IF);
@@ -394,11 +409,12 @@ class RWGGeometry
    /*--------------------------------------------------------------*/
    int UpdateIncFields(IncField *IF, cdouble Omega, double *kBloch=nullptr);
 
-   /* GetFields comes in two forms.  The allocating form returns a
-      newly allocated NX x NUMFIELDS matrix of E/H fields at the NX
-      evaluation points (rows of XMatrix).  The filling form stores
-      into a caller-owned FMatrix, which must have exactly NX rows
-      and NUMFIELDS columns.                                      */
+   /** GetFields comes in two forms.  The allocating form returns a
+       newly allocated NX x NUMFIELDS matrix of E/H fields at the NX
+       evaluation points (rows of XMatrix).  The filling form stores
+       into a caller-owned FMatrix, which must have exactly NX rows
+       and NUMFIELDS columns.
+    */
    std::unique_ptr<HMatrix> GetFields(IncField *IF, HVector *KN, cdouble Omega,
                                       double *kBloch, HMatrix *XMatrix);
    std::unique_ptr<HMatrix> GetFields(IncField *IF, HVector *KN, cdouble Omega,
@@ -416,8 +432,9 @@ class RWGGeometry
    /*--------------------------------------------------------------*/
    /*- post-processing routine for dyadic green's functions -------*/
    /*--------------------------------------------------------------*/
-   /* filling form: GMatrix must be an NXx18 matrix (NX = number of
-      evaluation points, rows of XMatrix)                           */
+   /** filling form: GMatrix must be an NXx18 matrix (NX = number of
+       evaluation points, rows of XMatrix)
+    */
    void GetDyadicGFs(cdouble Omega, double *kBloch,
                      HMatrix *XMatrix, HMatrix *M,
                      HMatrix &GMatrix,
@@ -435,14 +452,14 @@ class RWGGeometry
                      HMatrix *M, HVector *KN,
                      cdouble GEScat[3][3], cdouble GMScat[3][3]);
 
-   /*--------------------------------------------------------------*/
-   /* post-processing routines for power, force, and torque (PFT)  */
-   /*--------------------------------------------------------------*/
+   /** post-processing routines for power, force, and torque (PFT)
+    */
    void GetPFT(int SurfaceIndex, HVector *KN, cdouble Omega,
                double PFT[NUMPFT], PFTOptions *Options=nullptr);
-   /* GetPFTMatrix comes in two forms: the allocating form returns a
-      newly allocated NumSurfaces x NUMPFT matrix; the filling form
-      stores into a caller-owned PFTMatrix of those dimensions.     */
+   /** GetPFTMatrix comes in two forms: the allocating form returns a
+       newly allocated NumSurfaces x NUMPFT matrix; the filling form
+       stores into a caller-owned PFTMatrix of those dimensions.
+    */
    std::unique_ptr<HMatrix> GetPFTMatrix(HVector *KN, cdouble Omega,
                          PFTOptions *Options=nullptr);
    void GetPFTMatrix(HVector *KN, cdouble Omega,
@@ -452,16 +469,18 @@ class RWGGeometry
    /*- post-processing routines for various other quantities      -*/
    /*--------------------------------------------------------------*/
    /* charge and current densities at panel centroids */
-   /* GetPanelSourceDensities comes in two forms: the allocating
-      form returns a newly allocated TotalPanels x 13 matrix; the
-      filling form stores into a caller-owned PSD of those
-      dimensions.                                                   */
+   /** GetPanelSourceDensities comes in two forms: the allocating
+       form returns a newly allocated TotalPanels x 13 matrix; the
+       filling form stores into a caller-owned PSD of those
+       dimensions.
+    */
    std::unique_ptr<HMatrix> GetPanelSourceDensities(cdouble Omega, double *kBloch, HVector *KN);
    std::unique_ptr<HMatrix> GetPanelSourceDensities(cdouble Omega, HVector *KN);
    void GetPanelSourceDensities(cdouble Omega, double *kBloch, HVector *KN, HMatrix &PSD);
    void GetPanelSourceDensities(cdouble Omega, HVector *KN, HMatrix &PSD);
 
-   /* scattering amplitudes */
+   /** scattering amplitudes
+    */
    cdouble GetPlaneWaveAmplitude(cdouble Omega, double *kBloch, HVector *KNVector, PlaneWave *PW, cdouble *Terms=nullptr);
    cdouble GetPlaneWaveAmplitude(cdouble Omega, HVector *KNVector, PlaneWave *PW, cdouble *Terms=nullptr);
    cdouble GetPlaneWaveAmplitude(cdouble Omega, double *kBloch, HVector *KNVector,
@@ -469,18 +488,21 @@ class RWGGeometry
    cdouble GetPlaneWaveAmplitude(cdouble Omega, HVector *KNVector,
                                  cdouble E0[3], double nHat[3], char *RegionLabel=nullptr, cdouble *Terms=nullptr);
 
-   /* electric and magnetic dipole moments.  The allocating form
-      returns a newly allocated NumSurfacesx6 matrix; the filling
-      form stores into a caller-owned PM of those dimensions.       */
+   /** electric and magnetic dipole moments.  The allocating form
+       returns a newly allocated NumSurfacesx6 matrix; the filling
+       form stores into a caller-owned PM of those dimensions.
+    */
    std::unique_ptr<HMatrix> GetDipoleMoments(cdouble Omega, HVector *KN);
    void GetDipoleMoments(cdouble Omega, HVector *KN, HMatrix &PM);
 
-   /* expansion coefficients in the RWG expansion of an arbitrary */
-   /* user-supplied surface-tangential vector field               */
+   /** expansion coefficients in the RWG expansion of an arbitrary
+       user-supplied surface-tangential vector field
+    */
    void ExpandCurrentDistribution(IncField *IF, HVector *KN, cdouble Omega=1.0, bool IsEHField=false);
 
-   /* get surface currents and charges at a given point X (zero if X not on a meshed surface)  */
-   /* iw{Sigma,Tau} = \nabla \cdot {K, N}  = i\omega * {electric, magnetic} surface charge     */
+   /** get surface currents and charges at a given point X (zero if X not on a meshed surface)
+       iw{Sigma,Tau} = \nabla \cdot {K, N}  = i\omega * {electric, magnetic} surface charge
+    */
    void EvalSourceDistribution(const double X[3], HVector *KNVector, double *kBloch,
                                cdouble KN[6], cdouble iwSigmaTau[2],
                                int *WhichSurface=nullptr, int *WhichPanel=nullptr);
@@ -506,24 +528,28 @@ class RWGGeometry
    /*- misc routines for modifying geometric parameters, etc. -----*/
    /*--------------------------------------------------------------*/
 
-   /* routine for setting logging verbosity */
+   /** routine for setting logging verbosity
+    */
    void SetLogLevel(int LogLevel);
    void SetLogLevel(const char *Level);
 
-   /* routines for changing material properties */
+   /** routines for changing material properties
+    */
    void SetEps(cdouble Eps);
    void SetEps(const char *Label, cdouble Eps);
    void SetEpsMu(cdouble Eps, cdouble Mu);
    void SetEpsMu(const char *Label, cdouble Eps, cdouble Mu);
 
-   /* some simple utility functions */
+   /** some simple utility functions
+    */
    int GetDimension();
    int GetRegionByLabel(const char *Label);
    RWGSurface *GetSurfaceByLabel(const char *Label, int *pns=nullptr);
    int GetRegionIndex(const double X[3]); // index of region containing X
    int PointInRegion(int RegionIndex, const double X[3]); 
 
-   /* geometrical transformations */
+   /** geometrical transformations
+    */
    void Transform(GTComplex *GTC);
    void UnTransform();
    char *CheckGTCList(const GTCList &GTCs);
@@ -615,22 +641,21 @@ class RWGGeometry
    void **FIBBICaches;
 
    /**************************************************************/
-   /* LDim=0 for compact geometries.                             */
-   /* For geometries with D-dimensional Bloch-periodicity,       */
-   /* LBasis is a 3 x D matrix whose columns are the lattice     */
-   /* basis vectors.                                             */
-   /* RLBasis is a similar matrix for the reciprocal lattice.    */
-   /* LVolume, RLVolume are the unit-cell volumes of the direct  */
-   /* and reciprocal lattices.                                   */
-   /*                                                            */
-   /* All other fields in this section are only used for PBCs:   */
-   /*                                                            */
-   /* NumStraddlers[nd][ns] = number of straddlers on unit-cell  */
-   /*                         face normal to lattice vector #nd  */
-   /*                         for surface #ns                    */
-   /* RegionIsExtended[nd][ns] = true if the periodicity lattice */
-   /*                            of region #nr includes the #ndth*/
-   /*                            lattice vector                  */
+   /** LDim=0 for compact geometries.
+       For geometries with D-dimensional Bloch-periodicity,
+       LBasis is a 3 x D matrix whose columns are the lattice
+       basis vectors.
+       RLBasis is a similar matrix for the reciprocal lattice.
+       LVolume, RLVolume are the unit-cell volumes of the direct
+       and reciprocal lattices.
+       All other fields in this section are only used for PBCs:
+       NumStraddlers[nd][ns] = number of straddlers on unit-cell
+       face normal to lattice vector #nd
+       for surface #ns
+       RegionIsExtended[nd][ns] = true if the periodicity lattice
+       of region #nr includes the #ndth
+       lattice vector
+    */
    /**************************************************************/
    int LDim;
    HMatrix *LBasis, *RLBasis;
@@ -638,42 +663,47 @@ class RWGGeometry
    int *NumStraddlers[MAXLDIM];
    bool *RegionIsExtended[MAXLDIM];
 
-   /* BFIndexOffset[n] is the index within the overall BEM          */
-   /* system vector of the first basis function on surface #n. thus */
-   /*  BFIndexOffset[0]=0                                           */
-   /*  BFIndexOffset[1]=# BFs for surface 0                         */
-   /*  BFIndexOffset[2]=# BFs for surface 0 + # BFs for surface     */
-   /* etc.                                                          */
+   /** BFIndexOffset[n] is the index within the overall BEM
+       system vector of the first basis function on surface #n. thus
+       BFIndexOffset[0]=0
+       BFIndexOffset[1]=# BFs for surface 0
+       BFIndexOffset[2]=# BFs for surface 0 + # BFs for surface
+       etc.
+    */
    int *BFIndexOffset;
    int *EdgeIndexOffset;
    int *PanelIndexOffset;
 
-   /* Mate[i]=j if j<i and surface j is identical to surface i. */
-   /* Mate[i]=-1 if there is no surface identical to surface i, */
-   /* OR if there is an surface identical to surface i but its  */
-   /* index is greater than i.                                  */
-   /* for example, if surfaces 2 and 3 are identical then       */
-   /*  Mate[2]=-1, Mate[3]=2.                                   */
-   /* note: two surfaces are identical if  	                */
-   /*  (1) they have the same mesh file (and the same physical  */
-   /*      region in that mesh file)                            */
-   /*  (1) the regions on either side have the same material    */
-   /*      properties                                           */
+   /** Mate[i]=j if j<i and surface j is identical to surface i.
+       Mate[i]=-1 if there is no surface identical to surface i,
+       OR if there is an surface identical to surface i but its
+       index is greater than i.
+       for example, if surfaces 2 and 3 are identical then
+       Mate[2]=-1, Mate[3]=2.
+       note: two surfaces are identical if
+       (1) they have the same mesh file (and the same physical
+       region in that mesh file)
+       (1) the regions on either side have the same material
+       properties
+    */
    int *Mate;
 
    // EEPTables[nsa][nsb] = equivalent edge-pair table for surfaces (nsa,nsb) 
    std::vector < std::vector< std::unique_ptr<EquivalentEdgePairTable> > > EEPTables;
 
-   /* SurfaceMoved[i] = 1 if surface #i was moved on the most   */
-   /* recent call to Transform(). Otherwise SurfaceMoved[i]=0.  */
+   /** SurfaceMoved[i] = 1 if surface #i was moved on the most
+       recent call to Transform(). Otherwise SurfaceMoved[i]=0.
+    */
    int *SurfaceMoved;
 
-   /* Each MMJData structure describes a single triangle edge */
-   /* at which two or more distinct surfaces meet.            */
+   /** Each MMJData structure describes a single triangle edge
+       at which two or more distinct surfaces meet.
+    */
    MMJData **MultiMaterialJunctions;
    int NumMMJs;
 
-   /* Substrate is non-NULL iff a multilayered substrate is present.*/
+   /** Substrate is non-NULL iff a multilayered substrate is present.
+    */
    LayeredSubstrate *Substrate;
   
    int LogLevel; 
@@ -686,12 +716,14 @@ class RWGGeometry
  };
 
 /***************************************************************/
-/* non-class methods that operate on RWGPanels and RWGSurfaces */
+/** non-class methods that operate on RWGPanels and RWGSurfaces
+ */
 /***************************************************************/
 int CountCommonRegions(RWGSurface *Sa, RWGSurface *Sb, 
                        int CommonRegionIndices[2], double Signs[2]);
 
-/* routines for creating the 'Gamma Matrix' used for torque calculations */
+/** routines for creating the 'Gamma Matrix' used for torque calculations
+ */
 void CreateGammaMatrix(double *TorqueAxis, double *GammaMatrix);
 void CreateGammaMatrix(double TorqueAxisX, double TorqueAxisY, 
                        double TorqueAxisZ, double *GammaMatrix);

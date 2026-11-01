@@ -39,136 +39,117 @@
 #define LMDI_LOGLEVEL_VERBOSE 2
 
 /***************************************************************/
-/* prototype for a user-supplied function of one variable.     */
-/*                                                             */
-/* X is the input to the function (the point at which the      */
-/* function is to be evaluated.)                               */
-/*                                                             */
-/* PhiVD stands for 'phi value and derivative.' on return,     */
-/* this array must be filled in as follows:                    */
-/*                                                             */
-/* PhiVD[0]  = Phi_1                                           */
-/* PhiVD[1]  = dPhi_1 /dX                                      */
-/*                                                             */
-/* PhiVD[2]  = Phi_2                                           */
-/* PhiVD[3]  = dPhi_2 /dX                                      */
-/*                                                             */
-/* ... and so on for all components of the Phi function vector.*/
-/* (the number of components is specified by the nFun parameter*/
-/* to the Interp1D class constructor.)                         */
-/*                                                             */
-/* note: the function should be thread-safe, as it may be      */
-/* called simultaneously by multiple concurrent threads.       */
+/** prototype for a user-supplied function of one variable.
+    X is the input to the function (the point at which the
+    function is to be evaluated.)
+    PhiVD stands for 'phi value and derivative.' on return,
+    this array must be filled in as follows:
+    PhiVD[0]  = Phi_1
+    PhiVD[1]  = dPhi_1 /dX
+    PhiVD[2]  = Phi_2
+    PhiVD[3]  = dPhi_2 /dX
+    ... and so on for all components of the Phi function vector.
+    (the number of components is specified by the nFun parameter
+    to the Interp1D class constructor.)
+    note: the function should be thread-safe, as it may be
+    called simultaneously by multiple concurrent threads.
+ */
 /***************************************************************/ 
 using Phi1D = void (*)(double X1, void *UserData, double *PhiVD);
 
 /***************************************************************/ 
-/* prototype for a user-supplied function of two variables.    */
-/*                                                             */
-/* X1, X2 are the inputs to the function (the coordinates      */
-/* of the point at which the function is to be evaluated.)     */
-/*                                                             */
-/* PhiVD stands for 'phi values and derivatives.' on return,   */
-/* this array must be filled in as follows:                    */
-/*                                                             */
-/* PhiVD[0]  = Phi_1                                           */
-/* PhiVD[1]  = dPhi_1 /dX1                                     */
-/* PhiVD[2]  = dPhi_1 /dX2                                     */
-/* PhiVD[3]  = d^2 Phi_1 / dX1 dX2                             */
-/*                                                             */
-/* PhiVD[4]  = Phi_2                                           */
-/* PhiVD[5]  = dPhi_2 /dX1                                     */
-/* PhiVD[6]  = dPhi_2 /dX2                                     */
-/* PhiVD[7]  = d^2 Phi_2 / dX1 dX2                             */
-/*                                                             */
-/* ... and so on for all components of the Phi function vector.*/
-/* (the number of components is specified by the nFun parameter*/
-/* to the Interp2D class constructor.)                         */
-/*                                                             */
-/* note: the function should be thread-safe, as it may be      */
-/* called simultaneously by multiple concurrent threads.       */
+/** prototype for a user-supplied function of two variables.
+    X1, X2 are the inputs to the function (the coordinates
+    of the point at which the function is to be evaluated.)
+    PhiVD stands for 'phi values and derivatives.' on return,
+    this array must be filled in as follows:
+    PhiVD[0]  = Phi_1
+    PhiVD[1]  = dPhi_1 /dX1
+    PhiVD[2]  = dPhi_1 /dX2
+    PhiVD[3]  = d^2 Phi_1 / dX1 dX2
+    PhiVD[4]  = Phi_2
+    PhiVD[5]  = dPhi_2 /dX1
+    PhiVD[6]  = dPhi_2 /dX2
+    PhiVD[7]  = d^2 Phi_2 / dX1 dX2
+    ... and so on for all components of the Phi function vector.
+    (the number of components is specified by the nFun parameter
+    to the Interp2D class constructor.)
+    note: the function should be thread-safe, as it may be
+    called simultaneously by multiple concurrent threads.
+ */
 /***************************************************************/ 
 using Phi2D = void (*)(double X1, double X2, void *UserData, double *PhiVD);
 
 /***************************************************************/
-/* prototype for a user-supplied function of three variables.  */
-/*                                                             */
-/* X1, X2, X3 are the inputs to the function (the coordinates  */
-/* of the point at which the function is to be evaluated.)     */
-/*                                                             */
-/* PhiVD stands for 'phi values and derivatives.' on return,   */
-/* this array must be filled in as follows:                    */
-/*                                                             */
-/* PhiVD[0]  = Phi_1                                           */
-/* PhiVD[1]  = dPhi_1 /dX1                                     */
-/* PhiVD[2]  = dPhi_1 /dX2                                     */
-/* PhiVD[3]  = dPhi_1 /dX3                                     */
-/* PhiVD[4]  = d^2 Phi_1 / dX1 dX2                             */
-/* PhiVD[5]  = d^2 Phi_1 / dX1 dX3                             */
-/* PhiVD[6]  = d^2 Phi_1 / dX2 dX3                             */
-/* PhiVD[7]  = d^3 Phi_1 / dX1 dX2 dX3                         */
-/*                                                             */
-/* PhiVD[8]  = Phi_2                                           */
-/* PhiVD[9]  = dPhi_2 / dX1                                    */
-/* ...                                                         */
-/* PhiVD[15] = d^3 Phi_2 / dX1 dX2 dX3                         */
-/*                                                             */
-/* ... and so on for all components of the Phi function vector.*/
-/* (the number of components is specified by the nFun parameter*/
-/* to the Interp3D class constructor.)                         */
-/*                                                             */
-/* note: the function should be thread-safe, as it may be      */
-/* called simultaneously by multiple concurrent threads.       */
+/** prototype for a user-supplied function of three variables.
+    X1, X2, X3 are the inputs to the function (the coordinates
+    of the point at which the function is to be evaluated.)
+    PhiVD stands for 'phi values and derivatives.' on return,
+    this array must be filled in as follows:
+    PhiVD[0]  = Phi_1
+    PhiVD[1]  = dPhi_1 /dX1
+    PhiVD[2]  = dPhi_1 /dX2
+    PhiVD[3]  = dPhi_1 /dX3
+    PhiVD[4]  = d^2 Phi_1 / dX1 dX2
+    PhiVD[5]  = d^2 Phi_1 / dX1 dX3
+    PhiVD[6]  = d^2 Phi_1 / dX2 dX3
+    PhiVD[7]  = d^3 Phi_1 / dX1 dX2 dX3
+    PhiVD[8]  = Phi_2
+    PhiVD[9]  = dPhi_2 / dX1
+    ...
+    PhiVD[15] = d^3 Phi_2 / dX1 dX2 dX3
+    ... and so on for all components of the Phi function vector.
+    (the number of components is specified by the nFun parameter
+    to the Interp3D class constructor.)
+    note: the function should be thread-safe, as it may be
+    called simultaneously by multiple concurrent threads.
+ */
 /***************************************************************/ 
 using Phi3D = void (*)(double X1, double X2, double X3, 
                       void *UserData, double *PhiVD);
 
 /***************************************************************/
-/* prototype for a user-supplied function of four variables.   */
-/*                                                             */
-/* X1, X2, X3, X4 are the inputs to the function (the coords   */
-/* of the point at which the function is to be evaluated.)     */
-/*                                                             */
-/* PhiVD stands for 'phi values and derivatives.' on return,   */
-/* this array must be filled in as follows:                    */
-/*                                                             */
-/* PhiVD[0]  = Phi_1                                           */
-/* PhiVD[1]  = dPhi_1 /dX1                                     */
-/* PhiVD[2]  = dPhi_1 /dX2                                     */
-/* PhiVD[3]  = dPhi_1 /dX3                                     */
-/* PhiVD[4]  = dPhi_1 /dX4                                     */
-/* PhiVD[5]  = d^2 Phi_1 / dX1 dX2                             */
-/* PhiVD[6]  = d^2 Phi_1 / dX1 dX3                             */
-/* PhiVD[7]  = d^2 Phi_1 / dX1 dX4                             */
-/* PhiVD[8]  = d^2 Phi_1 / dX2 dX3                             */
-/* PhiVD[9]  = d^2 Phi_1 / dX2 dX4                             */
-/* PhiVD[10] = d^2 Phi_1 / dX3 dX4                             */
-/* PhiVD[11] = d^3 Phi_1 / dX1 dX2 dX3                         */
-/* PhiVD[12] = d^3 Phi_1 / dX1 dX2 dX4                         */
-/* PhiVD[13] = d^3 Phi_1 / dX1 dX3 dX4                         */
-/* PhiVD[14] = d^3 Phi_1 / dX2 dX3 dX4                         */
-/* PhiVD[15] = d^4 Phi_1 / dX1 dX2 dX3 dX4                     */
-/*                                                             */
-/* PhiVD[16] = Phi_2                                           */
-/* PhiVD[17] = dPhi_2 / dX1                                    */
-/* ...                                                         */
-/* PhiVD[31] = d^4 Phi_2 / dX1 dX2 dX3 dX4                     */
-/*                                                             */
-/* ... and so on for all components of the Phi function vector.*/
-/* (the number of components is specified by the nFun parameter*/
-/* to the Interp4D class constructor.)                         */
-/*                                                             */
-/* note: the function should be thread-safe, as it may be      */
-/* called simultaneously by multiple concurrent threads.       */
+/** prototype for a user-supplied function of four variables.
+    X1, X2, X3, X4 are the inputs to the function (the coords
+    of the point at which the function is to be evaluated.)
+    PhiVD stands for 'phi values and derivatives.' on return,
+    this array must be filled in as follows:
+    PhiVD[0]  = Phi_1
+    PhiVD[1]  = dPhi_1 /dX1
+    PhiVD[2]  = dPhi_1 /dX2
+    PhiVD[3]  = dPhi_1 /dX3
+    PhiVD[4]  = dPhi_1 /dX4
+    PhiVD[5]  = d^2 Phi_1 / dX1 dX2
+    PhiVD[6]  = d^2 Phi_1 / dX1 dX3
+    PhiVD[7]  = d^2 Phi_1 / dX1 dX4
+    PhiVD[8]  = d^2 Phi_1 / dX2 dX3
+    PhiVD[9]  = d^2 Phi_1 / dX2 dX4
+    PhiVD[10] = d^2 Phi_1 / dX3 dX4
+    PhiVD[11] = d^3 Phi_1 / dX1 dX2 dX3
+    PhiVD[12] = d^3 Phi_1 / dX1 dX2 dX4
+    PhiVD[13] = d^3 Phi_1 / dX1 dX3 dX4
+    PhiVD[14] = d^3 Phi_1 / dX2 dX3 dX4
+    PhiVD[15] = d^4 Phi_1 / dX1 dX2 dX3 dX4
+    PhiVD[16] = Phi_2
+    PhiVD[17] = dPhi_2 / dX1
+    ...
+    PhiVD[31] = d^4 Phi_2 / dX1 dX2 dX3 dX4
+    ... and so on for all components of the Phi function vector.
+    (the number of components is specified by the nFun parameter
+    to the Interp4D class constructor.)
+    note: the function should be thread-safe, as it may be
+    called simultaneously by multiple concurrent threads.
+ */
 /***************************************************************/
 using Phi4D = void (*)(double X1, double X2, double X3, double X4,
                       void *UserData, double *PhiVD);
 
 /***************************************************************/
-/* Interp1D is a class which stores an internal grid of        */
-/* tabulated function values and provides a class method for   */
-/* approximating the value of the function at an arbitrary     */
-/* point by interpolating.                                     */
+/** Interp1D is a class which stores an internal grid of
+    tabulated function values and provides a class method for
+    approximating the value of the function at an arbitrary
+    point by interpolating.
+ */
 /***************************************************************/
 class Interp1D
  { 
@@ -254,10 +235,11 @@ class Interp1D
     
 
 /***************************************************************/
-/* Interp2D is a class which stores an internal 2D grid of     */
-/* tabulated function values and provides a class method for   */
-/* approximating the value of the function at an arbitrary     */
-/* point by interpolating.                                     */
+/** Interp2D is a class which stores an internal 2D grid of
+    tabulated function values and provides a class method for
+    approximating the value of the function at an arbitrary
+    point by interpolating.
+ */
 /***************************************************************/
 class Interp2D
  { 
@@ -298,7 +280,8 @@ class Interp2D
     /*--------------------------------------------------------------*/
     Interp2D(const char *FileName);
 
-    /* owning raw CTable; copying is neither used nor safe (C.21) */
+    /** owning raw CTable; copying is neither used nor safe (C.21)
+     */
     Interp2D(const Interp2D &) = delete;
     Interp2D &operator=(const Interp2D &) = delete;
 
@@ -337,10 +320,11 @@ class Interp2D
  };
 
 /***************************************************************/
-/* Interp3D is a class which stores an internal 3D grid of     */
-/* tabulated function values and provides a class method for   */
-/* approximating the value of the function at an arbitrary     */
-/* point by interpolating.                                     */
+/** Interp3D is a class which stores an internal 3D grid of
+    tabulated function values and provides a class method for
+    approximating the value of the function at an arbitrary
+    point by interpolating.
+ */
 /***************************************************************/
 class Interp3D
  { 
@@ -451,10 +435,11 @@ class Interp3D
  };
 
 /***************************************************************/
-/* Interp4D is a class which stores an internal 4D grid of     */
-/* tabulated function values and provides a class method for   */
-/* approximating the value of the function at an arbitrary     */
-/* point by interpolating.                                     */
+/** Interp4D is a class which stores an internal 4D grid of
+    tabulated function values and provides a class method for
+    approximating the value of the function at an arbitrary
+    point by interpolating.
+ */
 /***************************************************************/
 class Interp4D
  { 
@@ -582,11 +567,9 @@ class InterpND
              dVec XMin, dVec XMax, double MaxRelError=1.0e-4, 
              bool ComplexData=false, bool Verbose=false);
 
-    /*--------------------------------------------------------------*/
-    /*--------------------------------------------------------------*/
-    /*- class destructor -------------------------------------------*/
-    /*--------------------------------------------------------------*/
-    /* owning raw CTable; copying is neither used nor safe (C.21) */
+    /** - class destructor
+        owning raw CTable; copying is neither used nor safe (C.21)
+     */
     InterpND(const InterpND &) = delete;
     InterpND &operator=(const InterpND &) = delete;
 
@@ -675,8 +658,9 @@ class InterpND
  };
 
 /***************************************************************/
-/* routines for automatically determining optimal grid spacing */
-/* required for given error tolerances                         */
+/** routines for automatically determining optimal grid spacing
+    required for given error tolerances
+ */
 /***************************************************************/
 double GetInterpolationError(PhiVDFunc UserFunc, void *UserData, int NF,
                              dVec X0Vec, dVec DeltaVec, bool ComplexData=false,
@@ -690,10 +674,11 @@ dVec GetXGrid(PhiVDFunc UserFunc, void *UserData, int NF, dVec XMin, dVec XMax, 
               double DesiredMaxRE, bool ComplexData=false);
 
 /***************************************************************/
-/* non-member function for binary searching                    */
-/* (BinSearch.c, FindInterval, and freadEC are plain C with C  */
-/* linkage, so that they remain usable from C translation      */
-/* units as well.)                                             */
+/** non-member function for binary searching
+    (BinSearch.c, FindInterval, and freadEC are plain C with C
+    linkage, so that they remain usable from C translation
+    units as well.)
+ */
 /***************************************************************/
 extern "C" {
 void BinSearch(double X, double *XPoints, int N);
@@ -702,7 +687,8 @@ bool FindInterval(double X, double *XPoints, int N, double XMin, double DX,
                   int *n, double *XBar);
 
 /***************************************************************/
-/* a version of fread() with simple error-checking *************/
+/** a version of fread() with simple error-checking
+ */
 /***************************************************************/
 void freadEC(void *p, size_t size, size_t nmemb, FILE *f, const char *FileName);
 }

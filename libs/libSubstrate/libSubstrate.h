@@ -153,7 +153,8 @@ using ScalarGFOptions = struct ScalarGFOptions
 void InitScalarGFOptions(ScalarGFOptions *Options);
 
 /***************************************************************/
-/* data structure for layered material substrate               */
+/** data structure for layered material substrate
+ */
 /***************************************************************/
 class LayeredSubstrate
  {
@@ -193,16 +194,14 @@ public:
    void GetPhiE(double XD[3], double XS[3], double PhiE[4],
                 bool Total=true);
 
-   /*--------------------------------------------------------------*/
-   /* full-wave case: get the 6x6 dyadic Green's function giving   */
-   /* the E,H fields at XD due to J, M currents at XS.             */
-   /*                                                              */
-   /* slightly confusing: GMatrix is a 36xN matrix (where N is the */
-   /* number of evaluation points) whose nth column is the 6x6     */
-   /* dyadic GF for eval point #n stored in column-major order,    */
-   /* i.e. as a fortran/lapack/libhmat style array, not a C array. */
-   /*--------------------------------------------------------------*/
-   /* filling form: GMatrix must be a 36xNX matrix (NX = XMatrix->NC) */
+   /** full-wave case: get the 6x6 dyadic Green's function giving
+       the E,H fields at XD due to J, M currents at XS.
+       slightly confusing: GMatrix is a 36xN matrix (where N is the
+       number of evaluation points) whose nth column is the 6x6
+       dyadic GF for eval point #n stored in column-major order,
+       i.e. as a fortran/lapack/libhmat style array, not a C array.
+       filling form: GMatrix must be a 36xNX matrix (NX = XMatrix->NC)
+    */
    void GetSubstrateDGF(cdouble Omega, HMatrix *XMatrix, HMatrix &GMatrix,
                         bool AddHomogeneousDGF=false,
                         bool SubtractQS=false);
@@ -228,12 +227,13 @@ public:
    /*--------------------------------------------------------------*/
    void InitStaticAccelerator1D(double RhoMin, double RhoMax, double z);
 
-   /* Rebuild the scalar-GF interpolation table (if necessary) and
-      return a NON-OWNING pointer to it: the returned InterpND is owned
-      by *this and stays valid until this LayeredSubstrate is destroyed
-      (or until a later call rebuilds the table).  Callers must not
-      delete it; use DestroyScalarGFInterpolator() for explicit early
-      disposal.  This aliasing was previously undocumented. */
+   /** Rebuild the scalar-GF interpolation table (if necessary) and
+       return a NON-OWNING pointer to it: the returned InterpND is owned
+       by *this and stays valid until this LayeredSubstrate is destroyed
+       (or until a later call rebuilds the table).  Callers must not
+       delete it; use DestroyScalarGFInterpolator() for explicit early
+       disposal.  This aliasing was previously undocumented.
+    */
    InterpND *InitScalarGFInterpolator(cdouble Omega, double RhoMin, double RhoMax,
                                       double zMin, double zMax, bool PPIsOnly, bool Subtract,
                                       bool RetainSingularTerms, bool Verbose=false);
@@ -251,17 +251,15 @@ public:
    void UpdateCachedEpsMu(cdouble Omega);
    int GetLayerIndex(double z);
 
-   /*--------------------------------------------------------------*/
-   /* routines for static DGF calculation                          */
-   /*--------------------------------------------------------------*/
+   /** routines for static DGF calculation
+    */
    double GetStaticG0Correction(double z);
    double GetStaticG0Correction(double zD, double zS);
    void GetSigmaTwiddle(double zS, double q, double *SigmaTwiddle);
    void GetqIntegral(double RhoMag, double zD, double zS, double qIntegral[3]);
 
-   /*--------------------------------------------------------------*/
-   /* routines for full-wave DGF calculation                       */
-   /*--------------------------------------------------------------*/
+   /** routines for full-wave DGF calculation
+    */
    void GetGamma0Twiddle(cdouble Omega, cdouble q2D[2],
                          double zDest, double zSource,
                          cdouble Gamma0Twiddle[6][6],
@@ -306,10 +304,9 @@ public:
    void gFrakToScriptG(cdouble gFrak[NUMGFRAK], double Theta,
                        cdouble ScriptG[36]);
 
-   /*--------------------------------------------------------------*/
-   /* specialized routines for geometries involving metal directly */
-   /* atop an infinite or grounded dielectric slab                 */
-   /*--------------------------------------------------------------*/
+   /** specialized routines for geometries involving metal directly
+       atop an infinite or grounded dielectric slab
+    */
    bool GetScalarGFs_Interp(cdouble Omega, double Rho, double zDest,
                             cdouble *V, const ScalarGFOptions *Options);
 
@@ -342,8 +339,9 @@ public:
    int WhichIntegral;
 
    // interpolation tables
-   /* owned; the pointer returned by InitScalarGFInterpolator aliases
-      this member */
+   /** owned; the pointer returned by InitScalarGFInterpolator aliases
+       this member
+    */
    std::unique_ptr<InterpND> ScalarGFInterpolator;
    ScalarGFOptions SGFIOptions;
    double zSGFI;
@@ -359,7 +357,8 @@ public:
  };
 
 /***************************************************************/
-/* free-space Green's functions ********************************/
+/** free-space Green's functions
+ */
 /***************************************************************/
 void AddPhiE0(double XDest[3], double xs, double ys, double zs, double Q, double PhiE[4]);
 void AddPhiE0(double XDest[3], double XSource[3], double Q, double PhiE[4]);
@@ -377,7 +376,8 @@ void GetJdJFactors(cdouble q, double Rho, cdouble JdJFactors[2][4],
                    bool NeedRhoDerivatives=false, int NuMax=2);
 
 /***************************************************************/
-/* SommerfeldIntegrator.cc                                     */ 
+/** SommerfeldIntegrator.cc
+ */
 /***************************************************************/
 void SommerfeldIntegrate(integrand f, void *fdata, unsigned zfdim,
                          double q0, double qR, int xNu, double Rho,
@@ -391,7 +391,8 @@ void GetacSommerfeld(LayeredSubstrate *S, cdouble Omega,
                      double *pa, double *pc);
 
 /***************************************************************/
-/* MOI.cc ******************************************************/
+/** MOI.cc
+ */
 /***************************************************************/
 int GetSGFCorrection_MOI(cdouble Omega, double Rho, double z,
                          cdouble Eps, double h, cdouble *V,
