@@ -78,9 +78,7 @@ void HMatrix::InitHMatrix(int NRows, int NCols, int pRealComplex,
    StorageType=pStorageType;
    ipiv=nullptr;
    lwork=0;
-   work=nullptr;
    liwork=0;
-   iwork=nullptr;
    ErrMsg=nullptr;
 
    NR=NRows;
@@ -159,9 +157,7 @@ void HMatrix::ReadFromFile(const char *FileName, int FileType, const char *Optio
   ZM=nullptr;
   ipiv=nullptr;
   lwork=0;
-  work=nullptr;
   liwork=0;
-  iwork=nullptr;
   ErrMsg=nullptr;
 
   if (FileName==nullptr)
@@ -205,9 +201,7 @@ HMatrix::HMatrix(SMatrix *S)
    StorageType=LHM_NORMAL;
    ipiv=nullptr;
    lwork=0;
-   work=nullptr;
    liwork=0;
-   iwork=nullptr;
    ErrMsg=nullptr;
    ownsM=true;
 
@@ -254,7 +248,6 @@ HMatrix::~HMatrix()
   }
   if (ipiv) free(ipiv);
   if (ErrMsg) free(ErrMsg);
-  if (work) free(work);
 }
 
 /***************************************************************/

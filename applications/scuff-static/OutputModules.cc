@@ -122,7 +122,7 @@ void WritePolarizabilities(StaticSolver *SS, HMatrix *M, HVector *Sigma, const c
   
      SS->AssembleRHSVector(&SE, *Sigma);
      M->LUSolve(Sigma);
-     SS->GetCartesianMoments(Sigma, QP.get());
+     SS->GetCartesianMoments(Sigma, *QP);
      for(int ns=0; ns<NS; ns++)
       { PolMatrix->SetEntry(ns, 0*3+Mu, QP->GetEntryD(ns,1));
         PolMatrix->SetEntry(ns, 1*3+Mu, QP->GetEntryD(ns,2));

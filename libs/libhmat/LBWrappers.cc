@@ -275,11 +275,11 @@ int HMatrix::LUInvert()
      lworkOptimal=(int)dlworkOptimal;
 
      if (lworkOptimal > lwork)
-      { if (work) free(work);
-        work=(double *)mallocEC(lworkOptimal*sizeof(double));
+ {
+        work.resize(lworkOptimal*sizeof(double));
         lwork=lworkOptimal;
       };
-     dwork=(double *)work;
+     dwork=reinterpret_cast<double *>(work.data());
 
      dgetri_(&NR, DM, &NR, ipiv, dwork, &lwork, &info);
    }
@@ -287,11 +287,11 @@ int HMatrix::LUInvert()
    { 
      lworkOptimal = NR;
      if (lworkOptimal > lwork)
-      { if (work) free(work);
-        work=(double *)mallocEC(lworkOptimal*sizeof(double));
+ {
+        work.resize(lworkOptimal*sizeof(double));
         lwork=lworkOptimal;
       };
-     dwork=(double *)work;
+     dwork=reinterpret_cast<double *>(work.data());
 
      dsptri_("U", &NR, DM, ipiv, dwork, &info);
  
@@ -302,11 +302,11 @@ int HMatrix::LUInvert()
      lworkOptimal=(int) real(zlworkOptimal);
 
      if (lworkOptimal > lwork)
-      { if (work) free(work);
-        work=(cdouble *)mallocEC(lworkOptimal*sizeof(cdouble));
+ {
+        work.resize(lworkOptimal*sizeof(cdouble));
         lwork=lworkOptimal;
       };
-     zwork=(cdouble *)work;
+     zwork=reinterpret_cast<cdouble *>(work.data());
 
      zgetri_(&NR, ZM, &NR, ipiv, zwork, &lwork, &info);
    }
@@ -314,11 +314,11 @@ int HMatrix::LUInvert()
    { 
      lworkOptimal=NR;
      if (lworkOptimal > lwork)
-      { if (work) free(work);
-        work=(cdouble *)mallocEC(lworkOptimal*sizeof(cdouble));
+ {
+        work.resize(lworkOptimal*sizeof(cdouble));
         lwork=lworkOptimal;
       };
-     zwork=(cdouble *)work;
+     zwork=reinterpret_cast<cdouble *>(work.data());
  
      zhptri_("U", &NR, ZM, ipiv, zwork, &info);
    }
@@ -326,11 +326,11 @@ int HMatrix::LUInvert()
    { 
      lworkOptimal=NR;
      if (lworkOptimal > lwork)
-      { if (work) free(work);
-        work=(cdouble *)mallocEC(lworkOptimal*sizeof(cdouble));
+ {
+        work.resize(lworkOptimal*sizeof(cdouble));
         lwork=lworkOptimal;
       };
-     zwork=(cdouble *)work;
+     zwork=reinterpret_cast<cdouble *>(work.data());
  
      zsptri_("U", &NR, ZM, ipiv, zwork, &info);
    };
@@ -467,11 +467,10 @@ int HMatrix::QR(HMatrix &Q, HMatrix &R)
      // make sure our internally-stored workspace is large enough
      // to store TauLength + lworkOptimal doubles
      if ( lwork < (TauLength+lworkOptimal) )
-      { if (work) free(work);
-        work = (double *)mallocEC( (TauLength+lworkOptimal)*sizeof(double) );
+      { work.resize((TauLength+lworkOptimal)*sizeof(double));
         lwork=(TauLength+lworkOptimal);
       };
-     Tau   = (double *)work;
+     Tau   = reinterpret_cast<double *>(work.data());
      dwork = Tau + TauLength;
 
      // do the QR factorization 
@@ -495,12 +494,11 @@ int HMatrix::QR(HMatrix &Q, HMatrix &R)
      // make sure our internally-stored workspace is large enough
      // to store TauLength + lworkOptimal cdoubles
      if ( lwork < (TauLength+lworkOptimal) )
-      { if (work) free(work);
-        work = (cdouble *)mallocEC( (TauLength+lworkOptimal)*sizeof(cdouble) );
+      { work.resize((TauLength+lworkOptimal)*sizeof(cdouble));
         lwork=(TauLength+lworkOptimal);
       };
 
-     Tau   = (cdouble *)work;
+     Tau   = reinterpret_cast<cdouble *>(work.data());
      zwork = Tau + TauLength;
 
      // do the QR factorization 
@@ -540,7 +538,7 @@ void HMatrix::EigCore(HVector *Lambda, HMatrix *U)
   int idum1, idum2, idum3, lworkOptimal, liworkOptimal, info, MinusOne=-1;
   double ddum1, ddum2, AbsTol=0.0, dlworkOptimal;
 
-  int *isuppz = new int[2*NR]; 
+  auto isuppz=std::make_unique<int[]>(static_cast<size_t>(2)*NR);
  
   if ( RealComplex==LHM_REAL && StorageType==LHM_NORMAL )
    { 
@@ -549,15 +547,15 @@ void HMatrix::EigCore(HVector *Lambda, HMatrix *U)
      /*- stored workspaces as necessary                              */
      /*--------------------------------------------------------------*/
      dsyevr_(jobz, "A", "U", &NR, DM, &NR, &ddum1, &ddum2, &idum1, &idum2, &AbsTol, &idum3,
-             Lambda->DV, U ? U->DM : nullptr, &NR, isuppz, &dlworkOptimal, &MinusOne,
+             Lambda->DV, U ? U->DM : nullptr, &NR, isuppz.get(), &dlworkOptimal, &MinusOne,
              &liworkOptimal, &MinusOne, &info);
      lworkOptimal = (int)dlworkOptimal;
      if (lworkOptimal > lwork)
-      { work=reallocEC(work,lworkOptimal*sizeof(double));
+      { work.resize(lworkOptimal*sizeof(double));
         lwork=lworkOptimal;
       };
      if (liworkOptimal > liwork)
-      { iwork=(int *)reallocEC(iwork,liworkOptimal*sizeof(int));
+      { iwork.resize(liworkOptimal);
         liwork=liworkOptimal;
       };
 
@@ -565,8 +563,8 @@ void HMatrix::EigCore(HVector *Lambda, HMatrix *U)
      /*--------------------------------------------------------------*/
      /*--------------------------------------------------------------*/
      dsyevr_(jobz, "A", "U", &NR, DM, &NR, &ddum1, &ddum2, &idum1, &idum2, &AbsTol, &idum3,
-             Lambda->DV, U ? U->DM : nullptr, &NR, isuppz, (double *)work, &lwork,
-             iwork, &liwork, &info);
+             Lambda->DV, U ? U->DM : nullptr, &NR, isuppz.get(), reinterpret_cast<double *>(work.data()), &lwork,
+             iwork.data(), &liwork, &info);
    }
   else if ( RealComplex==LHM_REAL && StorageType==LHM_SYMMETRIC )
    {
@@ -581,7 +579,7 @@ void HMatrix::EigCore(HVector *Lambda, HMatrix *U)
      cdouble zlworkOptimal;
      double dlrworkOptimal;
      zheevr_(jobz, "A", "U", &NR, ZM, &NR, &ddum1, &ddum2, &idum1, &idum2,
-             &AbsTol, &idum3, Lambda->DV, U ? U->ZM : nullptr, &NR, isuppz,
+             &AbsTol, &idum3, Lambda->DV, U ? U->ZM : nullptr, &NR, isuppz.get(),
              &zlworkOptimal, &MinusOne, &dlrworkOptimal, &MinusOne,
              &liworkOptimal, &MinusOne, &info);
 
@@ -589,15 +587,15 @@ void HMatrix::EigCore(HVector *Lambda, HMatrix *U)
      int rworkSize = (int)dlrworkOptimal;
      lworkOptimal = 2*workSize + rworkSize;
      if (lworkOptimal > lwork)
-      { work=reallocEC(work,lworkOptimal*sizeof(double));
+      { work.resize(lworkOptimal*sizeof(double));
         lwork=lworkOptimal;
       };
 
-     cdouble *zwork = (cdouble *)work;
+     cdouble *zwork = reinterpret_cast<cdouble *>(work.data());
      double *rwork = (double *)(zwork + workSize);
 
      if (liworkOptimal > liwork)
-      { iwork=(int *)reallocEC(iwork,liworkOptimal*sizeof(int));
+      { iwork.resize(liworkOptimal);
         liwork=liworkOptimal;
       };
 
@@ -605,8 +603,8 @@ void HMatrix::EigCore(HVector *Lambda, HMatrix *U)
      /*--------------------------------------------------------------*/
      /*--------------------------------------------------------------*/
      zheevr_(jobz, "A", "U", &NR, ZM, &NR, &ddum1, &ddum2, &idum1, &idum2, &AbsTol, &idum3,
-             Lambda->DV, U ? U->ZM : nullptr, &NR, isuppz, (cdouble *)work, &workSize,
-             (double *)rwork, &rworkSize, iwork, &liwork, &info);
+             Lambda->DV, U ? U->ZM : nullptr, &NR, isuppz.get(), reinterpret_cast<cdouble *>(work.data()), &workSize,
+             rwork, &rworkSize, iwork.data(), &liwork, &info);
 
    }
   else if ( RealComplex==LHM_COMPLEX && StorageType==LHM_HERMITIAN )
@@ -618,7 +616,6 @@ void HMatrix::EigCore(HVector *Lambda, HMatrix *U)
       ErrExit("use NSEig() for non-hermitian eigenproblems");
    }
 
-  delete[] isuppz;
 }
 
 /***************************************************************/
@@ -688,7 +685,7 @@ void HMatrix::NSEigCore(HVector *Lambda, HMatrix *U)
 
      lworkOptimal = (int)dlworkOptimal;
      if (lworkOptimal > lwork)
-      { work=reallocEC(work,lworkOptimal*sizeof(double));
+      { work.resize(lworkOptimal*sizeof(double));
         lwork=lworkOptimal;
       };
 
@@ -696,7 +693,7 @@ void HMatrix::NSEigCore(HVector *Lambda, HMatrix *U)
      /*--------------------------------------------------------------*/
      /*--------------------------------------------------------------*/
      dgeev_(jobvl, jobvr, &NR, DM, &NR, wr, wi, nullptr, &NR, 
-            U ? U->DM : nullptr, &NR, (double *)work, &lwork, &info);
+            U ? U->DM : nullptr, &NR, reinterpret_cast<double *>(work.data()), &lwork, &info);
 
      /*--------------------------------------------------------------*/
      /*--------------------------------------------------------------*/
@@ -829,7 +826,7 @@ void HMatrix::SVDCore(HVector *Sigma, HMatrix *U, HMatrix *VT)
 
      lworkOptimal = (int)dlworkOptimal;
      if (lworkOptimal > lwork)
-      { work=reallocEC(work,lworkOptimal*sizeof(double));
+      { work.resize(lworkOptimal*sizeof(double));
         lwork=lworkOptimal;
       };
 
@@ -838,7 +835,7 @@ void HMatrix::SVDCore(HVector *Sigma, HMatrix *U, HMatrix *VT)
      /*--------------------------------------------------------------*/
      dgesvd_(jobu, jobvt, &NR, &NC, DM, &NR, Sigma->DV,
              U ? U->DM : nullptr, &LDU, VT ? VT->DM : nullptr, &LDVT,
-             (double *)work, &lwork, &info);
+             reinterpret_cast<double *>(work.data()), &lwork, &info);
    }
   else // (RealComplex==LHM_COMPLEX)
    {
@@ -854,7 +851,7 @@ void HMatrix::SVDCore(HVector *Sigma, HMatrix *U, HMatrix *VT)
 
      lworkOptimal = 2*(int)(real(zlworkOptimal));
      if (lworkOptimal > lwork)
-      { work=reallocEC(work,lworkOptimal*sizeof(double));
+      { work.resize(lworkOptimal*sizeof(double));
         lwork=lworkOptimal;
       };
 
@@ -863,7 +860,7 @@ void HMatrix::SVDCore(HVector *Sigma, HMatrix *U, HMatrix *VT)
      /*--------------------------------------------------------------*/
      zgesvd_(jobu, jobvt, &NR, &NC, ZM, &NR, Sigma->DV, 
              U ? U->ZM : nullptr, &LDU, VT ? VT->ZM : nullptr, &LDVT,
-             (cdouble *)work, &lwork, rwork, &info);
+             reinterpret_cast<cdouble *>(work.data()), &lwork, rwork, &info);
      delete[] rwork;
 
    };
@@ -923,11 +920,11 @@ double HMatrix::GetNorm(bool UseInfinityNorm)
      /*--------------------------------------------------------------*/
      int lworkOptimal = UseInfinityNorm ? NR : 0;
      if (lworkOptimal > lwork)
-      { work=reallocEC(work,lworkOptimal*sizeof(double));
+      { work.resize(lworkOptimal*sizeof(double));
         lwork=lworkOptimal;
       };
 
-     double *rwork=(double *)work;
+     double *rwork=reinterpret_cast<double *>(work.data());
      return dlange_(Norm, &NR, &NC, DM, &NR, rwork);
    }
   else // (RealComplex==LHM_COMPLEX)
@@ -937,10 +934,10 @@ double HMatrix::GetNorm(bool UseInfinityNorm)
      /*--------------------------------------------------------------*/
      int lworkOptimal = UseInfinityNorm ? NR : 0;
      if (lworkOptimal > lwork)
-      { work=reallocEC(work,lworkOptimal*sizeof(double));
+      { work.resize(lworkOptimal*sizeof(double));
         lwork=lworkOptimal;
       };
-     double *rwork  = (double *)work;
+     double *rwork  = reinterpret_cast<double *>(work.data());
      return zlange_(Norm, &NR, &NC, ZM, &NR, rwork);
    };
 
@@ -966,18 +963,18 @@ double HMatrix::GetRCond(double ANorm, bool UseInfinityNorm)
      /*--------------------------------------------------------------*/
      int lworkOptimal = 4*NR;
      if (lworkOptimal > lwork)
-      { work=reallocEC(work,lworkOptimal*sizeof(double));
+      { work.resize(lworkOptimal*sizeof(double));
         lwork=lworkOptimal;
       };
      int iworkOptimal = NR;
      if (iworkOptimal > liwork)
-      { iwork=(int *)reallocEC(iwork,iworkOptimal*sizeof(int));
+      { iwork.resize(iworkOptimal);
         liwork=iworkOptimal;
       };
 
-     double *rwork=(double *)work;
+     double *rwork=reinterpret_cast<double *>(work.data());
      int info;
-     dgecon_(Norm, &NR, DM, &NR, &ANorm, &RCond, rwork, (int *)iwork, &info);
+     dgecon_(Norm, &NR, DM, &NR, &ANorm, &RCond, rwork, iwork.data(), &info);
    }
   else // (RealComplex==LHM_COMPLEX)
    {
@@ -986,11 +983,11 @@ double HMatrix::GetRCond(double ANorm, bool UseInfinityNorm)
      /*--------------------------------------------------------------*/
      int lworkOptimal = 6*NR; // 2N doubles plus 2N cdoubles
      if (lworkOptimal > lwork)
-      { work=reallocEC(work,lworkOptimal*sizeof(double));
+      { work.resize(lworkOptimal*sizeof(double));
         lwork=lworkOptimal;
       };
   
-     double *rwork  = (double *)work;
+     double *rwork  = reinterpret_cast<double *>(work.data());
      double *work2  = rwork + 2*NR;
      cdouble *zwork = (cdouble *)work2;
      int info;

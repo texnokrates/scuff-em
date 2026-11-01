@@ -387,11 +387,18 @@ class HMatrix
    cdouble *ZM;
 
    // internally-stored workspaces that are automatically
-   // allocated as necessary for various LAPACK routines
-   int lwork; // size currently allocated for work in doubles or cdoubles
-   void *work;
-   int liwork; // size currently allocated for iwork in ints
-   int *iwork;
+   // allocated as necessary for various LAPACK routines.
+   // work is a single scratch buffer; routines that take multiple
+   // scratch pointers (e.g. complex LAPACK routines with separate
+   // zwork/rwork arguments) carve non-owning typed views out of it
+   // at computed offsets -- that intra-buffer layout is deliberate.
+   // lwork tracks the buffer's size in units of the type the routine
+   // expects (doubles or cdoubles); iwork/liwork are the integer
+   // workspace equivalents.
+   std::vector<std::byte> work;
+   int lwork;
+   std::vector<int> iwork;
+   int liwork;
 
    // flag to indicate whether we "own" the DM/ZM data & should free it
    bool ownsM; 
