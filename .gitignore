@@ -81,3 +81,15 @@ ehthumbs.db
 Icon?
 Thumbs.db
 *~
+
+# LaTeX build artifacts (technical memos in tex/) #
+####################################################
+*.aux
+*.toc
+*.bbl
+*.blg
+*.fls
+*.fdb_latexmk
+*.synctex.gz
+*.run.xml
+*.bcf

@@ -1,0 +1,104 @@
+%**********************************************************************
+%* HRCommands.tex                                                    *
+%*                                                                    *
+%* Shared \usepackage declarations and personal macros used by the    *
+%* technical-memo LaTeX sources in this directory.                    *
+%*                                                                    *
+%* NOTE (2026-11): the original version of this file lived in the     *
+%* author's private texmf tree and was never committed to this        *
+%* repository.  The definitions below were reconstructed from the     *
+%* macro usage in the memo sources and by comparison against the      *
+%* rendered memos (the PDFs under homerreid.github.io/                *
+%* scuff-em-documentation/tex and the copies in tex/*.pdf), so the    *
+%* rendered output matches the historical memos, but incidental       *
+%* whitespace choices may differ from the lost original.              *
+%**********************************************************************
+
+%----------------------------------------------------------------------
+% Packages 
+%----------------------------------------------------------------------
+\usepackage{amsmath}
+\usepackage{mathtools}   % dcases environment
+\usepackage{amssymb}
+\usepackage{graphicx}
+\usepackage{array}
+\usepackage{float}       % [H] float placement
+\usepackage{color}
+\usepackage{url}
+\usepackage{listings}
+
+% shaded, bordered verbatim block for code and file-format snippets
+\lstnewenvironment{verbcode}
+  {\lstset{basicstyle=\ttfamily\small,
+           backgroundcolor=\color[gray]{0.87},
+           frame=single, rulecolor=\color{black},
+           framerule=0.4pt, columns=fullflexible,
+           xleftmargin=1em, framexleftmargin=0.5em}}
+  {}
+
+%----------------------------------------------------------------------
+% Bold and calligraphic letters
+%----------------------------------------------------------------------
+\newcommand{\vb}[1]{\mathbf{#1}}                 % bold vector
+\newcommand{\mb}[1]{\mathbb{#1}}                 % blackboard
+\newcommand{\mc}[1]{\mathcal{#1}}                % calligraphic
+\newcommand{\bmc}[1]{\boldsymbol{\mathcal{#1}}}  % bold calligraphic
+\newcommand{\vbhat}[1]{\boldsymbol{\hat{#1}}}    % bold unit vector
+\newcommand{\vbhatt}[1]{\boldsymbol{\hat #1}}    % bold unit vector
+\newcommand{\wh}[1]{\widehat{#1}}                % wide hat
+
+% bold greek letters
+\newcommand{\vbGamma}{\boldsymbol{\Gamma}}
+\newcommand{\vbEta}{\boldsymbol{\eta}}
+\newcommand{\vbLambda}{\boldsymbol{\Lambda}}
+\newcommand{\vbmLambda}{\boldsymbol{\Lambda}}
+\newcommand{\vbrho}{\boldsymbol{\rho}}
+\newcommand{\vbsigma}{\boldsymbol{\sigma}}
+\newcommand{\vbchi}{\boldsymbol{\chi}}
+\newcommand{\vbEps}{\boldsymbol{\epsilon}}
+\newcommand{\vbVarEps}{\boldsymbol{\varepsilon}}
+
+%----------------------------------------------------------------------
+% Delimited fractions
+%----------------------------------------------------------------------
+\newcommand{\pf}[2]{\left(\frac{#1}{#2}\right)}   % parenthesized fraction
+\newcommand{\sbf}[2]{\left[\frac{#1}{#2}\right]}  % square-bracketed fraction
+
+%----------------------------------------------------------------------
+% Bracketed inner products and matrix elements
+%----------------------------------------------------------------------
+\newcommand{\inp}[2]{\big\langle #1 \big| #2 \big\rangle}
+\newcommand{\Inp}[2]{\Big\langle #1 \Big| #2 \Big\rangle}
+\newcommand{\INP}[2]{\bigg\langle #1 \bigg| #2 \bigg\rangle}
+\newcommand{\vmv}[3]{\big\langle #1 \big| #2 \big| #3 \big\rangle}
+\newcommand{\Vmv}[3]{\Big\langle #1 \Big| #2 \Big| #3 \Big\rangle}
+\newcommand{\VMV}[3]{\bigg\langle #1 \bigg| #2 \bigg| #3 \bigg\rangle}
+\newcommand{\expval}[1]{\left\langle #1 \right\rangle}
+\newcommand{\Expval}[1]{\Big\langle #1 \Big\rangle}
+
+%----------------------------------------------------------------------
+% Display-equation helpers
+%----------------------------------------------------------------------
+% numbered, labeled equation: \numeq{LabelTag}{equation body}
+\newcommand{\numeq}[2]{\begin{equation}\label{#1} #2 \end{equation}}
+% insert short text in the middle of a display
+\newcommand{\qtq}[1]{\qquad\mbox{#1}\qquad}
+\newcommand{\nn}{\nonumber\\}
+\newcommand{\whereupon}{\quad\Longrightarrow\quad}
+\newcommand{\wt}{\widetilde}
+
+%----------------------------------------------------------------------
+% Operators and derivatives
+%----------------------------------------------------------------------
+\newcommand{\atan}{\mathop{\mathrm{atan}}\nolimits}
+\newcommand{\Tr}{\mathop{\mathrm{Tr}}\nolimits}
+\newcommand{\out}{\mathrm{out}}
+\newcommand{\pard}[2]{\frac{\partial #1}{\partial #2}}
+
+%----------------------------------------------------------------------
+% Upright text-valued sub/superscripts
+%----------------------------------------------------------------------
+\newcommand{\subs}[1]{_{\text{\scriptsize #1}}}
+\newcommand{\sups}[1]{^{\text{\scriptsize #1}}}
+\newcommand{\subt}[1]{_{\text{\scriptsize #1}}}
+\newcommand{\supt}[1]{^{\text{\scriptsize #1}}}

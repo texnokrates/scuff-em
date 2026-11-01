@@ -1,0 +1,45 @@
+%**********************************************************************
+%* physcmds.tex                                                       *
+%*                                                                    *
+%* A minimal subset of the shared memo macros, sufficient for the      *
+%* documents that \input this file directly (Fresnel.tex).            *
+%*                                                                    *
+%* NOTE (2026-11): reconstructed alongside tex/HRCommands.tex (q.v.)  *
+%* after the originals were found to be missing from the repository;  *
+%* definitions were recovered from macro usage and the rendered memos.*
+%**********************************************************************
+
+\usepackage{amsmath}
+\usepackage{mathtools}
+\usepackage{amssymb}
+\usepackage{graphicx}
+\usepackage{array}
+\usepackage{float}
+\usepackage{color}
+\usepackage{url}
+
+\newcommand{\vb}[1]{\mathbf{#1}}
+\newcommand{\mb}[1]{\mathbb{#1}}
+\newcommand{\mc}[1]{\mathcal{#1}}
+\newcommand{\bmc}[1]{\boldsymbol{\mathcal{#1}}}
+\newcommand{\vbhat}[1]{\boldsymbol{\hat{#1}}}
+
+\newcommand{\pf}[2]{\left(\frac{#1}{#2}\right)}
+\newcommand{\sbf}[2]{\left[\frac{#1}{#2}\right]}
+
+\newcommand{\inp}[2]{\big\langle #1 \big| #2 \big\rangle}
+\newcommand{\Inp}[2]{\Big\langle #1 \Big| #2 \Big\rangle}
+\newcommand{\Vmv}[3]{\Big\langle #1 \Big| #2 \Big| #3 \Big\rangle}
+
+\newcommand{\numeq}[2]{\begin{equation}\label{#1} #2 \end{equation}}
+\newcommand{\qtq}[1]{\qquad\mbox{#1}\qquad}
+\newcommand{\nn}{\nonumber\\}
+\newcommand{\wt}{\widetilde}
+
+\newcommand{\Tr}{\mathop{\mathrm{Tr}}\nolimits}
+\newcommand{\pard}[2]{\frac{\partial #1}{\partial #2}}
+
+\newcommand{\subs}[1]{_{\text{\scriptsize #1}}}
+\newcommand{\sups}[1]{^{\text{\scriptsize #1}}}
+\newcommand{\subt}[1]{_{\text{\scriptsize #1}}}
+\newcommand{\supt}[1]{^{\text{\scriptsize #1}}}
