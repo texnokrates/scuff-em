@@ -132,3 +132,82 @@ Flow: scatspec parse → per mesh-based kind, shim builds RWGGeometry (route 1
 or 2) once per kind, computes T-matrix per omega inside
 `qpms_scatspec_build_scatsys()` (or lazily), exposing it as an existing
 file-based T-matrix generator would be.
+
+## Full integration / hybrid VSWF+BEM coupling (2026-11-07, follow-up)
+
+Scope beyond T-matrix generation: (1) BEM-computed T-matrix → pure-MS solve
+in QPMS; (2) VSWF coefficients back to the BEM representation (surface
+currents/fields); ultimately a hybrid system matrix with VSWF–VSWF, BE–BE
+and VSWF–BE blocks, assembled at QPMS level.
+
+The right abstraction is a per-(kind, omega) "serviced BEM object" exposing
+four operators, every one of which is a thin loop over *existing, public*
+libscuff primitives (all verified in the headers today):
+
+- **T** (NumMoments x NumMoments): scuff-tmatrix loop
+  (`AssembleBEMMatrix` + `LUFactorize` once, then per incident
+  `SphericalWave`: `AssembleRHSVector` + `LUSolve` + `GetSphericalMoments`).
+- **X: VSWF→KN** (NumBFs x NumMoments): the same loop, storing the solved
+  KN vectors instead of their moments. Legitimate because RHS assembly is
+  linear in the incident field and `SphericalWave` is deliberately
+  unit-amplitude (libIncField.h:197 — L/M/P only, NO amplitude member):
+  an arbitrary incident VSWF coefficient vector p maps to KN = X·p.
+  This operator is the new piece needed for step 3 (and the VSWF→BE
+  coupling block for the hybrid); it costs one extra RHS solve per column
+  beyond T, amortized over all downstream uses.
+- **M: KN→VSWF** (NumMoments x NumBFs): `GetSphericalMoments` per RWG
+  basis function (unit-KN columns). The BE→VSWF coupling block for the
+  hybrid. **Gap: `GetSphericalMoments` is not declared in `libscuff.h`**
+  (only a local prototype in scuff-tmatrix.cc:58) — must be added.
+  Identity T = M·X gives an end-to-end convention/regression check.
+- **B: BE–BE**: `AssembleBEMMatrix` (full) or per-pair
+  `AssembleBEMMatrixBlock(nsa, nsb, ...)` — already declared public
+  (libscuff.h:571). One RWGGeometry holding all meshed objects at their
+  placements; `Mate[]` + FIBBI caches reuse identical-mesh work.
+
+Step 3 (VSWF → surface fields) with these operators, per omega:
+
+1. KN = X·p (p = QPMS incident VSWF coefficients in scuff convention).
+2. Surface fields: `GetPanelSourceDensities(Omega, KN, PSD)` —
+   TotalPanels x 13: cols 0-2 centroid, 3 area, 4 electric charge density,
+   5-7 electric current K, 8 magnetic charge eta, 9-11 magnetic current N,
+   12 Poynting flux (GetDipoleMoments.cc:150 comment);
+   `PlotSurfaceCurrents` / `S->PlotScalarDensity` for mesh plots.
+3. Field maps: `GetFields(IFList, KN, ...)` treats IF and KN as
+   independently optional (GetFields.cc:380ff: `if (KN)` adds scattered,
+   `if (IFList)` walks the incident chain) — so scattered-only maps work
+   with IF=nullptr, and QPMS evaluates the incident VSWF superposition
+   with its own evaluator. `IncField::Next` chaining exists
+   (libIncField.h:60) and `AssembleRHSVector` walks the chain, but without
+   a SphericalWave amplitude member a chain can only carry unit waves —
+   irrelevant for the X route; adding an amplitude member would be a small
+   optional convenience patch.
+
+Hybrid system (assembled in QPMS): BEM object j has DOF KN_j; rows
+B_jj·KN_j + Σ_k≠j B_jk·KN_k = X_j·p_j(incidence), with incidence from
+translated outgoing fields of other objects (particles via T_i, BEM
+objects via M_j·KN_j) handled by QPMS's translation/Ewald machinery. An
+isolated BEM object among T-matrix particles is fully characterized by T
+(X needed only for post-processing); explicit KN DOF are needed once ≥2
+BEM objects couple directly.
+
+Conventions: QPMS already converts scuff's SW/.TMatrix convention on the
+`SCUFF_FILE` import path; the same conversion applies elementwise to p
+vectors entering X and moment vectors leaving M. Reuse that code.
+
+Work items on the scuff-em side (unchanged build story — one libscuff,
+pkg-config / CMake package):
+1. Declare `GetSphericalMoments` in `libscuff.h` (required).
+2. Recommended small helpers as thin libscuff loops (else the shim loops):
+   `GetSphericalMomentMatrix` (M) and `GetSWResponseMatrix` (X).
+3. Optional: amplitude member for `SphericalWave` (convenience only).
+4. ErrExit robustness now matters more: QPMS will hold geometry/solver
+   objects long-term and call them repeatedly; malformed input terminates
+   the process today.
+5. Geometry construction route (temp-.scuffgeo vs builder ctor) as above;
+   per-object placement via TRANSFORMATION lines or `RWGSurface::Transform`.
+
+QPMS-side items: convention mapping for vectors (reuse import-path code);
+per-(kind, omega) caching of T/X/M and the factorized BEM matrix; the
+hybrid assembly in `qpms_scatsys_t`; the C shim exposing these operators
+with an explicit handle-based lifetime model.
