@@ -327,8 +327,14 @@ void MatProp::InitMatProp(const char *MaterialName, const char *MatPropFileName)
      /***************************************************************/
      MatProp *MP;
      if ( (MP=FindMPInMatPropDataBase(p)) )
-      { InterpReal=MP->InterpReal; 
-	InterpImag=MP->InterpImag; 
+      { // a material we have seen before; copy its type and constant
+        // values as well, since a previously-seen FILE_ material may
+        // be a frequency-independent constant (single-row data file)
+        Type=MP->Type;
+        Eps=MP->Eps;
+        Mu=MP->Mu;
+        InterpReal=MP->InterpReal;
+	InterpImag=MP->InterpImag;
 	OwnsInterpolators=false;
       }
      else
@@ -402,6 +408,24 @@ void MatProp::ReadInterpolationTable(const char *FileName)
 
   if (Data->NC != 2 && Data->NC != 3)
     ErrExit("interpolation data must have either two or three columns");
+
+  /*--------------------------------------------------------------*/
+  /* a single-row table is a legitimate way to express a          */
+  /* frequency-independent material: accept it as a constant.     */
+  /* (an interpolator needs at least two rows, so this case used  */
+  /* to abort with a confusing 'grid must have 2 or more data     */
+  /* points' error that did not even name the offending file.)    */
+  /*--------------------------------------------------------------*/
+  if (Data->NR==1)
+   { Log("Material data file %s has a single row; defining a "
+         "frequency-independent (constant) material.",FileName);
+     Type=MP_CONSTANT;
+     Eps=Data->GetEntry(0,1);
+     Mu=(Data->NC==3) ? Data->GetEntry(0,2) : cdouble(1.0,0.0);
+     InterpReal=InterpImag=nullptr;
+     OwnsInterpolators=false;
+     return;
+   }
 
   Data->Sort(0); // Interp1D expects data to be sorted
 

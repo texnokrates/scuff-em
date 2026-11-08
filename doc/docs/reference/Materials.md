@@ -101,6 +101,30 @@ Of course, a dielectric function with a frequency-independent
 imaginary part is unphysical, but no problems will arise as long 
 as you are only doing computations at a single frequency.
 
+The full family of constant-material designations is
+
++ ``CONST_EPS_``*eps*&nbsp;&mdash; frequency-independent permittivity
+  *eps*, permeability $\mu=1$
++ ``CONST_MU_``*mu*&nbsp;&mdash; frequency-independent permeability
+  *mu*, permittivity $\epsilon=1$
++ ``CONST_EPS_``*eps*``_MU_``*mu*&nbsp;&mdash; both specified
++ ``CONST_EPS_``*eps*``_SIGMA_``*sigma*&nbsp;&mdash; permittivity plus
+  an ohmic conductivity $\sigma$ (in units of S/m): this material is
+  frequency-dependent, with
+  $\epsilon(\omega)=\epsilon + i\,\sigma\,\omega_0/\omega$
+  where $\omega_0=c/(1\,\mu\text{m})$ and $\omega$ is the angular
+  frequency in rad/sec
+
+*eps* and *mu* may be real (``4``, ``11.8``, ``-54``) or complex
+(*re*+*im*``i`` or *re*-*im*``i``, as in ``2.25+0.1i`` or
+``-54+46i``). Note that the material name must begin with
+``CONST_``: there is no leading-underscore variant such as
+``_CONST_EPS_4.0``. A material name that does not match one of the
+special-name conventions (``CONST_...``, ``FILE_...``, ``PEC``,
+``VACUUM``) is instead looked up in [matprop database
+files](#Database), and you will get a ``could not find
+material`` error if it is not defined there.
+
 --------------------------------------------------
 <a name="Tabulated"></a>
 ## 3. Materials specified using tabulated data
@@ -130,6 +154,10 @@ strings, which are interpreted as
 where ***Omega*** is an angular frequency, ***Epsilon(Omega)*** 
 is the relative permittivity at that frequency, and the optional
 ***Mu(Omega)*** is the relative permeability.
+(A data file containing just one data row is a legitimate
+way to express a frequency-independent material: it is
+accepted as a [constant material](#Constant) with the given
+$\epsilon$ and optional $\mu$.)
 
 The values specified for *Eps* and *Mu* may be
 [complex numbers.][ComplexNumbers].
