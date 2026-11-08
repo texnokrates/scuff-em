@@ -59,7 +59,7 @@ list of angular frequencies at which to run the scattering problem:
 
 (We pause to note one subtlety here: Angular frequencies specified 
 using the `--Omega` or `--OmegaFile` arguments are interpreted in 
-units of $c / 1 \mu$m = $3\cdot 10^{14}$ rad/sec.
+units of $c / 1 \mu$m = $2.99792458\cdot 10^{14}$ rad/sec.
 These are natural 
 frequency units to use for problems involving micron-sized objects; 
 in particular, for Mie scattering from a sphere of radius 1 μm, as 

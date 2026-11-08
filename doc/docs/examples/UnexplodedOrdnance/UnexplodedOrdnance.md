@@ -32,10 +32,10 @@ vicinity of the sphere.
 As discussed [here][UnitsInSCUFFEM], the default units for
 length and angular frequency in <span class=SC>scuff-em</span>
 are typically $L_0=1\,\mu$m and
-$\omega_0=\frac{c}{L_0}=3\cdot 10^{14}$ rad/sec.
+$\omega_0=\frac{c}{L_0}=2.99792458\cdot 10^{14}$ rad/sec.
 However, in view of the the typical lengthscales and excitation
 frequencies that appear in UXO problems, it's convenient 
-here to use $L_0=1$ m and $\omega_0=\frac{c}{L_0}=3\cdot 10^8$ rad/sec.
+here to use $L_0=1$ m and $\omega_0=\frac{c}{L_0}=2.99792458\cdot 10^8$ rad/sec.
 As discussed in the FAQ item referenced above, the only place we will
 ever need explicitly to recognize that we have made this choice is 
 in defining frequency-dependent material-property functions (see below).
@@ -94,11 +94,11 @@ the dimensionless quantity in the second term may be written
 $$  \frac{\sigma}{\epsilon_0 \omega}
    =\frac{\sigma Z_0 c }{\omega}
     _{ \frac{377 \cdot \left(\sigma \text{ in }\mho \text{ m}^{-1}\right)}
-            {\left(\omega \text{ in }\mho 3\cdot 10^{8} rad/sec\right)}
+            {\left(\omega \text{ in }\mho 2.99792458\cdot 10^{8} rad/sec\right)}
      }
    =\frac{\sigma Z_0 c }{\omega}
     _{ \frac{3.77 \cdot 10^{-4} \cdot \left(\sigma \text{ in }\mho \text{ m}^{-1}\right)}
-            {\left(\omega \text{ in }\mho 3\cdot 10^{14} rad/sec\right)}
+            {\left(\omega \text{ in }\mho 2.99792458\cdot 10^{14} rad/sec\right)}
      }
 $$
 %====================================================================%

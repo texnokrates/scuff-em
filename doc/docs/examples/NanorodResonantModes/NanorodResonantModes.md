@@ -172,7 +172,7 @@ gnuplot> plot 'Nanorod_648.LDOS' u 1:3 t 'Monomer', 'Nanorods_648.LDOS' u 1:3 t 
 
 So, this comports with our expectations: the monomer configuration has a
 single resonance near $\omega\approx 6.5\omega_0$
-(where $\omega_0\equiv c/1\,\mu\hbox{m}\equiv 3\times 10^{14}$ rad/sec
+(where $\omega_0\equiv c/1\,\mu\hbox{m}\equiv 2.99792458\times 10^{14}$ rad/sec
 is the [default unit of angular frequency in <span class=SC>scuff-em</span>][Units],
 in terms of which all frequencies are quoted below)
 which splits into a lower-frequency "bonding" and a higher-frequency "anti-bonding" 

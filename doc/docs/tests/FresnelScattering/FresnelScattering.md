@@ -102,7 +102,7 @@ describes the [<span class="SC">scuff-em</span> geometry][scuffEMGeometries]
 (it refers to a mesh file named [`Square_40.msh`](Square_40.msh) )
 and the command-line arguments ask for a calculation at 
 two angular frequencies ($\omega=\{0.1, 1\}\omega_0$ with 
-$\omega_0\equiv 3\times 10^{14}$ rad/sec the default
+$\omega_0\equiv 2.99792458\times 10^{14}$ rad/sec the default
 <span class=SC>scuff-em</span> unit of angular frequency)
 and at 20 incident angles in the range $0\le \theta < 90 $ degrees.
 

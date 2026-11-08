@@ -387,7 +387,7 @@ within in the BZ:
 
 ![EightPoints.png](EightPoints.png)
 
-Working at angular frequency $\omega=10 \cdot 3\times 10^{14}$ rad/sec,
+Working at angular frequency $\omega=10 \cdot 2.99792458\times 10^{14}$ rad/sec,
 we create a little text file named [`EightPoints`](EightPoints) listing the
 $(\omega, k_x, k_y)$ values at which we want to sample the BZ integrand:
 

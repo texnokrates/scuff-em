@@ -74,7 +74,7 @@ scattering geometry. This option is always mandatory.
 --OmegaFile MyFile
 ```
 
-`--Omega` specifies an angular frequency at which to run computations, in units of $\omega_0 \equiv 3\times 10^{14} $ rad/sec ($=c/1 \mu$m).
+`--Omega` specifies an angular frequency at which to run computations, in units of $\omega_0 \equiv c/(1\,\mu\text{m})=2.99792458\cdot 10^{14}$ rad/sec.
 
 The value specified for `--Omega` may be a [complex number.](../GeneralReference#Complex)
 
@@ -332,7 +332,7 @@ ENDOBJECT
 
 We create a simple file called
 [`OmegaFile`](OmegaFile) containing a
-list of angular frequencies (in units of $3\cdot 10^{14}$ rad/sec)
+list of angular frequencies (in units of $\omega_0$)
 at which to compute *T-*matrices:
 
 ``` {.listing}
@@ -374,7 +374,7 @@ remind you which is which:
 ```
 
 As an example, the lowest line above is interpreted as follows:
-At angular frequency $\omega=3.25 \times 3\cdot 10^{14}$ rad/sec,
+At angular frequency $\omega=3.25\,\omega_0$ rad/sec,
 for the spherical-wave pair $(\alpha,\beta)=(2,9)$
 [where $\alpha$ is a $\mathbf{M}$-type wave with $(\ell,m)=(1,0)$
 and $\beta$ is an $\mathbf{N}$-type wave with $(\ell,m)=(2,-1)$,

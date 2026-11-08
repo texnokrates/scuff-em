@@ -235,7 +235,7 @@ each transform you request.
 The first option here requests computation at just a
 single angular frequency (interpreted in 
 [standard <span class=SC>scuff-em</span> units][Units]
-of $\omega_0=3\cdot 10^{14}$ rad/sec).
+of $\omega_0=2.99792458\cdot 10^{14}$ rad/sec).
 
 The second option specifies a file containing a list
 of frequencies $\omega$ (one per line) at which to compute
@@ -512,7 +512,8 @@ $$
 In this equation,
 
 + $u$ is a dimensionless frequency variable: $u=\omega/\omega_0$, 
-where $\omega_0=3\cdot 10^{14}$ rad/sec. (Thus $u$ agrees numerically
+where $\omega_0=c/(1\,\mu\text{m})=2.99792458\cdot 10^{14}$ rad/sec.
+(Thus $u$ agrees numerically
 with the arguments to the `--omega` option.)
 
 + $\widehat\Theta(u)$ is a dimensionless version of the usual

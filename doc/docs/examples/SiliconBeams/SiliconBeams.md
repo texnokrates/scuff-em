@@ -271,7 +271,7 @@ The file `SiliconBeams_192.byXi` looks like this:
 As the file header says, the first column here is the
 transform tag (the surface--surface separation), 
 the second column is the imaginary angular frequency 
-in units of $\xi_0=3\cdot 10^{14}$ rad/sec, and the
+in units of $\xi_0=2.99792458\cdot 10^{14}$ rad/sec, and the
 third column is the Casimir force per unit length 
 per unit frequency (in units of 
  $\hbar c/(\omega_0 L_0^3)=31.6 (\text{fN/micron})/\omega_0$

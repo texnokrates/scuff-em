@@ -96,7 +96,7 @@ You may define the incident field to be a superposition of the fields of multipl
 
      --Omega xx 
 
-Specifies the angular frequency of the scattering problem, in units of 3•10<sup>14</sup> rad/s (=c / 1 μm).
+Specifies the angular frequency of the scattering problem, in units of c / 1 μm = 2.99792458•10<sup>14</sup> rad/s.
 
 The value specified for `--Omega` may be a [complex number.](scuff-em/reference/scuffEMMisc.shtml#Complex)
 

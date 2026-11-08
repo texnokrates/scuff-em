@@ -80,7 +80,7 @@ Specifies the geometry input file.
 
 Specifies the angular frequencies at which to
 run calculations. (Angular frequencies are interpreted
-in units of $c/1\,\mu\text{m}=3\cdot 10^{14}$ rad/sec.)
+in units of $c/1\,\mu\text{m}=2.99792458\cdot 10^{14}$ rad/sec.)
 The `--Omega` option may be used more than once 
 to specify multiple frequencies. Alternatively,
 the `--OmegaFile` option may be used to specify the
@@ -93,7 +93,7 @@ in terms of the corresponding free-space wavelength
 $\lambda=\frac{2\pi}{\omega}$, interpreted in units
 of microns. Thus `--Omega 3.1415` and `--Lambda 0.5`
 are equivalent; both specify an angular frequency
-$\omega=\pi \cdot 3\cdot 10^{14}$rad/sec, 
+$\omega=\pi \cdot 2.99792458\cdot 10^{14}$rad/sec, 
 corresponding
 to a free-space wavelength of $\lambda=0.5\,\mu$m.
 

@@ -113,7 +113,7 @@ DEFAULT 1.900000e-01 11 1.05263974e-04
 
 As the file header says, the second column here
 is the angular frequency 
-in units of $\omega_0=3\cdot 10^{14}$ rad/sec
+in units of $\omega_0=2.99792458\cdot 10^{14}$ rad/sec
 and the fourth column is the dimensionless power
 flux. (The first column lists the 
 [geometrical transformation][Transformations]; since 

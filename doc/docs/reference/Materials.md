@@ -137,9 +137,10 @@ The values specified for *Eps* and *Mu* may be
 **Note that $\omega$ values in material data files are always specified
 in units of radians per second, *not* the specialized frequency
 units that are used in [[scuff-em]] application codes.** For 
-example, an angular frequency of $3\cdot 10^{14}$ rad/sec would
+example, an angular frequency of 
+$\omega_0=c/(1\,\mu\text{m})=2.99792458\cdot 10^{14}$ rad/sec would
 be specified as ``1.0`` in (for example) the ``--omega`` argument
-to [[scuff-scatter]], but as ``3.0e14`` in a material data file.
+to [[scuff-scatter]], but as ``2.99792458e14`` in a material data file.
 
 For example, suppose you have tabulated data for the 
 frequency-dependent permittivity of silver over a finite

@@ -10,7 +10,7 @@
 ### Length and frequency 
 
 Short answer: The default units are $L_0=1\, \mu\text{m}$ for length
-and $\omega_0=3\cdot 10^{14}$ rad/sec (=$c/L_0)$ for angular frequency.
+and $\omega_0=c/L_0=2.99792458\cdot 10^{14}$ rad/sec for angular frequency.
 
 Thus, if you write a 
 [<span class="SC">gmsh</sc>][gmsh]
@@ -19,7 +19,7 @@ of radius `1.3` and use the resulting surface mesh in a
 [<span class="SC">scuff-scatter</sc>][scuff-scatter] calculation
 with an angular-frequency specification of `--omega 2.0`,
 then you will be studying a sphere of radius 1.3 microns
-at an angular frequency of $6\cdot 10^{14}$ rad/sec 
+at an angular frequency of $2.0\,\omega_0=5.996\cdot 10^{14}$ rad/sec 
 (corresponding to a free-space wavelength of 
 $\lambda=\frac{2\pi c}{\omega} = 3.1415\,\mu$m,
 which could alternatively be specified by saying
@@ -45,13 +45,13 @@ a [[scuff-em]] calculation at angular frequency `1.2`,
 then the results can be equally well interpreted as describing
 
 + a sphere of radius 0.9 $\mu$m at an angular frequency of
-$1.2 \cdot 3\cdot 10^{14}$ rad/sec, or
+$1.2\,\omega_0=3.60\cdot 10^{14}$ rad/sec, or
 
 + a sphere of radius 0.9 mm at an angular frequency of
-$1.2 \cdot 3\cdot 10^{11}$ rad/sec, or
+$1.2\,\omega_0=3.60\cdot 10^{11}$ rad/sec, or
 
 + a sphere of radius 0.9 nm at an angular frequency of
-$1.2 \cdot 3\cdot 10^{17}$ rad/sec, etc. (Of course,
+$1.2\,\omega_0=3.60\cdot 10^{17}$ rad/sec, etc. (Of course,
 the continuum
 
 However, this scale invariance is broken by
@@ -62,7 +62,7 @@ as the `SILICON` material definition in
 adopted by [[scuff-em]] is that
 [$\omega$ values in frequency-dependent material
 definitions are always interpreted in units of radians/second][MaterialUnits],
-*not* specialized units like $3 \cdot 10^{14} rad/sec$.
+*not* specialized units like $\omega_0$.
 Thus, if your calculation involves a frequency-dependent 
 material function (either a [user-defined function][UserDefined] or
 a [datafile][Tabulated]),
@@ -70,7 +70,7 @@ then [[scuff-em]] will eventually need to convert the numerical
 values you specify for ``--Omega`` inputs into absolute
 angular frequencies. For this purpose, [[scuff-em]] generally
 makes the scale-breaking assumption that numerical ``--Omega`` values
-are given in units of $\omega_0=3\cdot 10^{14}$ rad/sec,
+are given in units of $\omega_0=c/L_0=2.99792458\cdot 10^{14}$ rad/sec,
 corresponding to the default length scale of $L_0=1\,\mu$m.
 (The one exception to this rule is
 [<span class=SC>scuff-rf</span>][scuff-rf], which uses

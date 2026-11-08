@@ -50,7 +50,8 @@ accept that argument.
 > Specifies one or more frequencies at which to perform calculations.
 >
 > `--Omega` specifies the angular frequency in units of 
-> $\omega_0=3\cdot 10^{14}$ rad/sec. The argument of `--Omega` may be a
+> $\omega_0=c/(1\,\mu\text{m})=2.99792458\cdot 10^{14}$ rad/sec.
+> The argument of `--Omega` may be a
 > [complex number](../applications/GeneralReference.md#Complex).
 >
 > The alternative option `--Lambda` instead specifies the frequency
@@ -163,8 +164,8 @@ accept that argument.
 > $\omega$ or $\xi$ integration is 0, the integrand is 
 > assumed to be constant between 0 and the value specified here.
 > These options are interpreted in the usual [[scuff-em]]
-> frequency units of $3\times 10^{14}$ rad/sec, so typical
-> values will be something like `0.001.`
+> frequency units of $\omega_0=c/(1\,\mu\text{m})=2.99792458\cdot 10^{14}$
+> rad/sec, so typical values will be something like `0.001.`
 >
 > `--AbsTol` and `--RelTol` may be used to specify
 > absolute and relative error tolerances for adaptive
