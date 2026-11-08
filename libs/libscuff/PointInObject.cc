@@ -131,7 +131,7 @@ static void swap(void *a_, void *b_, size_t size)
              so successive elements alternate between 4- and 8-byte
              alignment.  Copy through local values so the loads and
              stores are alignment-safe. */
-          unsigned char *a = (unsigned char *) a_, *b = (unsigned char *) b_;
+          unsigned char *a = static_cast<unsigned char *>(a_), *b = static_cast<unsigned char *>(b_);
           while (size >= sizeof(uint64_t)) {
                uint64_t ca, cb; // NOLINT(cppcoreguidelines-init-variables) -- initialized via memcpy below
                memcpy(&ca, a, sizeof(ca));

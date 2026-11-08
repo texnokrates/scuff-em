@@ -183,7 +183,7 @@ void StaticSolver::VisualizeFields(HVector *Sigma,
       {  PPFileName = PPFileBase + ".pp";
          Log("Creating flux plot for surface %s...",FVMeshFile);
       };
-     FILE *f=fopen(PPFileName.c_str(),"a");
+     FILE *f=fopen(PPFileName.c_str(),"a"); // NOLINT(cppcoreguidelines-owning-memory)
      if (!f)
       { Warn("could not open field visualization file %s",PPFileName.c_str());
        continue;
@@ -287,7 +287,7 @@ void StaticSolver::PlotChargeDensity(HVector *Sigma, const char *BaseFileName)
       FileName = Stem + "." + ExcitationLabel + "." + Extension;
    };
 
-  FILE *f=fopen(FileName.c_str(),"a");
+  FILE *f=fopen(FileName.c_str(),"a"); // NOLINT(cppcoreguidelines-owning-memory)
   if (!f) return;
 
   /*--------------------------------------------------------------*/

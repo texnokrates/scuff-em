@@ -122,7 +122,7 @@ void RWGGeometry::ExpandCurrentDistribution(IncField *IF,
      GetBFCubature(this, ns, ne,
                    EHProjectionIntegrand, (void *)IF, IDim,
                    MaxEvals, 0.0, 0.0, Omega,
-                   nullptr, (double *)KNProjections);
+                   nullptr, reinterpret_cast<double *>(KNProjections));
                    
     else
      GetBFCubature2(this, ns, ne,
@@ -347,7 +347,7 @@ void RWGGeometry::EvalSourceDistribution(const double X[3], HVector *KNVector,
         double *QP    = S->Vertices + 3*E->iQP;
         double *V1    = S->Vertices + 3*E->iV1;
         double *V2    = S->Vertices + 3*E->iV2;
-        double *QM    = (E->iQM==-1) ? nullptr : S->Vertices + 3*E->iQM;
+        double *QM    = (E->iQM==-1) ? nullptr : S->Vertices + static_cast<ptrdiff_t>(3*E->iQM);
 
         /***************************************************************/
         /* Note: If the point lies on an RWG edge, it will be deemed   */

@@ -92,7 +92,7 @@ scuffSolver::~scuffSolver()
      as in the geometry's FIBBI caches: only the Mate[ns]==-1 slots are
      owned (TBlockStorage); TBlocks itself holds non-owning views.    */
 
-  if (CachedPortCurrents) delete CachedPortCurrents;
+  if (CachedPortCurrents) delete[] CachedPortCurrents;
   if (CachedIF)     delete CachedIF;
   if (PortList)     delete PortList;
   if (G)            delete G;
@@ -667,7 +667,7 @@ void scuffSolver::DoSolve(IncField *IF, cdouble *PortCurrents)
      for(int np=0; np<NumPorts; np++)
       for(int nbf=0; nbf<NBF; nbf++)
        KN->AddEntry(nbf, PortCurrents[np]*PBFIMatrix->GetEntry(nbf,np));
-     if (CachedPortCurrents==nullptr) CachedPortCurrents = new cdouble[NumPorts];
+     if (CachedPortCurrents==nullptr) CachedPortCurrents = new cdouble[NumPorts]; // NOLINT(cppcoreguidelines-owning-memory) -- lazy cache, freed in destructor
      memcpy(CachedPortCurrents, PortCurrents, NumPorts*sizeof(cdouble));
    }
   else if (IF)
@@ -680,9 +680,9 @@ void scuffSolver::DoSolve(IncField *IF, cdouble *PortCurrents)
      if (CachedIF) delete CachedIF;
      CachedIF=nullptr;
      if ( PlaneWave *PW=dynamic_cast<PlaneWave *>(IF) )
-      CachedIF=new PlaneWave(*PW);
+      CachedIF=new PlaneWave(*PW); // NOLINT(cppcoreguidelines-owning-memory) -- lazy cache, freed in destructor
      else if ( PointSource *PS=dynamic_cast<PointSource *>(IF) )
-      CachedIF=new PointSource(*PS);
+      CachedIF=new PointSource(*PS); // NOLINT(cppcoreguidelines-owning-memory) -- lazy cache, freed in destructor
      else
       Warn("scuffSolver: warning: incident fields of this type are not "
            "cached (post-processing modules cannot retain them)");
@@ -703,10 +703,9 @@ void scuffSolver::Solve(int WhichPort, cdouble PortCurrent)
 { if (NumPorts==0) ErrExit("no ports defined");
   /* value-initialize (all ports but one must read as zero) and free:
      DoSolve copies but does not take ownership of PortCurrents */
-  cdouble *PortCurrents = new cdouble[NumPorts]();
+  std::unique_ptr<cdouble[]> PortCurrents(new cdouble[NumPorts]());
   PortCurrents[WhichPort]=PortCurrent;
-  DoSolve(nullptr,PortCurrents);
-  delete[] PortCurrents;
+  DoSolve(nullptr,PortCurrents.get());
 }
 
 /***************************************************************/

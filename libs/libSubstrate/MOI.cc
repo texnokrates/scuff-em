@@ -272,15 +272,15 @@ void GetVTwiddle_MOI(cdouble q, cdouble u0, cdouble u,
 /***************************************************************/
 /***************************************************************/
 using MOIData = struct MOIData
- { 
-   LayeredSubstrate *S;
-   cdouble Omega;
-   cdouble Eps;
-   double h;
-   HMatrix *XMatrix;
-   ScalarGFOptions Options;
-   FILE *byqFile;
-   int NumCalls;
+ {
+   LayeredSubstrate *S=nullptr;
+   cdouble Omega=0.0;
+   cdouble Eps=0.0;
+   double h=0.0;
+   HMatrix *XMatrix=nullptr;
+   ScalarGFOptions Options={};
+   FILE *byqFile=nullptr;
+   int NumCalls=0;
 
  };
 
@@ -552,12 +552,12 @@ int LayeredSubstrate::GetScalarGFs_MOI(cdouble Omega, double Rho,
 /* constructor                                                 */
 /***************************************************************/
 using PhiVDFuncData = struct PhiVDFuncData
- { 
-   LayeredSubstrate *S;
-   cdouble Omega;
-   int Dimension;
-   double zFixed;
-   ScalarGFOptions Options;
+ {
+   LayeredSubstrate *S=nullptr;
+   cdouble Omega=0.0;
+   int Dimension=0;
+   double zFixed=0.0;
+   ScalarGFOptions Options={};
 
  };
 
@@ -720,8 +720,8 @@ InterpND *LayeredSubstrate::InitScalarGFInterpolator(cdouble Omega,
   else
    Log("Initializing ScalarGF interpolator for Rho=(%e,%e)",RhoMin,RhoMax);
 
-  ScalarGFInterpolator.reset(new InterpND(PhiVDFunc_ScalarGFs, (void *)&Data, NF, RZMin, RZMax,
-                                      Tolerance, Verbose));
+  ScalarGFInterpolator = std::make_unique<InterpND>(PhiVDFunc_ScalarGFs, reinterpret_cast<void *>(&Data), NF, RZMin, RZMax,
+                                                    Tolerance, Verbose);
 
   if (Dimension>1)
    Log("Rho,Z grid: %zu x %zu points",ScalarGFInterpolator->XGrids[0].size(),

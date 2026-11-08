@@ -172,6 +172,8 @@ bool TBlockCacheOp(int Op, RWGGeometry *G, int ns,
   /* block, but we hold off on doing that until necessary        */
   /***************************************************************/
   HMatrix *B=nullptr;
+  /* B either aliases M (OwnsB=false) or is locally owned; the three
+     delete sites below fire only on the locally-owned path */
   bool OwnsB=false;
   if ( RowOffset==0 && ColOffset==0 && (M->NR==NBF) && (M->NC==NBF) )
    B=M;
@@ -195,7 +197,7 @@ bool TBlockCacheOp(int Op, RWGGeometry *G, int ns,
            B=new HMatrix(NBF,NBF,M->RealComplex);
            if (B->ErrMsg)
             { Log("...could not allocate matrix (%s)",B->ErrMsg);
-              delete B;
+              delete B; // NOLINT(cppcoreguidelines-owning-memory)
               fclose(f);
               return false;
             };
@@ -222,7 +224,7 @@ bool TBlockCacheOp(int Op, RWGGeometry *G, int ns,
         B=new HMatrix(NBF,NBF,M->RealComplex);
         if (B->ErrMsg)
          { Log("...could not allocate matrix (%s)",B->ErrMsg);
-           delete B;
+           delete B; // NOLINT(cppcoreguidelines-owning-memory)
            return false;
          };
         M->ExtractBlock(RowOffset, ColOffset, B);
@@ -239,7 +241,7 @@ bool TBlockCacheOp(int Op, RWGGeometry *G, int ns,
       };
    };
 
-  if (B && OwnsB) delete B;
+  if (B && OwnsB) delete B; // NOLINT(cppcoreguidelines-owning-memory)
   if (f) fclose(f);
   return Success; 
 }

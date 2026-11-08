@@ -210,13 +210,13 @@ PolModel::PolModel(const char *String, int Which)
 {
   /* the Init* helpers assign every member; initialize here as well so
      that an early error return leaves the object in a known state */
-  Name     = 0;
-  ErrMsg   = 0;
-  MP       = 0;
+  Name     = nullptr;
+  ErrMsg   = nullptr;
+  MP       = nullptr;
   NumPoints= 0;
-  XiPoints = 0;
-  PolPoints= 0;
-  PolInterp= 0;
+  XiPoints = nullptr;
+  PolPoints= nullptr;
+  PolInterp= nullptr;
   LargeXiCoefficient = 0;
 
   if (Which==PM_BUILTIN)

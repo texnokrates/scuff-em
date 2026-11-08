@@ -179,12 +179,12 @@ void ProcessEPFile(RWGGeometry *G, HVector *KN, cdouble Omega,
 /***************************************************************/
 /***************************************************************/
 using RFMeshData = struct RFMeshData
- { RWGGeometry *G;
-   HVector *KN;
-   cdouble Omega;
-   RWGPort **Ports;
-   int NumPorts;
-   cdouble *PortCurrents;
+ { RWGGeometry *G=nullptr;
+   HVector *KN=nullptr;
+   cdouble Omega=0.0;
+   RWGPort **Ports=nullptr;
+   int NumPorts=0;
+   cdouble *PortCurrents=nullptr;
  };
 
 std::unique_ptr<HMatrix> RFFluxMDF(void *UserData, HMatrix *XMatrix,

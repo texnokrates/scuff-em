@@ -77,11 +77,11 @@ struct IncFieldListDeleter
     for(int n=0; n<List->NumIFs; n++) // NOLINT(cppcoreguidelines-owning-memory)
      { DeleteIncFieldChain(List->IFs[n]);
        if (List->Labels[n])
-        free(List->Labels[n]); // NOLINT(cppcoreguidelines-no-malloc)
+        free(List->Labels[n]); // NOLINT(cppcoreguidelines-no-malloc,cppcoreguidelines-owning-memory)
      };
-    free(List->IFs);    // NOLINT(cppcoreguidelines-no-malloc,bugprone-multi-level-implicit-pointer-conversion)
-    free(List->Labels); // NOLINT(cppcoreguidelines-no-malloc)
-    free(List);         // NOLINT(cppcoreguidelines-no-malloc)
+    free(List->IFs);    // NOLINT(cppcoreguidelines-no-malloc,bugprone-multi-level-implicit-pointer-conversion,cppcoreguidelines-owning-memory)
+    free(List->Labels); // NOLINT(cppcoreguidelines-no-malloc,bugprone-multi-level-implicit-pointer-conversion,cppcoreguidelines-owning-memory)
+    free(List);         // NOLINT(cppcoreguidelines-no-malloc,cppcoreguidelines-owning-memory)
   }
 };
 
@@ -252,9 +252,9 @@ int main(int argc, char *argv[])
   /*******************************************************************/
   std::unique_ptr<HVector> OmegaList =
     GetOmegaList(OmegaFile.empty() ? nullptr : OmegaFile.c_str(),
-                 OmegaVals.data(), (int)OmegaVals.size(),
+                 OmegaVals.data(), static_cast<int>(OmegaVals.size()),
                  LambdaFile.empty() ? nullptr : LambdaFile.c_str(),
-                 LambdaVals.data(), (int)LambdaVals.size());
+                 LambdaVals.data(), static_cast<int>(LambdaVals.size()));
   if (OmegaList.get()==nullptr)
    { CLI::ValidationError Error("scuff-scatter",
         "you must specify at least one frequency");
@@ -280,14 +280,17 @@ int main(int argc, char *argv[])
    ErrExit("numbers of --psLocation and --psStrength options must agree");
 
   IncField *IF=nullptr;
+  /* links are handed off to the IF chain and reclaimed via
+     DeleteIncFieldChain; the raw-pointer handoff is the legacy
+     ownership implementation here */
   for(size_t npw=0; npw<pwPolarization.size()/3; npw++)
-   { PlaneWave *PW=new PlaneWave(pwPolarization.data() + 3*npw,
+   { PlaneWave *PW=new PlaneWave(pwPolarization.data() + 3*npw, // NOLINT(cppcoreguidelines-owning-memory)
                                  pwDirection.data() + 3*npw);
      PW->Next=IF;
      IF=PW;
    };
   for(size_t ngb=0; ngb<gbCenter.size()/3; ngb++)
-   { GaussianBeam *GB=new GaussianBeam(gbCenter.data() + 3*ngb,
+   { GaussianBeam *GB=new GaussianBeam(gbCenter.data() + 3*ngb, // NOLINT(cppcoreguidelines-owning-memory)
                                       gbDirection.data() + 3*ngb,
                                       gbPolarization.data() + 3*ngb,
                                       gbWaist);
@@ -295,7 +298,7 @@ int main(int argc, char *argv[])
      IF=GB;
    };
   for(size_t nps=0; nps<psLocation.size()/3; nps++)
-   { PointSource *PS=new PointSource(psLocation.data() + 3*nps,
+   { PointSource *PS=new PointSource(psLocation.data() + 3*nps, // NOLINT(cppcoreguidelines-owning-memory)
                                      psStrength.data() + 3*nps);
      PS->Next=IF;
      IF=PS;

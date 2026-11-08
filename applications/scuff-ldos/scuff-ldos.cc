@@ -169,9 +169,9 @@ differential Green's functions of a compact or periodic object"};
   else
    { OmegaPoints =
       GetOmegaList(OmegaFile.empty() ? nullptr : OmegaFile.c_str(),
-                   OmegaVals.data(), (int)OmegaVals.size(),
+                   OmegaVals.data(), static_cast<int>(OmegaVals.size()),
                    LambdaFile.empty() ? nullptr : LambdaFile.c_str(),
-                   LambdaVals.data(), (int)LambdaVals.size());
+                   LambdaVals.data(), static_cast<int>(LambdaVals.size()));
      if (OmegaPoints.get()==nullptr)
       ErrExit("you must specify at least one frequency");
    };
@@ -184,7 +184,7 @@ differential Green's functions of a compact or periodic object"};
       ErrExit("--SkipBZIntegration is incompatible with --OmegakBlochFile");
      if ( !GroundPlane && HalfSpace.empty() )
       ErrExit("--SkipBZIntegration requires either --HalfSpace or --GroundPlane");
-     ProcessHalfSpaceDGFs(OmegaPoints.get(), EPFilePtrs.data(), (int)EPFiles.size(),
+      ProcessHalfSpaceDGFs(OmegaPoints.get(), EPFilePtrs.data(), static_cast<int>(EPFiles.size()),
                           HalfSpace.empty() ? nullptr : HalfSpace.c_str(),
                           RelTol, AbsTol, MaxEvals);
      return 0;   /* was exit(1), reporting failure on the success path */
@@ -196,7 +196,7 @@ differential Green's functions of a compact or periodic object"};
   /***************************************************************/
   auto Data        = CreateSLDData(GeoFile.c_str(),
                                     TransFile.empty() ? nullptr : TransFile.c_str(),
-                                    EPFilePtrs.data(), (int)EPFiles.size());
+                                     EPFilePtrs.data(), static_cast<int>(EPFiles.size()));
   Data->RelTol      = RelTol;
   Data->AbsTol      = AbsTol;
   Data->MaxEvals    = MaxEvals;

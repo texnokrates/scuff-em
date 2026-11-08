@@ -252,8 +252,8 @@ int main(int argc, char *argv[])
       ErrExit("--ExcitationFile is incompatible with [--PotFile | --ConstField | --Monopole | --Dipole | --PhiExt]");
      SEList = CreateSimpleSEList(G, PotFile.empty() ? nullptr : PotFile.c_str(),
                                  ConstField.empty() ? nullptr : ConstField.c_str(),
-                                 (int)Monopoles.size()/4, Monopoles.data(),
-                                 (int)Dipoles.size()/6, Dipoles.data(),
+                                 static_cast<int>(Monopoles.size())/4, Monopoles.data(),
+                                 static_cast<int>(Dipoles.size())/6, Dipoles.data(),
                                  PhiExt.empty() ? nullptr : PhiExt.c_str());
      NumExcitations=1;
    };
@@ -291,7 +291,7 @@ int main(int argc, char *argv[])
   {
      if (!TransFile.empty())
       { G->Transform(GTCs[nt].get());
-        free(SS->TransformLabel);
+        free(SS->TransformLabel); // NOLINT(cppcoreguidelines-no-malloc,cppcoreguidelines-owning-memory)
         SS->TransformLabel=strdup(GTCs[nt]->Tag);
         Log("Working at transformation %s...",GTCs[nt]->Tag);
       }
@@ -343,7 +343,7 @@ int main(int argc, char *argv[])
 
         if (EPFilePtrs.size()>0 || !PlotFile.empty() )
          WriteFields(SS.get(), Sigma.get(), SE, EPFilePtrs.data(),
-                     (int)EPFilePtrs.size(), FileBase.c_str());
+                     static_cast<int>(EPFilePtrs.size()), FileBase.c_str());
 
         for(size_t nfm=0; nfm<FVMeshes.size(); nfm++)
          SS->VisualizeFields(Sigma.get(), FVMeshes[nfm].c_str(), FileBase.c_str(), SE,
@@ -360,7 +360,7 @@ int main(int argc, char *argv[])
   /*******************************************************************/
   /*******************************************************************/
   /*******************************************************************/
-  delete M;
+  delete M; // NOLINT(cppcoreguidelines-owning-memory) -- M's realloc-in-place ownership is documented at its declaration
   printf("Thank you for your support.\n");
 
 }

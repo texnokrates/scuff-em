@@ -789,8 +789,8 @@ void DestroyBZIArgs(GetBZIArgStruct *BZIArgs)
 {
   if (BZIArgs==nullptr) return;
   /* Destroy* frees what Init* allocated: the ownership implementation */
-  free(BZIArgs->DataBuffer[0]); // NOLINT(cppcoreguidelines-no-malloc)
-  free(BZIArgs);                // NOLINT(cppcoreguidelines-no-malloc)
+  free(BZIArgs->DataBuffer[0]); // NOLINT(cppcoreguidelines-no-malloc,cppcoreguidelines-owning-memory)
+  free(BZIArgs);                // NOLINT(cppcoreguidelines-no-malloc,cppcoreguidelines-owning-memory)
 }
 
 /***************************************************************/

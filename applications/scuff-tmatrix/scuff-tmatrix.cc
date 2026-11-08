@@ -135,7 +135,7 @@ int main(int argc, char *argv[])
   /*--------------------------------------------------------------*/
   /* create the RWGGeometry from the .scuffgeo file               */
   /*--------------------------------------------------------------*/
-  RWGGeometry *G=new RWGGeometry(GeoFileName.c_str());
+  RWGGeometry *G=new RWGGeometry(GeoFileName.c_str()); // NOLINT(cppcoreguidelines-owning-memory) -- process-lifetime, live until exit
   G->SetLogLevel(SCUFF_VERBOSELOGGING);
   if (!Cache.empty())
    PreloadCache(Cache.c_str());

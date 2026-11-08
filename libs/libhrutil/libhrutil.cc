@@ -318,7 +318,7 @@ FILE *fopenPath(const char *Path, const char *FileName,
      std::string Dir=SearchPath.substr(Start,
          Colon==std::string::npos ? std::string::npos : Colon-Start);
      std::string FullFileName=Dir + "/" + FileName;
-     if ( FILE *f=fopen(FullFileName.c_str(),Mode) )
+     if ( FILE *f=fopen(FullFileName.c_str(),Mode) ) // NOLINT(cppcoreguidelines-owning-memory)
       { snprintf(DirFound,sizeof(DirFound),"%s",Dir.c_str());
         return f;
       }
@@ -770,7 +770,7 @@ int S2CD(const char *str, cdouble *pZ)
   double X=strtod(p,&End);
   if (End==p) return 1;
   p=End;
-  while (isspace((unsigned char)*p)) p++;
+  while (isspace(static_cast<unsigned char>(*p))) p++;
 
   /* pure real value */
   if (*p==0)
@@ -779,7 +779,7 @@ int S2CD(const char *str, cdouble *pZ)
   /* pure imaginary value: 3i, 3j, 3I, 3J */
   if (*p=='i' || *p=='I' || *p=='j' || *p=='J')
    { p++;
-     while (isspace((unsigned char)*p)) p++;
+     while (isspace(static_cast<unsigned char>(*p))) p++;
      if (*p!=0) return 1;
      *pZ=cdouble(0.0,X); return 0;
    };
@@ -788,17 +788,17 @@ int S2CD(const char *str, cdouble *pZ)
   if (*p!='+' && *p!='-') return 1;
   int Sign = (*p=='+') ? 1 : -1;
   p++;
-  while (isspace((unsigned char)*p)) p++;
+  while (isspace(static_cast<unsigned char>(*p))) p++;
 
   char *EndY=nullptr;
   double Y=strtod(p,&EndY);
   if (EndY==p) return 1;
   p=EndY;
-  while (isspace((unsigned char)*p)) p++;
+  while (isspace(static_cast<unsigned char>(*p))) p++;
 
   if (*p!='i' && *p!='I' && *p!='j' && *p!='J') return 1;
   p++;
-  while (isspace((unsigned char)*p)) p++;
+  while (isspace(static_cast<unsigned char>(*p))) p++;
   if (*p!=0) return 1;
 
   *pZ=cdouble(X, Sign*Y);
@@ -933,7 +933,7 @@ char *GetTimeString(char *s)
   if (s==nullptr) s=TimeStr;
   s[0]=0;
   time_t MyTime=time(nullptr);
-  struct tm TimeStruct;
+  struct tm TimeStruct={};
 #if defined(_WIN32)
   localtime_s(&TimeStruct,&MyTime);
 #else
@@ -1000,7 +1000,7 @@ static void SignalHandler(int WhichSignal)
 #endif
 
   if (OpenedHere)
-   fclose(f);
+   fclose(f); // NOLINT(cppcoreguidelines-owning-memory)
   exit(1);
 }
 #endif // !defined(_WIN32)

@@ -245,7 +245,7 @@ void WriteCMatrix(StaticSolver *SS, HMatrix *M, HVector *Sigma,
       Data->l = l;
       Data->m = m;
       StaticField SFs[1]={SphericalStaticField};
-      StaticExcitation SE={nullptr,nullptr,SFs,(void **)(&Data),1};
+      StaticExcitation SE={nullptr,nullptr,SFs,reinterpret_cast<void **>(&Data),1};
       SS->AssembleRHSVector(&SE, *Sigma);
       M->LUSolve(Sigma);
 

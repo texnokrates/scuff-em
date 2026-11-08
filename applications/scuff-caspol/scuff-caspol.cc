@@ -196,7 +196,7 @@ int main(int argc, char *argv[])
    ErrExit("--Xi and --XiFile options are incompatible with --Temperature");
   if (Temperature<0.0)
    ErrExit("--temperature may not be negative");
-  int NumAtoms = (int)(Atoms.size() + Particles.size());
+  int NumAtoms = static_cast<int>(Atoms.size() + Particles.size());
   if ( Atoms.empty() && Particles.empty() )
    { CLI::ValidationError Error("scuff-caspol",
         "you must specify at least one --atom or --particle");
@@ -212,8 +212,8 @@ int main(int argc, char *argv[])
   /*******************************************************************/
   /*******************************************************************/
   auto SCPD     = CreateSCPData(GeoFile.empty() ? nullptr : GeoFile.c_str(),
-                              AtomPtrs.data(), (int)Atoms.size(),
-                              ParticlePtrs.data(), (int)Particles.size(),
+                               AtomPtrs.data(), static_cast<int>(Atoms.size()),
+                               ParticlePtrs.data(), static_cast<int>(Particles.size()),
                               EPFile.c_str(),
                               FileBase.empty() ? nullptr : FileBase.c_str());
 
@@ -257,7 +257,7 @@ int main(int argc, char *argv[])
   else if ( XiVals.size()>0 )
    { XiList = std::make_unique<HVector>(static_cast<int>(XiVals.size()));
      for(size_t n=0; n<XiVals.size(); n++)
-      XiList->SetEntry((int)n,XiVals[n]);
+      XiList->SetEntry(static_cast<int>(n),XiVals[n]);
    };
 
   /*******************************************************************/
@@ -328,7 +328,7 @@ int main(int argc, char *argv[])
                                 ? "PECPlate" : GeoFile.c_str())) + ".out";
      WriteFilePreamble(SCPD.get(), OutFileName.c_str(), argc, argv, FILETYPE_OUT);
 
-     FILE *f=fopen(OutFileName.c_str(),"a");
+     FILE *f=fopen(OutFileName.c_str(),"a"); // NOLINT(cppcoreguidelines-owning-memory)
      HMatrix *EPMatrix=SCPD->EPMatrix.get();
      for(int nep=0; nep<EPMatrix->NR; nep++)
       { fprintf(f,"%e %e %e ", EPMatrix->GetEntryD(nep,0),

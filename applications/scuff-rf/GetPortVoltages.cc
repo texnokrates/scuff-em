@@ -91,15 +91,15 @@ void GetEdgeiwA_Multipole(RWGSurface *S, int ne, cdouble IK, double X[3], cdoubl
 /* iwA \cdot dl from X1 to X2                                  */
 /* x[0] = Tau where X = X_1 + Tau(X_2-X_1)                     */
 /***************************************************************/
-using iwAIData = struct iwAIData 
+using iwAIData = struct iwAIData
  {
-   RWGGeometry *G;
-   HVector *KN;
-   RWGPort **Ports;
-   int NumPorts;
-   cdouble *PortCurrents;
-   cdouble IK;
-   double *X1, *X2;
+   RWGGeometry *G=nullptr;
+   HVector *KN=nullptr;
+   RWGPort **Ports=nullptr;
+   int NumPorts=0;
+   cdouble *PortCurrents=nullptr;
+   cdouble IK=0.0;
+   double *X1=nullptr, *X2=nullptr;
  };
 
 void iwaIntegrand(unsigned ndim, const double *x, void *params, 
@@ -325,8 +325,8 @@ void GetPortVoltages(RWGGeometry *G, HVector *KN,
    { NumPanels=G->TotalPanels;
      /* PanelCharges is a function-static growable cache; converting it
         to a container is tracked in the ownership-sweep backlog */
-     if (PanelCharges) free(PanelCharges); // NOLINT(cppcoreguidelines-no-malloc)
-     PanelCharges=(cdouble *)mallocEC(NumPanels * sizeof(cdouble)); // NOLINT(cppcoreguidelines-no-malloc)
+     if (PanelCharges) free(PanelCharges); // NOLINT(cppcoreguidelines-no-malloc,cppcoreguidelines-owning-memory)
+     PanelCharges=static_cast<cdouble *>(mallocEC(NumPanels * sizeof(cdouble))); // NOLINT(cppcoreguidelines-no-malloc)
    };
 
   /***************************************************************/

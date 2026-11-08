@@ -437,7 +437,7 @@ int main(int argc, char *argv[])
    ErrorFileName = std::string(GetFileBase(DataFile.c_str())) + ".errors";
   FILE *ErrorFile = nullptr;
   if (!ErrorFileName.empty())
-   { ErrorFile=fopen(ErrorFileName.c_str(),"w");
+   { ErrorFile=fopen(ErrorFileName.c_str(),"w"); // NOLINT(cppcoreguidelines-owning-memory)
      fprintf(ErrorFile,"CheckSCUFFData running on %s (%s)\n",GetHostName(),GetTimeString());
      fprintf(ErrorFile,"Checklist:      %s \n",CLFile.c_str());
      fprintf(ErrorFile,"Data      file: %s \n",DataFile.c_str());

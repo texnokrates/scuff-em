@@ -528,7 +528,7 @@ RWGSurface::~RWGSurface()
   /* The free calls below are the ownership implementation for members
      malloc'd during mesh parsing; converting them to containers is part
      of the containerization backlog (G3.6). */
-  // NOLINTBEGIN(cppcoreguidelines-no-malloc) 
+  // NOLINTBEGIN(cppcoreguidelines-no-malloc,cppcoreguidelines-owning-memory)
   if(Vertices) free(Vertices); // NOLINT(cppcoreguidelines-no-malloc)
 
   for(int np=0; np<NumPanels; np++)
@@ -562,7 +562,7 @@ RWGSurface::~RWGSurface()
   if (RegionLabels[1]) free(RegionLabels[1]);
 
   kdtri_destroy(kdPanels);
-  // NOLINTEND(cppcoreguidelines-no-malloc)
+  // NOLINTEND(cppcoreguidelines-no-malloc,cppcoreguidelines-owning-memory)
 }
 
 

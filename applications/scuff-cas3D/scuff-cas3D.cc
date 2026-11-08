@@ -165,7 +165,7 @@ int main(int argc, char *argv[])
   std::unique_ptr<HMatrix> XiPoints;
   std::unique_ptr<HMatrix> XiKPoints;
   bool TemperatureSpecified = App.get_option("--temperature")->count() > 0;
-  int nTorque = (int)TorqueAxes.size()/3;
+  int nTorque = static_cast<int>(TorqueAxes.size())/3;
 
   if ( !XikBlochFile.empty() )
    { if (!XiFile.empty())      ErrExit("--XikBlochFile and --XiFile options are mutually exclusive");
@@ -189,8 +189,8 @@ int main(int argc, char *argv[])
    { if (TemperatureSpecified) ErrExit("--Xi and --Temperature options are mutually exclusive");
      XiPoints    = std::make_unique<HMatrix>(static_cast<int>(XiVals.size()), 1);
      for(size_t nxv=0; nxv<XiVals.size(); nxv++)
-      XiPoints->SetEntry((int)nxv, 0, XiVals[nxv]);
-     Log("Performing Casimir calculations at %i command-line Xi points.",(int)XiVals.size());
+      XiPoints->SetEntry(static_cast<int>(nxv), 0, XiVals[nxv]);
+     Log("Performing Casimir calculations at %i command-line Xi points.",static_cast<int>(XiVals.size()));
    }
   else if ( TemperatureSpecified )
    Log("Computing full Matsubara-summed Casimir quantities at T=%e Kelvin.",Temperature);
@@ -340,7 +340,7 @@ int main(int argc, char *argv[])
          fprintf(OutFile,"%e %e ",EFT[ntnq],Error[ntnq]);
         fprintf(OutFile,"\n");
       };
-     fclose(OutFile);
+     fclose(OutFile); // NOLINT(cppcoreguidelines-owning-memory)
    };
 
   DestroyBZIArgs(BZIArgs);

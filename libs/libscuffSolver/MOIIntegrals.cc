@@ -57,23 +57,23 @@ int FindEquivalentSurfacePair(RWGGeometry *G, int nsAlpha, int nsBeta,
 /***************************************************************/
 using MOIIntegrandData = struct MOIIntegrandData
  {
-   LayeredSubstrate *S;
-   cdouble Omega;
-   cdouble Eps;
-   bool Subtract;
+   LayeredSubstrate *S=nullptr;
+   cdouble Omega=0.0;
+   cdouble Eps=0.0;
+   bool Subtract=false;
 
    // used for GetMOI1BFFields
-   double *XDest;
+   double *XDest=nullptr;
 
    // used for GetMOIMatrixElement and GetMOIMatrixElement_NC
-   bool SeparateTerms;
+   bool SeparateTerms=false;
 
    // used for GetMOIMatrixElement_NC
-   RWGGeometry *G;
-   int nsInner, neInner, InnerOrder;
+   RWGGeometry *G=nullptr;
+   int nsInner=-1, neInner=-1, InnerOrder=-1;
 
    // used for diagnostics
-   int CubaturePoints, qPoints;
+   int CubaturePoints=0, qPoints=0;
 
  };
 
@@ -132,8 +132,8 @@ void MOIPFIntegrand(double xS[3], double b[3], double Divb,
 /* substrate GF                                                 */
 /*--------------------------------------------------------------*/
 using RPIData = struct RPIData
- { cdouble k;
-   double *XDest;
+ { cdouble k=0.0;
+   double *XDest=nullptr;
  };
 
 void RPIntegrand(double XSource[3], double b[3], double Divb,

@@ -333,7 +333,7 @@ using ParentPairMap = std::unordered_map <EdgePair, EdgePair, EdgePairHash, Edge
 using EPSigMap = std::unordered_map <EdgePairSignature, EdgePair, EPSigHash, EPSigEqual>;
 
 using EquivalentEdgePairSubTable = struct EquivalentEdgePairSubTable
- { RWGSurface *Sa, *Sb;
+ { RWGSurface *Sa=nullptr, *Sb=nullptr;
    ChildPairMap   Children;
    ParentPairMap  Parents;
    EPSigMap       EPRepresentatives;
@@ -590,7 +590,7 @@ EquivalentEdgePairTable::EquivalentEdgePairTable(RWGGeometry *_G, int _nsa, int 
 /***************************************************************/
 /***************************************************************/
 EquivalentEdgePairTable::~EquivalentEdgePairTable()
-{ delete (EquivalentEdgePairSubTable *)MasterTable;
+{ delete static_cast<EquivalentEdgePairSubTable *>(MasterTable);
 }
 
 bool EquivalentEdgePairTable::HasParent(int neaChild, int nebChild, int *neaParent, int *nebParent, SignPattern *Signs)

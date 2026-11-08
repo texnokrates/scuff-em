@@ -147,8 +147,8 @@ CLI::App App{"compute spectrum via Beyn method"};
      App.exit(Error);
      return 1;
    }
-  int nEPFiles  = (int)EPFiles.size();
-  int nFVMeshes = (int)FVMeshes.size();
+  int nEPFiles  = static_cast<int>(EPFiles.size());
+  int nFVMeshes = static_cast<int>(FVMeshes.size());
   SetDefaultCD2SFormat("{%+.12e,%+.12e}");
 
   /***************************************************************/
@@ -165,7 +165,7 @@ CLI::App App{"compute spectrum via Beyn method"};
   /***************************************************************/
   /* compute eigenvalues by Beyn method                          */
   /***************************************************************/
-  int K=BeynSolve(Solver, BeynFunc, (void *)BFD, Omega0, Rx, Ry, N);
+  int K=BeynSolve(Solver, BeynFunc, reinterpret_cast<void *>(BFD), Omega0, Rx, Ry, N);
 
   printf("Found %i eigenvalues: \n",K);
   for(int k=0; k<K; k++)

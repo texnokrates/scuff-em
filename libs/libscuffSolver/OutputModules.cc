@@ -420,7 +420,7 @@ void scuffSolver::AddMinusIdVTermsToZMatrix(HMatrix *KMatrix, HMatrix *ZMatrix)
      HVector KNSource(NBF, LHM_COMPLEX, KMatrix->GetColumnPointer(SourcePort));
      if (!KN) KN=G->AllocateRHSVector();
      KN->Copy(&KNSource);
-     if (CachedPortCurrents==nullptr) CachedPortCurrents=new cdouble[NumPorts];
+     if (CachedPortCurrents==nullptr) CachedPortCurrents=new cdouble[NumPorts]; // NOLINT(cppcoreguidelines-owning-memory) -- lazy cache, freed in destructor
      memset(CachedPortCurrents, 0, NumPorts*sizeof(cdouble));
      CachedPortCurrents[SourcePort]=1.0;
      GetRFFields(XMatrix.get(), PFMatrix.get());

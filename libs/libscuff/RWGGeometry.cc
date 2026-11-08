@@ -425,7 +425,7 @@ RWGGeometry::RWGGeometry(const char *pGeoFileName, int pLogLevel)
    Log("Found file %s in directory %s",GeoFileName,Dir);
   char *GeoFileDir=strdup(Dir);
   AppendEnv("SCUFF_MESH_PATH",":","%s/../mshFiles",GeoFileDir);
-  free(GeoFileDir);
+  free(GeoFileDir); // NOLINT(cppcoreguidelines-no-malloc,cppcoreguidelines-owning-memory)
 
   /***************************************************************/
   /* read and process lines from input file one at a time        */
@@ -816,7 +816,7 @@ RWGGeometry::~RWGGeometry()
   /* The free/delete calls below are the ownership implementation for the
      members allocated by the constructor; containerization is part of the
      containerization backlog (G3.6). */
-  // NOLINTBEGIN(cppcoreguidelines-no-malloc)
+  // NOLINTBEGIN(cppcoreguidelines-no-malloc,cppcoreguidelines-owning-memory)
   for(int ns=0; ns<NumSurfaces; ns++)
    delete Surfaces[ns];
 
@@ -855,7 +855,7 @@ RWGGeometry::~RWGGeometry()
      free(MultiMaterialJunctions[nMMJ]->EdgeIndices);
      delete MultiMaterialJunctions[nMMJ];
    }
-  free((void *)MultiMaterialJunctions);
+  free(reinterpret_cast<void *>(MultiMaterialJunctions));
 
   /* equivalent-edge-pair tables, created lazily during matrix assembly */
   for(size_t nsa=0; nsa<EEPTables.size(); nsa++)
@@ -871,7 +871,7 @@ RWGGeometry::~RWGGeometry()
   free(FIBBICaches);
   free(Mate);
 
-  // NOLINTEND(cppcoreguidelines-no-malloc)
+  // NOLINTEND(cppcoreguidelines-no-malloc,cppcoreguidelines-owning-memory)
 }
 
 /***************************************************************/

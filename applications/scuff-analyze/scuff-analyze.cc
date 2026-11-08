@@ -419,12 +419,12 @@ int main(int argc, char *argv[])
      if (Ext && !strcasecmp(Ext,"scuffgeo"))
       { GeoFile=argv[1];
         argc-=1;
-        memmove((void *)&argv[1],(void *)&argv[2],(argc)*sizeof(char *));
+        memmove(reinterpret_cast<void *>(&argv[1]),reinterpret_cast<void *>(&argv[2]),(argc)*sizeof(char *));
       }
      else if (Ext && !strcasecmp(Ext,"msh"))
       { MeshFile=argv[1];
         argc-=1;
-        memmove((void *)&argv[1],(void *)&argv[2],(argc)*sizeof(char *));
+        memmove(reinterpret_cast<void *>(&argv[1]),reinterpret_cast<void *>(&argv[2]),(argc)*sizeof(char *));
       }
    }
 

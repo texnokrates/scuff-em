@@ -121,7 +121,13 @@ jobs:
             libgsl-dev libreadline-dev
 
       - name: Configure (export compile_commands.json)
-        run: cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Debug
+        # CMAKE_EXPORT_COMPILE_COMMANDS must be explicit: CMake defaults it
+        # to OFF even for the Ninja generator, and without the database
+        # clang-tidy parses every changed file with fallback "no flags",
+        # failing on project headers and producing bogus diagnostics.
+        run: |
+          cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Debug \
+            -DCMAKE_EXPORT_COMPILE_COMMANDS=ON
 
       - name: Run clang-tidy on changed lines
         run: |
@@ -138,7 +144,10 @@ jobs:
                              /usr/lib/llvm-*/share/clang/clang-tidy-diff.py 2>/dev/null \
                         | sort -V | tail -1)
           # Gate project sources only; vendored/generated trees (third_party,
-          # cmatheval, f2c output, SGJ cubature) are excluded.
+          # cmatheval, f2c output, SGJ cubature) are excluded.  The filter
+          # then keeps only files the build can compile (drop headers and
+          # orphaned dev programs, which have no compile command; see
+          # .github/scripts/filter-diff-to-db.py).
           git diff -U0 "$BASE_SHA"...HEAD -- \
             '*.cc' '*.h' '*.hh' \
             ':(exclude)third_party' \
@@ -148,10 +157,17 @@ jobs:
             ':(exclude)libs/libSpherical/zbsubs.c' \
             ':(exclude)libs/libSpherical/machcon.c' \
             ':(exclude)libs/libSpherical/drc3jm.c' \
+            | python3 .github/scripts/filter-diff-to-db.py build \
             | "$DIFF_SCRIPT" -p1 -path build \
                 -clang-tidy-binary clang-tidy \
                 -extra-arg="-isystem$GXX_INC" -quiet \
-            | tee clang-tidy-diff.log
+            | tee clang-tidy-diff.log \
+            || true
+          # The pipeline is wrapped in "|| true" because clang-tidy-diff.py
+          # exits nonzero whenever any file fails to process (e.g. a TU that
+          # trips a header clang cannot parse); with bash -e + pipefail that
+          # would abort the step before the warnings gate below.  The gate
+          # -- changed-lines warnings -- is the single blocking criterion.
           if grep -q 'warning:' clang-tidy-diff.log; then
             N=$(grep -c 'warning:' clang-tidy-diff.log)
             echo "::notice title=clang-tidy ratchet::$N warnings on changed lines (non-blocking; see .clang-tidy and ai_notes/core-guidelines-survey-2026-10-27.md)"

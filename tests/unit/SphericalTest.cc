@@ -145,7 +145,7 @@ void TestRadialFunctionsAtOrigin()
    RFArray[n]=zdouble(1.0e99, 1.0e99);
 
   GetVSWRadialFunctions(LMax, zdouble(1.0), 0.0, LS_REGULAR,
-                        (cdouble *)RFArray, (double *)Workspace,
+                        reinterpret_cast<cdouble *>(RFArray), reinterpret_cast<double *>(Workspace),
                         false, false);
 
   for(int n=0; n<NumRF; n++)

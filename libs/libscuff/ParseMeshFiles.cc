@@ -242,13 +242,13 @@ char *ParseGMSHFile(FILE *MeshFile, char *FileName, int MeshTag,
      std::vector<int> Order(NumNodes);
      for(int nn=0; nn<NumNodes; nn++) Order[nn]=nn;
      std::sort(Order.begin(), Order.end(), [Vertices](int na, int nb)
-      { return Vertices[3*na] < Vertices[3*nb]; });
+      { return Vertices[static_cast<ptrdiff_t>(3*na)] < Vertices[static_cast<ptrdiff_t>(3*nb)]; });
      for(int ii=0; ii<NumNodes; ii++)
       { int na=Order[ii];
         for(int jj=ii+1; jj<NumNodes; jj++)
          { int nb=Order[jj];
-           if ( Vertices[3*nb] - Vertices[3*na] >= WeldTol ) break;
-           if ( VecDistance(Vertices+3*na, Vertices+3*nb) < WeldTol )
+           if ( Vertices[static_cast<ptrdiff_t>(3*nb)] - Vertices[static_cast<ptrdiff_t>(3*na)] >= WeldTol ) break;
+           if ( VecDistance(Vertices+static_cast<ptrdiff_t>(3*na), Vertices+static_cast<ptrdiff_t>(3*nb)) < WeldTol )
             { int RootA=FindNode(na), RootB=FindNode(nb);
               if (RootA!=RootB)
                { // weld: the lower-indexed node survives

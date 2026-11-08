@@ -491,7 +491,7 @@ StaticExcitation **CreateSimpleSEList(RWGGeometry *G,
   int NS = G->NumSurfaces;
 
   StaticExcitation **SEList
-   = (StaticExcitation **)mallocEC(sizeof(StaticExcitation *));
+   = static_cast<StaticExcitation **>(mallocEC(sizeof(StaticExcitation *)));
   StaticExcitation *SE = SEList[0] = (StaticExcitation *)mallocEC(sizeof(*SE));
   SE->Label            = nullptr;
   SE->SFs              = nullptr;

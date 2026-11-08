@@ -141,8 +141,8 @@ int main(int argc, char *argv[])
 
   if (auto Status=scuff::cli::Parse(App,argc,argv))
    return *Status;
-  int nEPFiles  = (int)EPFiles.size();
-  int nFVMeshes = (int)FVMeshes.size();
+  int nEPFiles  = static_cast<int>(EPFiles.size());
+  int nFVMeshes = static_cast<int>(FVMeshes.size());
 
   /* legacy: the --WriteLogFile flag poked libhrutil's log-file switch */
   extern int WriteLogFile;
@@ -282,7 +282,7 @@ int main(int argc, char *argv[])
    {
      snprintf(ZParFileName,999,"%s.zparms",GetFileBase(G->GeoFileName));
      ZParFile=CreateUniqueFile(ZParFileName,1,ZParFileName);
-     setbuf(ZParFile,nullptr);
+     setvbuf(ZParFile,nullptr,_IONBF,0);
      fprintf(ZParFile,"# %s ran on %s (%s)\n",argv[0],getenv("HOST"),TimeString);
      fprintf(ZParFile,"# command-line arguments: \n#");
      for(int narg=0; narg<argc; narg++)
@@ -309,7 +309,7 @@ int main(int argc, char *argv[])
    { 
      snprintf(SParFileName,999,"%s.sparms",GetFileBase(G->GeoFileName));
      SParFile=CreateUniqueFile(SParFileName,1,SParFileName);
-     setbuf(SParFile,nullptr);
+     setvbuf(SParFile,nullptr,_IONBF,0);
      fprintf(SParFile,"# %s ran on %s (%s)\n",argv[0],getenv("HOST"),TimeString);
      fprintf(SParFile,"# command-line arguments: \n#");
      for(int narg=0; narg<argc; narg++)

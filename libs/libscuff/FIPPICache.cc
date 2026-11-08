@@ -88,14 +88,14 @@ FIPPICache::~FIPPICache()
   /* entries created on the fly own their QIFIPPIData and are freed
      individually; preloaded entries are interior pointers into
      PreloadedRecords, which is freed in one piece. */
-  const char *PreloadBegin=(const char *)PreloadedRecords;
+  const char *PreloadBegin=static_cast<const char *>(PreloadedRecords);
   const char *PreloadEnd=PreloadBegin + NumPreloadedRecords*FIPPICF_RECSIZE;
   for(FIPPIKeyValueMap::iterator p=Table.begin(); p!=Table.end(); p++)
-   { const char *Value=(const char *)(p->second);
+   { const char *Value=reinterpret_cast<const char *>(p->second);
      if ( !(Value >= PreloadBegin && Value < PreloadEnd) )
-      free(p->second); // NOLINT(cppcoreguidelines-no-malloc) -- mixed value ownership documented above
+      free(p->second); // NOLINT(cppcoreguidelines-no-malloc,cppcoreguidelines-owning-memory) -- mixed value ownership documented above
    };
-  free(PreloadedRecords); // NOLINT(cppcoreguidelines-no-malloc)
+  free(PreloadedRecords); // NOLINT(cppcoreguidelines-no-malloc,cppcoreguidelines-owning-memory)
 }
 
 static void inline VecSubFloat(double *V1, double *V2, float *V1mV2)
@@ -286,11 +286,11 @@ void FIPPICache::PreLoad(const char *FileName)
   off_t FileSize;
   FileSize=fileStats.st_size;
   char FileSignature[FIPPICF_SIGSIZE]; 
-  if ( ErrMsg==nullptr && (FileSize < (signed int )FIPPICF_SIGSIZE) )
+  if ( ErrMsg==nullptr && (FileSize < static_cast<signed int>(FIPPICF_SIGSIZE)) )
    ErrMsg="invalid cache file";
   if ( ErrMsg==nullptr && 1!=fread(FileSignature, FIPPICF_SIGSIZE, 1, f) )
    ErrMsg="invalid cache file";
-  if ( ErrMsg==nullptr && strcmp(FileSignature, FIPPICF_Signature) ) 
+  if ( ErrMsg==nullptr && strcmp(FileSignature, FIPPICF_Signature) != 0 )
    ErrMsg="invalid cache file";
 
   // the file size, minus the portion taken up by the signature, 

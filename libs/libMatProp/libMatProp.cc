@@ -63,7 +63,7 @@ static int MPDBLength=0;
 void AddMPToMatPropDataBase(MatProp *MP)
 { 
   MPDB=(MatProp **)realloc(MPDB, (MPDBLength+1)*sizeof(MatProp *));
-  MPDB[MPDBLength] = new MatProp(*MP);
+  MPDB[MPDBLength] = new MatProp(*MP); // NOLINT(cppcoreguidelines-owning-memory) -- MPDB is the process-lifetime material DB
   MPDBLength++;
 }
 
@@ -476,7 +476,7 @@ void MatProp::ReadInterpolationTable(const char *FileName)
 
   // (strictly speaking, we should be able to omit the imaginary parts
   //  along the imaginary-frequency axis since they should always be zero)
-  InterpImag = (nreal == NR) ? nullptr : new Interp1D(XPoints + nreal, YPoints + 4*nreal, NR-nreal, 4);
+  InterpImag = (nreal == NR) ? nullptr : new Interp1D(XPoints + nreal, YPoints + static_cast<ptrdiff_t>(4*nreal), NR-nreal, 4);
 
   /***************************************************************/
   /* deallocate temporary storage ********************************/

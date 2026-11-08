@@ -125,7 +125,7 @@ void GetSRFluxTrace(RWGGeometry *G, HMatrix *XMatrix, cdouble Omega,
 #ifdef USE_OPENMP
   NumThreads=GetNumThreads();
 #endif
-  size_t DeltaSRFluxNE = size_t(NumThreads)*NX*NUMSRFLUX;
+  size_t DeltaSRFluxNE = static_cast<size_t>(NumThreads)*NX*NUMSRFLUX;
   static std::vector<cdouble> DeltaSRFlux;
   if (DeltaSRFlux.size()<DeltaSRFluxNE)
    DeltaSRFlux.resize(DeltaSRFluxNE);
@@ -505,9 +505,9 @@ void GetDSIPFT(RWGGeometry *G, cdouble Omega, double *kBloch,
   /***************************************************************/
   /***************************************************************/
   double **ByPanel=nullptr;
-  RWGSurface *BS=nullptr;
+  std::unique_ptr<RWGSurface> BS;
   if (DSIMesh && PlotFileName)
-   { BS=new RWGSurface(DSIMesh);
+   { BS.reset(new RWGSurface(DSIMesh));
      if (GT1) BS->Transform(GT1);
      if (GT2) BS->Transform(GT2);
      ByPanel = (double **)mallocEC(NUMPFT*sizeof(double *));
@@ -576,9 +576,8 @@ void GetDSIPFT(RWGGeometry *G, cdouble Omega, double *kBloch,
                             "%s(%s)",PFTNames[nq],z2s(Omega));
      fclose(f);
      
-     free(ByPanel[0]);
-     free(ByPanel);
-     delete BS;
+     free(ByPanel[0]); // NOLINT(cppcoreguidelines-no-malloc,cppcoreguidelines-owning-memory)
+     free(ByPanel);    // NOLINT(cppcoreguidelines-no-malloc,cppcoreguidelines-owning-memory)
    };
 
 }

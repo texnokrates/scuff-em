@@ -315,10 +315,10 @@ int main(int argc, char *argv[])
   /* The autodetect blocks above discard any user-specified column
      options when they fire, exactly as the legacy array-based code
      overwrote them. */
-  int NumData    = (int)DataColumns.size();
-  int nDataNames = (int)DataNames.size();
-  int NumParms   = (int)ParmColumns.size();
-  int nParmNames = (int)ParmNames.size();
+  int NumData    = static_cast<int>(DataColumns.size());
+  int nDataNames = static_cast<int>(DataNames.size());
+  int NumParms   = static_cast<int>(ParmColumns.size());
+  int nParmNames = static_cast<int>(ParmNames.size());
 
   /***************************************************************/
   /* sanity checks ***********************************************/
@@ -458,7 +458,7 @@ int main(int argc, char *argv[])
   std::string OutFileNameStr=OutFileName.empty()
    ? std::string(vstrdup("%s.Integrated",GetFileBase(DataFileName.c_str())))
    : OutFileName;
-  FILE *OutFile=fopen(OutFileNameStr.c_str(),"a");
+  FILE *OutFile=fopen(OutFileNameStr.c_str(),"a"); // NOLINT(cppcoreguidelines-owning-memory)
   if (!OutFile)
    ErrExit("could not open output file %s",OutFileNameStr.c_str());
   fprintf(OutFile,"# columns: \n");

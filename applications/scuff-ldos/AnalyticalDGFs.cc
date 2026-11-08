@@ -43,19 +43,19 @@ FILE *LogFile=nullptr;
 /***************************************************************/
 using HalfSpaceData = struct HalfSpaceData
  {
-   HMatrix *XMatrix;
-   cdouble Omega;     // angular frequency
-   cdouble Epsilon;   // half-space permittivity
-   cdouble Mu;        // half-space permeability
+   HMatrix *XMatrix=nullptr;
+   cdouble Omega=0.0;     // angular frequency
+   cdouble Epsilon=0.0;   // half-space permittivity
+   cdouble Mu=0.0;        // half-space permeability
 
-   double *kBloch;    // point in Brillouin zone
-   bool Accumulate; 
-   
-   double Workspace[12];
-   bool Polar;
-   bool Propagating;
+   double *kBloch=nullptr;    // point in Brillouin zone
+   bool Accumulate=false;
 
-   int nCalls;
+   double Workspace[12]={};
+   bool Polar=false;
+   bool Propagating=false;
+
+   int nCalls=0;
 
  };
 

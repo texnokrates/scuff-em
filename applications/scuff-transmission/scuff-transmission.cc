@@ -275,9 +275,9 @@ int main(int argc, char *argv[])
   /*******************************************************************/
   std::unique_ptr<HVector> OmegaVector =
     GetOmegaList(OmegaFile.empty() ? nullptr : OmegaFile.c_str(),
-                 OmegaVals.data(), (int)OmegaVals.size(),
+                 OmegaVals.data(), static_cast<int>(OmegaVals.size()),
                  LambdaFile.empty() ? nullptr : LambdaFile.c_str(),
-                 LambdaVals.data(), (int)LambdaVals.size());
+                 LambdaVals.data(), static_cast<int>(LambdaVals.size()));
   if ( OmegaVector.get()==nullptr || OmegaVector->N==0)
    { CLI::ValidationError Error("scuff-transmission",
         "you must specify at least one frequency");

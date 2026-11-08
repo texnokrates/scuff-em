@@ -84,12 +84,12 @@ inline cdouble RCVecDot(double *V1, cdouble *V2)
 using PFTIData = struct PFTIData
  {
    cdouble Omega, k, EpsRel, MuRel;
-   IncField *IF;
-   double *TorqueCenterA, *TorqueCenterB;
-   int EMTPFTIMethod;
-   RWGGeometry *G;
-   int nsb, neb;
-   bool SameSurface;
+   IncField *IF=nullptr;
+   double *TorqueCenterA=nullptr, *TorqueCenterB=nullptr;
+   int EMTPFTIMethod=0;
+   RWGGeometry *G=nullptr;
+   int nsb=-1, neb=-1;
+   bool SameSurface=false;
 
  };
 
@@ -461,7 +461,7 @@ void GetExtinctionPFTIntegrals(RWGGeometry *G, int ns, int ne,
   int fDim=4*NUMPFTT;
   int MaxEvals=21;
   GetBFCubature(G, ns, ne, ExtinctionPFTIntegrand, (void *)Data,
-                fDim, MaxEvals, 0, 0, 0, nullptr, (double *)QKQN);
+                fDim, MaxEvals, 0, 0, 0, nullptr, reinterpret_cast<double *>(QKQN));
 }
 
 /***************************************************************/
@@ -483,7 +483,7 @@ void GetExtinctionPFTT(RWGGeometry *G, HVector *KN,
   int NTNSNQ=NT*NS*NQ;
 
   static std::vector<double> DeltaPFTT;
-  if (DeltaPFTT.size() < size_t(NTNSNQ))
+  if (DeltaPFTT.size() < static_cast<size_t>(NTNSNQ))
    DeltaPFTT.resize(NTNSNQ);
   std::fill(DeltaPFTT.begin(), DeltaPFTT.end(), 0.0);
 
@@ -514,7 +514,7 @@ void GetExtinctionPFTT(RWGGeometry *G, HVector *KN,
 #ifdef USE_OPENMP
      nt = omp_get_thread_num();
 #endif
-     double *dPFTT = DeltaPFTT.data() + (nt*NS + ns)*NUMPFTT;
+     double *dPFTT = DeltaPFTT.data() + static_cast<ptrdiff_t>((nt*NS + ns)*NUMPFTT);
      dPFTT[PFT_PABS] += real(KStar*QK[PFT_PABS] + NStar*QN[PFT_PABS]);
      for(int nq=PFT_XFORCE; nq<NUMPFTT; nq++)
       dPFTT[nq] += imag( KStar*QK[nq] + NStar*QN[nq] );
@@ -529,7 +529,7 @@ void GetExtinctionPFTT(RWGGeometry *G, HVector *KN,
    for(int nt=0; nt<NT; nt++)
     for(int ns=0; ns<NS; ns++)
      { 
-       double *dPFTT = DeltaPFTT.data() + (nt*NS + ns)*NUMPFTT;
+       double *dPFTT = DeltaPFTT.data() + static_cast<ptrdiff_t>((nt*NS + ns)*NUMPFTT);
        PFTTMatrix->AddEntry(ns, PFT_PABS, PFactor*dPFTT[PFT_PABS]);
        for(int nq=PFT_XFORCE; nq<NUMPFTT; nq++)
         PFTTMatrix->AddEntry(ns, nq, FTFactor*dPFTT[nq]);
@@ -603,7 +603,7 @@ HMatrix *GetEMTPFTMatrix(RWGGeometry *G, cdouble Omega, IncField *IF,
   int NS2NQ   = NS*NS*NQ;
   int NTNS2NQ = NT*NS*NS*NQ; 
   static std::vector<double> DeltaPFTT;
-  if ( DeltaPFTT.size() < size_t(NTNS2NQ) )
+  if ( DeltaPFTT.size() < static_cast<size_t>(NTNS2NQ) )
    { Log("(re)allocating DeltaPFTT (%zu,%i)",DeltaPFTT.size(),NTNS2NQ);
      DeltaPFTT.resize(NTNS2NQ);
    };

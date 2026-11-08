@@ -167,10 +167,10 @@ int main(int argc, char *argv[])
 
   if (auto Status=scuff::cli::Parse(App,argc,argv))
    return *Status;
-  int nEPFiles          = (int)EPFiles.size();
-  int nFVScreens        = (int)FVScreens.size()/11;
-  int nFVMeshes         = (int)FVMeshes.size();
-  int nFVMeshTransFiles = (int)FVMeshTransFiles.size();
+  int nEPFiles          = static_cast<int>(EPFiles.size());
+  int nFVScreens        = static_cast<int>(FVScreens.size())/11;
+  int nFVMeshes         = static_cast<int>(FVMeshes.size());
+  int nFVMeshTransFiles = static_cast<int>(FVMeshTransFiles.size());
 
   if (FileBase.empty())
    FileBase=GetFileBase(GeoFile.c_str());
@@ -252,7 +252,7 @@ int main(int argc, char *argv[])
      HVector *EVErrors     = Solver->EVErrors.get();
      HMatrix *Eigenvectors = Solver->Eigenvectors.get();
      HVector *Residuals    = Solver->Residuals.get();
-     int NumModes=BeynSolve(Solver.get(), BeynFunc, (void *)&MyBFData, Omega0, Rx, Ry, N);
+     int NumModes=BeynSolve(Solver.get(), BeynFunc, reinterpret_cast<void *>(&MyBFData), Omega0, Rx, Ry, N);
 
      if (PlotContours)
       fclose(MyBFData.LogFile);
@@ -316,7 +316,7 @@ int main(int argc, char *argv[])
         for(int ns=0; ns<nFVScreens; ns++)
          { std::string VFFileBase=OutFileBase+".Screen"+std::to_string(ns);
            VisualizeFields(G.get(), &KN, Omega, kBloch, VFFileBase.c_str(),
-                           FVScreens.data() + (size_t)11*ns);
+                           FVScreens.data() + static_cast<size_t>(11)*ns);
          }
       }
 

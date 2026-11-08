@@ -197,7 +197,7 @@ int main(int argc, char *argv[])
   if (OmegaVals.size()>0)
    {
      std::unique_ptr<HVector> OmegaPoints0(std::move(OmegaPoints));
-     NumFreqs += (int)OmegaVals.size();
+     NumFreqs += static_cast<int>(OmegaVals.size());
      OmegaPoints       = std::make_unique<HVector>(NumFreqs, LHM_COMPLEX);
      int nFreq=0;
      if (OmegaPoints0)
@@ -205,8 +205,8 @@ int main(int argc, char *argv[])
          OmegaPoints->SetEntry(nFreq, OmegaPoints0->GetEntry(nFreq));
       };
      for(size_t nOV=0; nOV<OmegaVals.size(); nOV++)
-      OmegaPoints->SetEntry(nFreq+(int)nOV, OmegaVals[nOV]);
-     Log("Read %i frequencies from command line.",(int)OmegaVals.size());
+      OmegaPoints->SetEntry(nFreq+static_cast<int>(nOV), OmegaVals[nOV]);
+     Log("Read %i frequencies from command line.",static_cast<int>(OmegaVals.size()));
    };
 
   /*******************************************************************/
@@ -214,7 +214,7 @@ int main(int argc, char *argv[])
   /* to evaluate the neq transfer at a single frequency              */
   /*******************************************************************/
   SNEQData *SNEQD=CreateSNEQData(GeoFile.c_str(), TransFile.c_str(),
-                                 PFTMethods.data(), (int)PFTMethods.size(),
+                                 PFTMethods.data(), static_cast<int>(PFTMethods.size()),
                                  EPFile.empty() ? nullptr : EPFile.c_str(),
                                  FileBase.c_str());
   RWGGeometry *G=SNEQD->G;

@@ -44,6 +44,7 @@
 #include <libhrutil.h>
 #include <libSGJC.h>
 #include <libhmat.h>
+#include <memory>
 #include <vector>
 
 #define KMAX 20
@@ -128,7 +129,7 @@ cdouble MosigMichalski(int K, double *xValues, cdouble *uValues,
 
    };
   cdouble RetVal = SMatrix.GetEntry(K-1,0);
-  if (OwnsWorkspace) delete[] Workspace;
+  if (OwnsWorkspace) delete[] Workspace; // NOLINT(cppcoreguidelines-owning-memory) -- conditional ownership per OwnsWorkspace
   return RetVal;
 }
 
@@ -242,20 +243,19 @@ void SommerfeldIntegrate(integrand f, void *fdata, unsigned zfdim,
      SIData.q0          = q0;
      SIData.uTransform  = true;
      SIData.NumPoints   = 0;
-     cdouble *Integral2 = new cdouble[zfdim];
-     cdouble *Error2    = new cdouble[zfdim];
+     std::unique_ptr<cdouble[]> Integral2(new cdouble[zfdim]);
+     std::unique_ptr<cdouble[]> Error2(new cdouble[zfdim]);
      double tMin=0.0, tMax=1.0;
      int nDim=1;
-     pcubature(2*zfdim, ContourIntegrand, (void *)&SIData,
+     pcubature(2*zfdim, ContourIntegrand, reinterpret_cast<void *>(&SIData),
                nDim, &tMin, &tMax, MaxEvalB, AbsTol, RelTol, ERROR_PAIRED,
-               (double *)Integral2, (double *)Error2);
+               reinterpret_cast<double *>(Integral2.get()),
+               reinterpret_cast<double *>(Error2.get()));
      if (SIData.LogFile) fprintf(SIData.LogFile,"\n\n");
-     VecPlusEquals(Integral, 1.0, Integral2, zfdim);
-     VecPlusEquals(Error,    1.0, Error2,    zfdim);
+     VecPlusEquals(Integral, 1.0, Integral2.get(), zfdim);
+     VecPlusEquals(Error,    1.0, Error2.get(),    zfdim);
      if (Verbose)
       Log(" q Integral: %i calls (%s)",SIData.NumPoints,CD2S(Integral2[0]));
-     delete[] Integral2;
-     delete[] Error2;
      if (SIData.LogFile) fclose(SIData.LogFile);
      return; 
    };
