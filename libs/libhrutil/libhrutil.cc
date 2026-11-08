@@ -398,13 +398,32 @@ void vsetenv(const char *VariableName, const char *format, ...)
 #endif
 }
 
+/***************************************************************/
+/* ErrExit dispatch: if a handler has been installed via       */
+/* SetErrExitHandler(), it is invoked in place of the default  */
+/* print-and-exit behavior (see libhrutil.h). Not thread-safe; */
+/* install the handler once at host-application startup.       */
+/***************************************************************/
+static ErrExitHandler ErrExitHandlerFn=nullptr;
+static void *ErrExitHandlerUserData=nullptr;
+
+void SetErrExitHandler(ErrExitHandler Handler, void *UserData)
+{
+  ErrExitHandlerFn=Handler;
+  ErrExitHandlerUserData=UserData;
+}
+
 void ErrExit(const char *format, ...)
 {
-  va_list ap; 
+  va_list ap;
   char buffer[2*MAXSTR];
   va_start(ap,format);
   vsnprintfEC(buffer,2*MAXSTR,format,ap);
   va_end(ap);
+  if (ErrExitHandlerFn)
+   { ErrExitHandlerFn(buffer, ErrExitHandlerUserData);
+     exit(1); // the handler should not return, but just in case
+   }
   fprintf(stderr,"error: %s (aborting)\n",buffer);
   Log("error: %s (aborting)",buffer);
   exit(1);

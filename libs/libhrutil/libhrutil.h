@@ -160,6 +160,21 @@ void Warn(const char *format, ...)
   SCUFF_PRINTF_FORMAT(1,2);
 
 /***************************************************************/
+/* ErrExit() normally prints an error message and terminates   */
+/* the process. Host applications that link scuff-em code as   */
+/* a library may instead install a handler, which is then      */
+/* invoked with the formatted error message (and the user data */
+/* pointer passed at installation time) in place of the        */
+/* default behavior, allowing the host to intercept            */
+/* otherwise-fatal errors (e.g. to unwind and present its own  */
+/* diagnostics). The handler should not return; if it does,    */
+/* ErrExit() exits with status 1 as usual. Passing a nullptr   */
+/* handler restores the default behavior.                      */
+/***************************************************************/
+typedef void (*ErrExitHandler)(const char *Message, void *UserData);
+void SetErrExitHandler(ErrExitHandler Handler=nullptr, void *UserData=nullptr);
+
+/***************************************************************/
 /** General-purpose status logging
  */
 /***************************************************************/
