@@ -53,6 +53,25 @@ using namespace scuff;
 #define II cdouble (0.0,1.0)
 
 /***************************************************************/
+/* Format the angular frequency for the first column of the    */
+/* .TMatrix output file. Like z2s, but with full double        */
+/* precision: the T-matrix data columns carry 9 significant    */
+/* digits, and consumers match rows to frequencies via the     */
+/* frequency column, so that column must not be the lossy one. */
+/***************************************************************/
+static const char *OmegaStr(cdouble Omega)
+{
+  static thread_local char Buffer[100];
+  if ( imag(Omega)==0.0 )
+   snprintf(Buffer,100,"%.15g",real(Omega));
+  else if ( real(Omega)==0.0 )
+   snprintf(Buffer,100,"%.15gi",imag(Omega));
+  else
+   snprintf(Buffer,100,"%.15g+%.15gi",real(Omega),imag(Omega));
+  return Buffer;
+}
+
+/***************************************************************/
 /***************************************************************/
 /***************************************************************/
 void GetSphericalMoments(RWGGeometry *G, cdouble k, int LMax,
@@ -226,7 +245,7 @@ int main(int argc, char *argv[])
          for(int MBeta=-LBeta; MBeta<=LBeta; MBeta++)
           for(int PBeta=0; PBeta<2; PBeta++, Beta++)
            fprintf(f,"%s  %i %i %+i %i   %i %i %+i %i  %+15.8e %+15.8e\n",
-                      z2s(Omega), 
+                      OmegaStr(Omega),
                       Alpha,LAlpha,MAlpha,PAlpha,Beta,LBeta,MBeta,PBeta,
                       real(TMatrix->GetEntry(Alpha,Beta)),
                       imag(TMatrix->GetEntry(Alpha,Beta)));
