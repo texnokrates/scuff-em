@@ -29,6 +29,9 @@
 #include <math.h>
 #include <assert.h>
 
+#include <algorithm>
+#include <vector>
+
 #include "libscuff.h"
 
 namespace scuff {
@@ -60,9 +63,14 @@ namespace scuff {
 
 #define MAXREFPTS 100
 
-// vertices that are within a distance of
-// PIXELSIZE of each other are considered equivalent
-#define PIXELSIZE 1.0e-6
+// vertices whose pairwise separation is less than WELD_RELTOL times the
+// diagonal of the mesh bounding box are considered equivalent and welded
+// together. the tolerance is deliberately relative to the mesh size: a
+// hard-coded absolute tolerance (the historical behavior, 1.0e-6 in
+// mesh-file length units) silently welded essentially all vertices of
+// any mesh whose coordinates are not written in scuff-em's default
+// length unit of microns.
+#define WELD_RELTOL 1.0e-6
 
 /*************************************************************/
 /* Read vertices and panels from a GMSH .msh file to specify */
@@ -182,21 +190,91 @@ char *ParseGMSHFile(FILE *MeshFile, char *FileName, int MeshTag,
  
   /*------------------------------------------------------------*/
   /*- Eliminate any redundant vertices from the vertex list.   -*/
-  /*- Silly O(N^2) algorithm used; obviously O(N) algorithm possible. */
+  /*- Vertices closer than WELD_RELTOL times the bounding-box   */
+  /*- diagonal are welded together (all references to node j    */
+  /*- remapped to the lowest-indexed node in its weld cluster). */
+  /*- The weld tolerance being mesh-scale-relative (as opposed  */
+  /*- to a hard-coded absolute value in mesh-file length units) */
+  /*- is what keeps meshes written in length units other than   */
+  /*- scuff-em's default (microns) from being silently destroyed.*/
   /*------------------------------------------------------------*/
   int NumRedundantNodes=0;
-  double *Vertices = &(VertexCoordinates[0]);
-  for(int i=0; i<NumNodes; i++)
-   for(int j=i+1; j<NumNodes; j++)
-    if ( VecDistance(Vertices+3*i, Vertices+3*j) < 1.0e-6 )
-     {
-       /* remap all references to my node j so that they now refer to my node i*/
-       for(int jGMSH=0; jGMSH<2*NumNodes; jGMSH++)
-        if (GMSH2HR[jGMSH]==j)
-         GMSH2HR[jGMSH]=i;
-       NumRedundantNodes++;
-       //fprintf(stderr,"\n*\n* redundant nodes found!!(%i,%i)\n*\n",i,j);
-     }
+  if (NumNodes>1)
+   {
+     /*------------------------------------------------------------*/
+     /*- the diagonal of the vertex bounding box sets the length   */
+     /*- scale of the mesh as written in the mesh file             */
+     /*------------------------------------------------------------*/
+     double *Vertices = &(VertexCoordinates[0]);
+     double MinCorner[3], MaxCorner[3];
+     for(int nc=0; nc<3; nc++)
+      MinCorner[nc]=MaxCorner[nc]=Vertices[nc];
+     for(int nn=1; nn<NumNodes; nn++)
+      for(int nc=0; nc<3; nc++)
+       { MinCorner[nc]=std::min(MinCorner[nc], Vertices[3*nn+nc]);
+         MaxCorner[nc]=std::max(MaxCorner[nc], Vertices[3*nn+nc]);
+       }
+     double MeshDiagonal
+      = sqrt(   (MaxCorner[0]-MinCorner[0])*(MaxCorner[0]-MinCorner[0])
+              + (MaxCorner[1]-MinCorner[1])*(MaxCorner[1]-MinCorner[1])
+              + (MaxCorner[2]-MinCorner[2])*(MaxCorner[2]-MinCorner[2]) );
+     double WeldTol = WELD_RELTOL*MeshDiagonal;
+
+     /*------------------------------------------------------------*/
+     /*- union-find structure for bookkeeping of weld clusters    -*/
+     /*------------------------------------------------------------*/
+     std::vector<int> NodeParent(NumNodes);
+     for(int nn=0; nn<NumNodes; nn++) NodeParent[nn]=nn;
+     auto FindNode=[&NodeParent](int nn)
+      { while(NodeParent[nn]!=nn)
+         { NodeParent[nn]=NodeParent[NodeParent[nn]]; // path halving
+           nn=NodeParent[nn];
+         }
+        return nn;
+      };
+
+     /*------------------------------------------------------------*/
+     /*- weld all pairs of vertices closer than the weld tolerance */
+     /*- (only pairs whose x-coordinates differ by less than the   */
+     /*- weld tolerance can be close enough, which prunes the      */
+     /*- pairwise comparison to a tiny fraction of the N^2 pairs)  */
+     /*------------------------------------------------------------*/
+     std::vector<int> Order(NumNodes);
+     for(int nn=0; nn<NumNodes; nn++) Order[nn]=nn;
+     std::sort(Order.begin(), Order.end(), [Vertices](int na, int nb)
+      { return Vertices[3*na] < Vertices[3*nb]; });
+     for(int ii=0; ii<NumNodes; ii++)
+      { int na=Order[ii];
+        for(int jj=ii+1; jj<NumNodes; jj++)
+         { int nb=Order[jj];
+           if ( Vertices[3*nb] - Vertices[3*na] >= WeldTol ) break;
+           if ( VecDistance(Vertices+3*na, Vertices+3*nb) < WeldTol )
+            { int RootA=FindNode(na), RootB=FindNode(nb);
+              if (RootA!=RootB)
+               { // weld: the lower-indexed node survives
+                 if (RootA<RootB) NodeParent[RootB]=RootA;
+                 else             NodeParent[RootA]=RootB;
+                 NumRedundantNodes++;
+               }
+             }
+          }
+       }
+
+     /*------------------------------------------------------------*/
+     /*- remap all vertex references to the surviving node of      */
+     /*- each weld cluster                                         */
+     /*------------------------------------------------------------*/
+     if (NumRedundantNodes>0)
+      for(int jGMSH=0; jGMSH<2*NumNodes; jGMSH++)
+       GMSH2HR[jGMSH]=FindNode(GMSH2HR[jGMSH]);
+   }
+
+  if (NumRedundantNodes>0)
+   Log("Welded %i redundant vertices in mesh file %s",NumRedundantNodes,FileName);
+  if (NumRedundantNodes > NumNodes/100)
+   Warn("%i of %i vertices welded in mesh file %s; the mesh coordinates are "
+        "probably not in scuff-em's default length unit (microns). Check "
+        "your mesh!",NumRedundantNodes,NumNodes,FileName);
  
   /*------------------------------------------------------------*/
   /* Confirm that the next two lines in the file are the        */
